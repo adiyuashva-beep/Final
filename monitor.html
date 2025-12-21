@@ -56,10 +56,15 @@
         .col-center { flex: 1.2; display: flex; flex-direction: column; gap: 15px; }
         .stats-wrapper { flex: 1.5; background: var(--card-bg); border-radius: 15px; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.05); }
         
+        /* --- DONUT CHART (PERBAIKAN UTAMA DI SINI) --- */
         .donut-chart { 
             position: relative; width: 160px; height: 160px; border-radius: 50%; 
-            background: conic-gradient(var(--c) var(--p), #334155 0deg); 
-            display: flex; align-items: center; justify-content: center; margin-bottom: 15px; transition: 1s; 
+            /* Gunakan variabel CSS custom --p (derajat) dan --c (warna) */
+            /* Default: Merah, 0 derajat */
+            background: conic-gradient(var(--c, #ef4444) var(--p, 0deg), #334155 0deg); 
+            display: flex; align-items: center; justify-content: center; 
+            margin-bottom: 15px; 
+            transition: background 1s ease-in-out; /* Animasi Smooth */
         }
         .donut-inner { width: 85%; height: 85%; background: var(--card-bg); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .big-percent { font-size: 2.2em; font-weight: 900; color: white; line-height: 1; }
@@ -70,7 +75,7 @@
         .stat-item p { margin: 0; font-size: 1.3em; font-weight: 700; }
         .c-hadir { color: var(--neon-green); } .c-izin { color: var(--neon-gold); } .c-alpha { color: var(--neon-red); }
 
-        /* BOX BELUM HADIR (DIBAWAH DONAT) */
+        /* BOX BELUM HADIR */
         .box-belum { flex: 1; background: var(--card-bg); border-radius: 15px; border-top: 4px solid #64748b; display: flex; flex-direction: column; overflow: hidden; }
         .belum-header { background: rgba(100, 116, 139, 0.1); color: #94a3b8; padding: 10px 15px; font-weight: 700; font-size: 0.9em; display:flex; align-items:center; justify-content: space-between; }
         .scroller-content { flex: 1; overflow: hidden; padding: 10px; position: relative; }
@@ -80,13 +85,12 @@
         .alpha-kelas { font-size: 0.7em; color: #94a3b8; background: rgba(0,0,0,0.3); padding: 2px 5px; border-radius: 3px; }
 
         /* KOLOM KANAN: SPLIT 2 (TELAT & LIVE) */
-        .col-right-split { flex: 1.4; display: flex; flex-direction: column; gap: 15px; } /* LEBIH LEBAR */
+        .col-right-split { flex: 1.4; display: flex; flex-direction: column; gap: 15px; } 
         
         /* 1. BOX TELAT (ATAS - MERAH) */
         .box-telat { flex: 1; background: var(--card-bg); border-radius: 15px; border: 2px solid rgba(239, 68, 68, 0.5); display: flex; flex-direction: column; overflow: hidden; position: relative; }
         .telat-header { background: rgba(239, 68, 68, 0.2); color: var(--neon-red); padding: 10px 15px; font-weight: 800; font-size: 0.9em; display:flex; align-items:center; justify-content: space-between; }
         
-        /* ITEM TELAT */
         .telat-row { display: flex; align-items: center; padding: 8px; margin-bottom: 5px; background: rgba(239, 68, 68, 0.05); border-left: 3px solid var(--neon-red); border-radius: 6px; }
         .telat-img { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--neon-red); margin-right: 10px; filter: grayscale(1); }
         .telat-time { margin-left: auto; font-family: monospace; color: var(--neon-red); font-weight: 700; }
@@ -95,7 +99,6 @@
         .box-live { flex: 2.5; background: var(--card-bg); border-radius: 15px; border-top: 4px solid var(--neon-blue); display: flex; flex-direction: column; overflow: hidden; }
         .live-header-big { padding: 15px; font-size: 1.1em; font-weight: 800; color: var(--neon-blue); border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(59, 130, 246, 0.05); display: flex; align-items: center; gap: 10px; }
         
-        /* ITEM LIVE */
         .live-card-big { display: flex; align-items: center; padding: 12px; margin-bottom: 8px; background: rgba(255,255,255,0.03); border-radius: 12px; border-left: 4px solid var(--neon-green); transition: transform 0.3s; }
         .live-card-big.is-telat { border-left-color: var(--neon-red); background: rgba(239, 68, 68, 0.05); }
         .live-img { width: 55px; height: 55px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,0.1); margin-right: 15px; flex-shrink: 0; background: black; }
@@ -105,7 +108,6 @@
         .live-time { font-family: monospace; font-size: 1.2em; font-weight: 800; color: var(--neon-green); }
         .live-card-big.is-telat .live-time { color: var(--neon-red); }
 
-        /* ANIMASI SCROLL */
         .marquee-vertical { animation: scrollUp linear infinite; }
         @keyframes scrollUp { 0% { transform: translateY(0); } 100% { transform: translateY(-100%); } }
 
@@ -140,7 +142,7 @@
 
         <div class="col-center">
             <div class="stats-wrapper">
-                <div class="donut-chart" id="chart-absen" style="--p: 0deg; --c: var(--neon-red);">
+                <div class="donut-chart" id="chart-absen">
                     <div class="donut-inner">
                         <span class="big-percent" id="persen-text">0%</span>
                         <small style="color:#94a3b8; font-size:0.7em;">KEHADIRAN</small>
@@ -176,8 +178,7 @@
                     <span style="background:rgba(255,0,0,0.2); padding:2px 8px; border-radius:4px;" id="badge-telat">0</span>
                 </div>
                 <div class="scroller-content">
-                    <div class="marquee-vertical" id="list-telat">
-                        </div>
+                    <div class="marquee-vertical" id="list-telat"></div>
                 </div>
             </div>
 
@@ -187,8 +188,7 @@
                     <span style="font-size:0.7em; font-weight:400; color:#94a3b8;">Realtime Update</span>
                 </div>
                 <div class="scroller-content">
-                    <div class="marquee-vertical" id="live-feed-list">
-                        </div>
+                    <div class="marquee-vertical" id="live-feed-list"></div>
                 </div>
             </div>
 
@@ -203,7 +203,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getFirestore, collection, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-        // --- ⚠️ CONFIG FIREBASE (SESUAIKAN DENGAN PUNYA NDAN) ---
+        // --- ⚠️ ISI CONFIG ASLI KAMU DISINI ---
         const firebaseConfig = {
             apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo",
             authDomain: "siganteng-absensi.firebaseapp.com",
@@ -220,7 +220,9 @@
         // --- KONFIGURASI ---
         const JAM_BATAS_TERLAMBAT = "07:00:00"; 
         const DEFAULT_IMG = "https://cdn-icons-png.flaticon.com/512/847/847969.png";
-        const today = new Date().toLocaleDateString('fr-CA'); // OTOMATIS HARI INI
+        
+        // GUNAKAN TANGGAL HARI INI
+        const today = new Date().toLocaleDateString('fr-CA'); 
 
         let allSiswa = [];      
         let dataAbsenHariIni = []; 
@@ -262,7 +264,7 @@
                     }
                 });
                 document.getElementById('total-populasi').innerText = allSiswa.length;
-                startMonitorAbsen();
+                startMonitorAbsen(); // Lanjut monitoring
             } catch (error) { console.error(error); }
         }
 
@@ -292,45 +294,60 @@
             });
         }
 
+        // --- UPDATE TAMPILAN (DENGAN LOGIKA PERSEN BARU) ---
         function updateTampilanLayar() {
             const listHadir = dataAbsenHariIni.filter(d => d.status_terakhir !== 'Sakit' && d.status_terakhir !== 'Izin');
             const nisnHadir = dataAbsenHariIni.map(d => d.nisn_clean); 
             
-            // 1. BELUM HADIR (TENGAH BAWAH)
+            // 1. BELUM HADIR
             const listBelum = allSiswa.filter(s => !nisnHadir.includes(s.username));
             listBelum.sort((a,b) => a.kelas.localeCompare(b.kelas));
             renderScrollList(listBelum, 'list-belum', 'belum');
             document.getElementById('badge-belum').innerText = listBelum.length;
 
-            // 2. GASIK (KIRI)
+            // 2. GASIK (Top 10)
             let sortedByTime = [...listHadir].sort((a,b) => a.jam_display.localeCompare(b.jam_display));
             renderGasik(sortedByTime.slice(0, 10));
 
-            // 3. TELAT (KANAN ATAS) - Filter Jam > 07:00
+            // 3. LIVE FEED
+            const listLive = [...listHadir].sort((a,b) => b.jam_display.localeCompare(a.jam_display));
+            renderLiveFeed(listLive);
+
+            // 4. DAFTAR TELAT
             const listTelat = listHadir.filter(d => d.jam_display > JAM_BATAS_TERLAMBAT);
             listTelat.sort((a,b) => b.jam_display.localeCompare(a.jam_display));
             renderScrollList(listTelat, 'list-telat', 'telat');
             document.getElementById('badge-telat').innerText = listTelat.length;
 
-            // 4. LIVE FEED (KANAN BAWAH) - SEMUA HADIR (Urut Terbaru di Atas)
-            const listLive = [...listHadir].sort((a,b) => b.jam_display.localeCompare(a.jam_display));
-            renderLiveFeed(listLive);
-
-            // 5. STATS
+            // 5. STATS & DONAT PERSEN (PERBAIKAN UTAMA)
             const countIzin = dataAbsenHariIni.filter(d => d.status_terakhir === 'Izin' || d.status_terakhir === 'Sakit').length;
             document.getElementById('total-hadir').innerText = listHadir.length;
             document.getElementById('total-izin').innerText = countIzin;
             document.getElementById('total-alpha').innerText = listBelum.length;
 
             const totalPop = allSiswa.length;
-            let rawPercent = totalPop > 0 ? ((listHadir.length + countIzin) / totalPop) * 100 : 0;
-            let displayPercent = Math.round(rawPercent) + "%";
-            let warnaDonat = rawPercent > 75 ? 'var(--neon-green)' : (rawPercent > 40 ? 'var(--neon-gold)' : 'var(--neon-red)');
+            let rawPercent = 0;
+            if (totalPop > 0) {
+                // Total Masuk = Hadir + Izin
+                rawPercent = ((listHadir.length + countIzin) / totalPop) * 100;
+            }
+            if (rawPercent > 100) rawPercent = 100;
 
+            let displayPercent = Math.round(rawPercent) + "%";
+            let warnaDonat = '#ef4444'; // Merah
+            if(rawPercent > 40) warnaDonat = '#f59e0b'; // Kuning
+            if(rawPercent > 75) warnaDonat = '#10b981'; // Hijau
+
+            // Update Teks
             document.getElementById('persen-text').innerText = displayPercent;
             document.getElementById('persen-text').style.color = warnaDonat;
-            document.getElementById('chart-absen').style.setProperty('--p', `${rawPercent * 3.6}deg`);
-            document.getElementById('chart-absen').style.setProperty('--c', warnaDonat);
+            
+            // Update Grafik Donat (CSS Variables)
+            const chart = document.getElementById('chart-absen');
+            if(chart) {
+                chart.style.setProperty('--p', `${rawPercent * 3.6}deg`); // 100% = 360deg
+                chart.style.setProperty('--c', warnaDonat);
+            }
         }
 
         // RENDER GASIK
@@ -364,7 +381,6 @@
             container.style.animation = `scrollUp ${durasi}s linear infinite`;
             
             data.forEach(d => {
-                // Template Beda antara Telat (Ada Foto Kecil) dan Belum (Teks Aja)
                 if(type === 'telat') {
                     container.insertAdjacentHTML('beforeend', `
                         <div class="telat-row">
