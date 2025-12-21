@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SiGanteng Super App</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        body { font-family: 'Outfit', sans-serif; background-color: #f8fafc; }
+        .hidden-page { display: none !important; }
+        .fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        #mapMini { z-index: 0; }
+    </style>
+</head>
+<body class="text-slate-800 h-screen flex flex-col overflow-hidden bg-slate-50">
+
+    <main id="main-container" class="flex-1 overflow-y-auto hide-scroll relative">
+        
+        <div id="page-dashboard" class="p-6 fade-in min-h-screen pb-24">
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <p class="text-slate-400 text-sm font-medium">Sugeng Enjang,</p>
+                    <h2 class="text-2xl font-bold text-slate-800 tracking-tight" id="dash-nama">Memuat...</h2>
+                    <span id="dash-kelas" class="text-[10px] font-extrabold bg-blue-100 text-blue-600 px-2 py-1 rounded mt-1 inline-block uppercase tracking-wider">...</span>
+                </div>
+                <div onclick="bukaHalaman('page-profil')" class="relative cursor-pointer transition transform active:scale-90">
+                    <img id="dash-foto" src="" class="w-12 h-12 rounded-full border-2 border-white shadow-lg bg-white">
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-6 text-white shadow-xl shadow-blue-500/20 mb-10 relative overflow-hidden group">
+                <div class="relative z-10">
+                    <p class="text-blue-200 text-xs font-semibold uppercase tracking-widest mb-1">Status Hari Ini</p>
+                    <h1 class="text-3xl font-extrabold tracking-tight mt-1" id="hero-status">Belum Absen</h1>
+                </div>
+                <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full blur-2xl group-hover:scale-110 transition duration-700"></div>
+            </div>
+
+            <h3 class="font-bold text-slate-700 text-lg mb-4">Menu Utama</h3>
+            <div id="wadah-menu" class="grid grid-cols-2 gap-4">
+                </div>
+        </div>
+
+
+        <div id="page-absen" class="hidden-page p-6 fade-in h-full bg-slate-50">
+            <button onclick="kembali()" class="mb-6 flex items-center text-slate-500 hover:text-blue-600 gap-2 font-medium">
+                <div class="bg-white p-2 rounded-full shadow-sm"><i data-lucide="arrow-left" class="w-5 h-5"></i></div>
+                <span class="font-bold">Kembali ke Dashboard</span>
+            </button>
+
+            <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 text-center mb-6 relative overflow-hidden">
+                <h1 class="font-black text-5xl text-slate-800 tracking-tighter" id="jamDigital">00:00</h1>
+                <p class="text-slate-400 text-sm font-medium uppercase tracking-widest mb-4" id="tanggalDigital">...</p>
+                
+                <div class="h-40 w-full bg-slate-100 rounded-2xl overflow-hidden border-2 border-slate-200 relative z-0" id="mapContainer">
+                    <div id="mapMini" class="h-full w-full"></div>
+                </div>
+                <div id="jarakBox" class="inline-block -mt-4 relative z-10 bg-slate-800 text-green-400 px-4 py-1 rounded-full text-xs font-bold shadow-lg border border-slate-700">
+                    Menghitung Jarak...
+                </div>
+            </div>
+
+            <div class="space-y-3 mb-8" id="containerTombol">
+                <button id="btnMasuk" onclick="klikMasuk()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-5 rounded-2xl shadow-lg shadow-blue-500/30 flex items-center justify-between active:scale-95 transition">
+                    <div class="text-left">
+                        <span class="text-blue-100 text-xs block mb-1">Sudah sampai sekolah?</span>
+                        <span class="font-bold text-xl">ABSEN MASUK</span>
+                    </div>
+                    <div class="bg-white/20 p-3 rounded-full"><i data-lucide="camera" class="w-8 h-8"></i></div>
+                </button>
+
+                <div id="groupDiSekolah" class="hidden space-y-3">
+                    <button onclick="klikPulang()" class="w-full bg-gradient-to-r from-red-500 to-pink-600 text-white p-5 rounded-2xl shadow-lg shadow-red-500/30 flex items-center justify-between active:scale-95 transition">
+                        <div class="text-left">
+                            <span class="text-red-100 text-xs block mb-1">Waktunya pulang?</span>
+                            <span class="font-bold text-xl">ABSEN PULANG</span>
+                        </div>
+                        <div class="bg-white/20 p-3 rounded-full"><i data-lucide="home" class="w-8 h-8"></i></div>
+                    </button>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="klikIzinKeluar()" class="bg-orange-100 text-orange-700 p-4 rounded-2xl font-bold flex flex-col items-center justify-center gap-2 border border-orange-200 active:scale-95 transition">
+                            <i data-lucide="bike" class="w-6 h-6"></i> Izin Keluar
+                        </button>
+                        <button onclick="klikKembali()" id="btnKembali" class="hidden bg-emerald-100 text-emerald-700 p-4 rounded-2xl font-bold flex flex-col items-center justify-center gap-2 border border-emerald-200 active:scale-95 transition">
+                            <i data-lucide="check-circle" class="w-6 h-6"></i> Saya Kembali
+                        </button>
+                    </div>
+                </div>
+
+                <button onclick="bukaKartu()" class="w-full bg-slate-800 text-slate-200 p-4 rounded-2xl font-bold flex items-center justify-center gap-3 border border-slate-700 active:scale-95 transition hover:bg-slate-700 shadow-lg">
+                    <i data-lucide="qr-code" class="w-6 h-6 text-yellow-400"></i>
+                    <span>QR Code / Kartu Digital</span>
+                </button>
+            </div>
+
+            <h3 class="font-bold text-slate-700 mb-3 ml-1">Riwayat Hari Ini</h3>
+            <div id="listRiwayat" class="space-y-3 pb-10"></div>
+        </div>
+
+
+        <div id="page-sakit" class="hidden-page p-6 fade-in h-full bg-white">
+            <button onclick="kembali()" class="mb-6 flex items-center text-slate-500 hover:text-blue-600 gap-2 font-medium">
+                <i data-lucide="arrow-left" class="w-5 h-5"></i> Kembali
+            </button>
+            <h2 class="text-2xl font-bold mb-4 text-slate-800">Formulir Berhalangan</h2>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Jenis Izin</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="pilihJenisIzin('Sakit')" id="btnOptSakit" class="p-4 rounded-xl border-2 border-slate-100 font-bold text-slate-500 focus:border-blue-500 focus:text-blue-600 transition">Sakit</button>
+                        <button onclick="pilihJenisIzin('Izin')" id="btnOptIzin" class="p-4 rounded-xl border-2 border-slate-100 font-bold text-slate-500 focus:border-orange-500 focus:text-orange-600 transition">Keperluan</button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Keterangan</label>
+                    <textarea id="ketIzin" class="w-full bg-slate-50 p-4 rounded-xl border border-slate-200 font-semibold focus:outline-none focus:border-blue-500" rows="3" placeholder="Contoh: Demam tinggi, Surat dokter terlampir..."></textarea>
+                </div>
+
+                <div id="areaUploadFoto" class="hidden">
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Foto Bukti (Surat/Kondisi)</label>
+                    <button onclick="bukaCam('BuktiSakit')" id="btnAmbilBukti" class="w-full py-6 border-2 border-dashed border-slate-300 rounded-xl text-slate-400 font-bold flex flex-col items-center justify-center gap-2 hover:border-blue-400 hover:text-blue-500 transition">
+                        <i data-lucide="camera" class="w-8 h-8"></i>
+                        <span>Ambil Foto Bukti</span>
+                    </button>
+                    <img id="previewBukti" class="hidden w-full h-40 object-cover rounded-xl mt-2 border border-slate-200">
+                </div>
+
+                <button onclick="kirimLaporanIzin()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-500/30 mt-4">
+                    KIRIM LAPORAN
+                </button>
+            </div>
+        </div>
+
+        <div id="page-jadwal" class="hidden-page p-6 fade-in"><button onclick="kembali()" class="text-blue-600 font-bold mb-4">← Kembali</button><h2 class="text-2xl font-bold">Jadwal Pelajaran</h2><p class="text-slate-500">Fitur ini akan segera hadir.</p></div>
+        <div id="page-ekskul" class="hidden-page p-6 fade-in"><button onclick="kembali()" class="text-blue-600 font-bold mb-4">← Kembali</button><h2 class="text-2xl font-bold">Info Ekskul</h2><p class="text-slate-500">Fitur ini akan segera hadir.</p></div>
+        <div id="page-profil" class="hidden-page p-6 fade-in"><button onclick="kembali()" class="text-blue-600 font-bold mb-4">← Kembali</button><h2 class="text-2xl font-bold">Profil Siswa</h2><button onclick="logout()" class="mt-4 w-full bg-red-50 text-red-600 font-bold py-3 rounded-xl">Logout</button></div>
+
+    </main>
+
+    <div id="modalKamera" class="hidden fixed inset-0 z-50 bg-black flex flex-col items-center justify-center p-4">
+        <h3 class="text-white font-bold mb-4 text-lg" id="judulKamera">Ambil Foto</h3>
+        <div class="relative w-full max-w-sm aspect-[3/4] rounded-3xl overflow-hidden border-4 border-blue-500 shadow-2xl bg-slate-900">
+            <video id="videoStream" autoplay playsinline muted class="w-full h-full object-cover transform -scale-x-100"></video>
+            <canvas id="canvasFoto" class="hidden"></canvas>
+        </div>
+        <div class="mt-8 flex items-center gap-8">
+            <button onclick="tutupKamera()" class="p-4 rounded-full bg-white/10 text-white hover:bg-white/20 transition"><i data-lucide="x" class="w-6 h-6"></i></button>
+            <button onclick="jepretFoto()" class="w-20 h-20 rounded-full bg-white border-4 border-slate-300 shadow-xl active:scale-90 transition transform hover:border-blue-500 flex items-center justify-center">
+                <div class="w-16 h-16 rounded-full bg-white border-2 border-slate-200"></div>
+            </button>
+            <button class="p-4 rounded-full bg-white/10 text-white hover:bg-white/20 transition"><i data-lucide="rotate-ccw" class="w-6 h-6"></i></button>
+        </div>
+    </div>
+
+    <div id="modalKartu" class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex flex-col items-center justify-center p-6">
+        <div class="bg-white p-8 rounded-[2.5rem] w-full max-w-xs text-center shadow-2xl transform transition-all scale-100">
+            <h3 class="font-extrabold text-slate-800 text-xl mb-1">KARTU DIGITAL</h3>
+            <p class="text-xs text-slate-400 mb-6">Scan QR ini di Kiosk Sekolah</p>
+            
+            <div class="flex justify-center mb-6">
+                <div id="qrcode" class="border-4 border-slate-100 p-2 rounded-xl"></div>
+            </div>
+
+            <h2 id="namaDiKartu" class="font-bold text-slate-800 text-lg leading-tight">...</h2>
+            <p id="nisnDiKartu" class="font-mono text-slate-500 tracking-widest font-bold mt-1">...</p>
+
+            <button onclick="tutupKartu()" class="mt-6 w-full bg-red-50 text-red-600 font-bold py-3 rounded-xl hover:bg-red-100 transition">
+                Tutup Kartu
+            </button>
+        </div>
+    </div>
+
+    <div id="loadingOverlay" class="hidden fixed inset-0 z-[60] bg-slate-900/90 flex flex-col items-center justify-center text-white">
+        <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <h5 class="font-bold">Mengirim Data...</h5>
+    </div>
+
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, onSnapshot, arrayUnion, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+
+        // CONFIG
+        const firebaseConfig = {
+            apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo",
+            authDomain: "siganteng-absensi.firebaseapp.com",
+            databaseURL: "https://siganteng-absensi-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "siganteng-absensi",
+            storageBucket: "siganteng-absensi.firebasestorage.app", 
+            messagingSenderId: "917873420012",
+            appId: "1:917873420012:web:0fe1a9eddc5f94959ba7c9"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        // VARS
+        const SEKOLAH_LAT = -7.678257; const SEKOLAH_LNG = 109.638708; const RADIUS_METER = 500;
+        let userSiswa = null; let lokasiUser = null; let map = null; let markerSiswa = null;
+        let streamKamera = null; let tipeAbsenAktif = ""; 
+        let tempFotoBukti = null; // Penampungan sementara foto sakit
+        let jenisIzinAktif = "";
+
+        const getTodayID = () => new Date().toLocaleDateString('fr-CA'); 
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            const dataLokal = localStorage.getItem('userSiswa'); 
+            if (dataLokal) {
+                userSiswa = JSON.parse(dataLokal);
+                userSiswa.nisn = String(userSiswa.username || userSiswa.nisn);
+                document.getElementById('dash-nama').innerText = userSiswa.nama;
+                document.getElementById('dash-kelas').innerText = userSiswa.kelas || "SISWA";
+                document.getElementById('dash-foto').src = `https://ui-avatars.com/api/?name=${userSiswa.nama}&background=2563eb&color=fff&size=128&bold=true`;
+                renderMenu(); mulaiJam(); pantauDataRealtime(); cekGPS();
+            } else { window.location.href = 'index.html'; }
+        });
+
+        const databaseMenu = [
+            { nama: "Absen Masuk", ikon: "scan-line",     warna: "emerald", aksi: "bukaHalaman('page-absen')" },
+            { nama: "Izin / Sakit", ikon: "ambulance",    warna: "orange",  aksi: "bukaHalaman('page-sakit')" },
+            { nama: "Profil",      ikon: "user-circle",   warna: "blue",    aksi: "bukaHalaman('page-profil')" }
+        ];
+
+        window.renderMenu = () => {
+            const wadah = document.getElementById('wadah-menu');
+            wadah.innerHTML = ''; 
+            databaseMenu.forEach(menu => {
+                wadah.innerHTML += `
+                    <button onclick="${menu.aksi}" class="group bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-4 transition-all duration-200 active:scale-95 hover:shadow-md hover:border-${menu.warna}-200">
+                        <div class="w-14 h-14 bg-${menu.warna}-50 text-${menu.warna}-600 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 group-hover:rotate-3"><i data-lucide="${menu.ikon}" class="w-7 h-7"></i></div>
+                        <div class="text-center"><span class="block font-bold text-slate-700 text-sm group-hover:text-${menu.warna}-700">${menu.nama}</span></div>
+                    </button>`;
+            });
+            lucide.createIcons();
+        }
+
+        window.bukaHalaman = (id) => {
+            document.querySelectorAll('[id^="page-"]').forEach(el => el.classList.add('hidden-page'));
+            document.getElementById(id).classList.remove('hidden-page');
+            if(id === 'page-absen') setTimeout(() => { if(!map) initMap(); else map.invalidateSize(); }, 100);
+            lucide.createIcons();
+        }
+        window.kembali = () => bukaHalaman('page-dashboard');
+
+        // --- MAPS ---
+        function cekGPS() {
+            if(navigator.geolocation) {
+                navigator.geolocation.watchPosition((p) => {
+                    lokasiUser = {lat: p.coords.latitude, lng: p.coords.longitude};
+                    if(map) {
+                        if(!markerSiswa) markerSiswa = L.marker(lokasiUser).addTo(map); else markerSiswa.setLatLng(lokasiUser);
+                        const d = map.distance(lokasiUser, [SEKOLAH_LAT, SEKOLAH_LNG]);
+                        const box = document.getElementById('jarakBox');
+                        box.innerText = `Jarak: ${Math.round(d)} Meter`;
+                        box.className = d <= RADIUS_METER ? "inline-block -mt-4 relative z-10 bg-emerald-100 text-emerald-700 px-4 py-1 rounded-full text-xs font-bold border border-emerald-200" : "inline-block -mt-4 relative z-10 bg-red-100 text-red-700 px-4 py-1 rounded-full text-xs font-bold border border-red-200";
+                    }
+                }, null, { enableHighAccuracy: true });
+            }
+        }
+        function initMap() { 
+            map = L.map('mapMini', {zoomControl:false, attributionControl: false}).setView([SEKOLAH_LAT,SEKOLAH_LNG], 16); 
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map); 
+            L.circle([SEKOLAH_LAT,SEKOLAH_LNG], {radius:RADIUS_METER, color:'#10b981', fillColor:'#10b981', fillOpacity:0.1}).addTo(map); 
+        }
+
+        // --- REALTIME STATUS ---
+        function pantauDataRealtime() {
+            const docID = `${getTodayID()}_${userSiswa.nisn}`;
+            onSnapshot(doc(db, "absensi", docID), (docSnap) => {
+                const btnMasuk = document.getElementById('btnMasuk');
+                const grpSekolah = document.getElementById('groupDiSekolah');
+                const listRiwayat = document.getElementById('listRiwayat');
+                const statusHero = document.getElementById('hero-status');
+                
+                listRiwayat.innerHTML = '';
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    const st = data.status_terakhir || "";
+                    statusHero.innerText = st;
+                    const sudahMasuk = st.includes("Masuk") || st.includes("Hadir") || st === "Kembali";
+                    const sedangIzin = st === "Izin Keluar";
+                    const sudahPulang = st.includes("Pulang");
+
+                    if(sudahMasuk) { btnMasuk.classList.add('hidden'); grpSekolah.classList.remove('hidden'); document.getElementById('btnKembali').classList.add('hidden'); }
+                    else if(sedangIzin) { btnMasuk.classList.add('hidden'); grpSekolah.classList.remove('hidden'); document.getElementById('btnKembali').classList.remove('hidden'); }
+                    else if(sudahPulang) { btnMasuk.classList.add('hidden'); grpSekolah.classList.add('hidden'); statusHero.innerText = "Sudah Pulang"; }
+
+                    if (data.riwayat_kegiatan) {
+                        [...data.riwayat_kegiatan].reverse().forEach(item => {
+                            listRiwayat.innerHTML += `<div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-500 flex items-center justify-between"><span class="font-bold text-slate-700 text-sm">${item}</span><i data-lucide="check" class="w-4 h-4 text-green-500"></i></div>`;
+                        });
+                        lucide.createIcons();
+                    }
+                } else {
+                    btnMasuk.classList.remove('hidden'); grpSekolah.classList.add('hidden');
+                    listRiwayat.innerHTML = '<div class="text-center text-slate-400 text-sm py-4">Belum ada aktivitas hari ini.</div>';
+                }
+            });
+        }
+
+        // --- KAMERA & FOTO ---
+        window.bukaCam = (tipe) => { 
+            tipeAbsenAktif = tipe; 
+            document.getElementById('modalKamera').classList.remove('hidden');
+            document.getElementById('judulKamera').innerText = tipe === 'BuktiSakit' ? 'Foto Bukti Surat/Kondisi' : `Foto Bukti ${tipe}`;
+            navigator.mediaDevices.getUserMedia({video:{facingMode:'user'}}).then(s=>{ streamKamera=s; document.getElementById('videoStream').srcObject=s; }); 
+        }
+        window.tutupKamera = () => { document.getElementById('modalKamera').classList.add('hidden'); if(streamKamera) streamKamera.getTracks().forEach(t=>t.stop()); }
+        
+        window.jepretFoto = () => {
+            const vid = document.getElementById('videoStream'); const can = document.getElementById('canvasFoto');
+            // COMPRESS FOTO: Resize ke 480x640 biar enteng
+            const scale = 480/vid.videoWidth; can.width=480; can.height=vid.videoHeight*scale;
+            can.getContext('2d').drawImage(vid,0,0,can.width,can.height);
+            
+            // Simpan Kualitas 60% (0.6)
+            const fotoData = can.toDataURL('image/jpeg', 0.6);
+
+            if(tipeAbsenAktif === 'BuktiSakit') {
+                // Kalo Mode Izin Sakit: Simpan sementara, jangan upload dulu
+                tempFotoBukti = fotoData;
+                document.getElementById('previewBukti').src = fotoData;
+                document.getElementById('previewBukti').classList.remove('hidden');
+                document.getElementById('btnAmbilBukti').innerHTML = `<i data-lucide="check" class="w-8 h-8 text-green-500"></i><span class="text-green-600">Foto Tersimpan</span>`;
+                lucide.createIcons();
+                tutupKamera();
+            } else {
+                // Kalo Mode Absen Biasa: Langsung Kirim
+                kirimData(tipeAbsenAktif, "Hadir", fotoData);
+            }
+        }
+
+        // --- LOGIKA UTAMA ---
+        window.klikMasuk = () => { if(validasiGPS()) bukaCam("Masuk"); }
+        window.klikPulang = () => { if(validasiGPS()) bukaCam("Pulang"); }
+        window.klikIzinKeluar = () => { const alasan = prompt("Alasan keluar:"); if(alasan) kirimData("Izin Keluar", alasan, "-"); }
+        window.klikKembali = () => { if(validasiGPS() && confirm("Sudah di sekolah?")) kirimData("Kembali", "Kembali ke Sekolah", "-"); }
+
+        // --- LOGIKA IZIN / SAKIT ---
+        window.pilihJenisIzin = (jenis) => {
+            jenisIzinAktif = jenis;
+            document.getElementById('btnOptSakit').className = jenis === 'Sakit' ? "p-4 rounded-xl border-2 border-blue-500 text-blue-600 bg-blue-50 font-bold" : "p-4 rounded-xl border-2 border-slate-100 font-bold text-slate-500";
+            document.getElementById('btnOptIzin').className = jenis === 'Izin' ? "p-4 rounded-xl border-2 border-orange-500 text-orange-600 bg-orange-50 font-bold" : "p-4 rounded-xl border-2 border-slate-100 font-bold text-slate-500";
+            
+            // Kalau Sakit, Wajib Foto
+            const areaUpload = document.getElementById('areaUploadFoto');
+            if(jenis === 'Sakit') areaUpload.classList.remove('hidden');
+            else areaUpload.classList.add('hidden');
+        }
+
+        window.kirimLaporanIzin = async () => {
+            const ket = document.getElementById('ketIzin').value;
+            if(!jenisIzinAktif) return Swal.fire('Pilih Jenis', 'Pilih Sakit atau Izin dulu', 'warning');
+            if(!ket) return Swal.fire('Isi Keterangan', 'Jelaskan alasan izinnya', 'warning');
+            if(jenisIzinAktif === 'Sakit' && !tempFotoBukti) return Swal.fire('Foto Bukti', 'Wajib ambil foto surat/kondisi!', 'warning');
+
+            // Kirim Data
+            kirimData(jenisIzinAktif, ket, tempFotoBukti || "-");
+            bukaHalaman('page-dashboard'); // Balik ke depan
+        }
+
+        async function kirimData(status, ket, foto) {
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+            const todayStr = getTodayID();
+            const docID = `${todayStr}_${userSiswa.nisn}`;
+            const jamStr = new Date().toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+
+            try {
+                let updateData = {
+                    nisn: userSiswa.nisn, nama: userSiswa.nama, kelas: userSiswa.kelas, tanggal: todayStr,
+                    status_terakhir: status,
+                    riwayat_kegiatan: arrayUnion(`${jamStr} - ${status} (${ket})`)
+                };
+                if (foto !== "-") {
+                    // Upload ke Folder 'absen' atau 'izin'
+                    const folder = (status === 'Sakit' || status === 'Izin') ? 'surat_izin' : 'absen';
+                    const snap = await uploadString(ref(storage, `${folder}/${todayStr}/${userSiswa.nisn}_${status}_${Date.now()}.jpg`), foto, 'data_url');
+                    const url = await getDownloadURL(snap.ref);
+                    
+                    if(status === "Masuk") { updateData.foto_masuk = url; updateData.jam_masuk = serverTimestamp(); updateData.lokasi_masuk = lokasiUser?`${lokasiUser.lat},${lokasiUser.lng}`:"-"; }
+                    else if(status === "Pulang") { updateData.foto_pulang = url; updateData.jam_pulang = serverTimestamp(); }
+                    else if(status === "Sakit" || status === "Izin") { updateData.foto_bukti = url; }
+                }
+                
+                await setDoc(doc(db, "absensi", docID), updateData, { merge: true });
+                tutupKamera();
+                Swal.fire('Berhasil', 'Laporan ' + status + ' terkirim!', 'success');
+            } catch (e) { alert("Gagal: " + e.message); } 
+            finally { document.getElementById('loadingOverlay').classList.add('hidden'); }
+        }
+
+        // --- QR CODE (KOTAK) ---
+        window.bukaKartu = () => {
+            document.getElementById('modalKartu').classList.remove('hidden');
+            document.getElementById('namaDiKartu').innerText = userSiswa.nama;
+            document.getElementById('nisnDiKartu').innerText = userSiswa.nisn;
+            
+            // Generate QR KOTAK
+            document.getElementById("qrcode").innerHTML = ""; // Bersihkan dulu
+            new QRCode(document.getElementById("qrcode"), {
+                text: userSiswa.nisn,
+                width: 180,
+                height: 180,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+        }
+        window.tutupKartu = () => document.getElementById('modalKartu').classList.add('hidden');
+
+        // --- TAMBAHAN: BACA CONFIG DARI ADMIN ---
+        let configSekolah = { validasi_gps_aktif: false, radius_meter: 500 }; // Default Santuy
+        
+        // Pasang listener ke pengaturan (Taruh di dalam DOMContentLoaded)
+        onSnapshot(doc(db, "pengaturan", "sekolah"), (doc) => {
+            if(doc.exists()) {
+                configSekolah = doc.data();
+                // Update Radius di Peta secara realtime kalau admin ubah
+                if(map) {
+                    // Hapus lingkaran lama, buat baru (Logic penyederhanaan)
+                    // (Di implementasi pro nanti bisa update properti circle)
+                }
+            }
+        });
+
+        // --- UPDATE FUNGSI VALIDASI GPS (JADI NURUT ADMIN) ---
+        function validasiGPS() { 
+            if(!lokasiUser){ Swal.fire('Tunggu GPS', 'Sedang mencari titik lokasi...', 'info'); return false; } 
+            
+            // CEK 1: APAKAH ADMIN MENGAKTIFKAN MODE DISIPLIN?
+            if (configSekolah.validasi_gps_aktif) {
+                // Mode Disiplin: ON
+                const d = map.distance(lokasiUser, [SEKOLAH_LAT, SEKOLAH_LNG]);
+                // Gunakan radius dari settingan admin
+                const batasRadius = configSekolah.radius_meter || 500; 
+
+                if (d > batasRadius) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Kejauhan!',
+                        text: `Jarak kamu ${Math.round(d)}m. Admin mewajibkan radius ${batasRadius}m.`
+                    });
+                    return false;
+                }
+            } else {
+                // Mode Disiplin: OFF (Santuy)
+                // Loloskan saja tanpa cek jarak
+                // console.log("Mode GPS dimatikan oleh Admin");
+            }
+            
+            return true; 
+        }
+        function mulaiJam() { setInterval(()=>{ document.getElementById('jamDigital').innerText=new Date().toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}); document.getElementById('tanggalDigital').innerText=new Date().toLocaleDateString('id-ID',{weekday: 'long', day:'numeric', month:'long', year:'numeric'}); },1000); }
+        window.logout = () => { if(confirm("Keluar aplikasi?")) { localStorage.clear(); window.location.href='index.html'; } }
+
+        // EXPORTS
+        window.bukaHalaman = bukaHalaman; window.kembali = kembali; window.klikMasuk = klikMasuk; window.klikPulang = klikPulang;
+        window.klikIzinKeluar = klikIzinKeluar; window.klikKembali = klikKembali; window.bukaKartu = bukaKartu; window.tutupKartu = tutupKartu;
+        window.bukaCam = bukaCam; window.tutupKamera = tutupKamera; window.jepretFoto = jepretFoto; window.logout = logout;
+        window.pilihJenisIzin = pilihJenisIzin; window.kirimLaporanIzin = kirimLaporanIzin;
+    </script>
+</body>
+</html>

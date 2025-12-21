@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Kiosk - SiGanteng</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        body { font-family: 'Outfit', sans-serif; background: #0f172a; color: white; overflow: hidden; }
+        .scanner-frame {
+            position: relative; width: 100%; max-width: 600px; aspect-ratio: 4/3;
+            background: #000; border-radius: 20px; overflow: hidden;
+            border: 4px solid #3b82f6; box-shadow: 0 0 30px rgba(59, 130, 246, 0.3);
+        }
+        #reader video { object-fit: cover; width: 100% !important; height: 100% !important; }
+        .scan-line {
+            position: absolute; width: 100%; height: 4px; background: #10b981;
+            top: 0; left: 0; box-shadow: 0 0 10px #10b981; animation: scan 2s infinite linear; z-index: 10;
+        }
+        @keyframes scan { 0% {top: 0;} 50% {top: 100%;} 100% {top: 0;} }
+    </style>
+</head>
+<body class="h-screen flex flex-col items-center justify-center p-4">
+
+    <div class="text-center mb-6">
+        <h1 class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 tracking-tight">SMART KIOSK</h1>
+        <p class="text-slate-400 text-sm tracking-widest uppercase mt-1">SMAN 1 PEJAGOAN</p>
+    </div>
+
+    <div class="scanner-frame mb-6 relative">
+        <div class="scan-line"></div>
+        <div id="reader" class="w-full h-full bg-black"></div>
+        <div id="camLoading" class="absolute inset-0 flex items-center justify-center bg-black z-20">
+            <div class="text-center">
+                <i data-lucide="camera" class="w-10 h-10 text-blue-500 animate-bounce mx-auto mb-2"></i>
+                <p class="text-xs text-blue-400">Menyalakan Mata Jarvis...</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="statusBox" class="bg-slate-800 border border-slate-700 p-4 rounded-2xl w-full max-w-md text-center shadow-lg">
+        <p class="text-slate-400 text-sm animate-pulse">Menunggu Kamera...</p>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, collection, query, where, getDocs, doc, setDoc, arrayUnion, serverTimestamp, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo",
+            authDomain: "siganteng-absensi.firebaseapp.com",
+            databaseURL: "https://siganteng-absensi-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "siganteng-absensi",
+            storageBucket: "siganteng-absensi.firebasestorage.app", 
+            messagingSenderId: "917873420012",
+            appId: "1:917873420012:web:0fe1a9eddc5f94959ba7c9"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        let html5QrcodeScanner;
+        let isProcessing = false;
+
+        // SETTING JAM PULANG OTOMATIS (Di atas jam 11 siang dianggap pulang)
+        const JAM_BATAS_PULANG = 11; 
+
+        function bicara(teks) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(teks);
+                utterance.lang = 'id-ID'; utterance.rate = 1; 
+                window.speechSynthesis.cancel(); 
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function onScanSuccess(decodedText) {
+            if (isProcessing) return; 
+            isProcessing = true;
+            html5QrcodeScanner.pause();
+            prosesAbsensi(decodedText);
+        }
+
+        async function prosesAbsensi(nisn) {
+            const statusBox = document.getElementById('statusBox');
+            statusBox.innerHTML = `<span class="text-blue-400 font-bold animate-pulse">Memproses Data: ${nisn}...</span>`;
+
+            try {
+                // 1. Cari User
+                const q = query(collection(db, "users"), where("username", "==", nisn));
+                const querySnapshot = await getDocs(q);
+                if (querySnapshot.empty) throw new Error("Siswa Tidak Dikenal");
+
+                let dataSiswa = null;
+                querySnapshot.forEach((doc) => { dataSiswa = doc.data(); });
+
+                // 2. Tentukan Status (Masuk / Pulang) Berdasarkan Jam
+                const now = new Date();
+                const jamSekarang = now.getHours();
+                const todayStr = now.toLocaleDateString('fr-CA'); 
+                const docID = `${todayStr}_${nisn}`;
+                const jamStr = now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+
+                // Logic Pintar:
+                // Cek dulu, apakah siswa ini SUDAH absen masuk hari ini?
+                const docRef = doc(db, "absensi", docID);
+                const docSnap = await getDoc(docRef);
+                
+                let status = "Masuk (Barkode)"; // Default
+                let pesanSuara = `Selamat Datang, ${dataSiswa.nama}`;
+
+                if (docSnap.exists()) {
+                    const dataAbsen = docSnap.data();
+                    // Kalau sudah ada data 'Masuk' DAN jam sekarang > 11 siang -> Anggap Pulang
+                    if ((dataAbsen.status_terakhir.includes("Masuk") || dataAbsen.status_terakhir.includes("Hadir")) && jamSekarang >= JAM_BATAS_PULANG) {
+                        status = "Pulang (Baekode)";
+                        pesanSuara = `Hati-hati di jalan, ${dataSiswa.nama}`;
+                    } else if (dataAbsen.status_terakhir.includes("Pulang")) {
+                        throw new Error("Anda Sudah Absen Pulang!");
+                    } else if (jamSekarang < JAM_BATAS_PULANG) {
+                         // Kalau masih pagi tapi scan lagi -> Anggap Masuk (Mungkin scan ulang)
+                         status = "Masuk BARKODE";
+                         pesanSuara = `Selamat Datang Kembali, ${dataSiswa.nama}`;
+                    }
+                } else {
+                    // Belum pernah absen hari ini
+                    if (jamSekarang >= JAM_BATAS_PULANG) {
+                        // Telat banget atau lupa absen pagi? Kita anggap Masuk dulu atau tolak?
+                        // Di sini kita anggap Masuk Terlambat
+                        status = "Masuk (Kiosk)"; 
+                        pesanSuara = `Selamat Datang, ${dataSiswa.nama}`;
+                    }
+                }
+
+                // 3. Simpan ke Firebase
+                let updateData = {
+                    nisn: nisn, nama: dataSiswa.nama, kelas: dataSiswa.kelas, tanggal: todayStr,
+                    status_terakhir: status,
+                    riwayat_kegiatan: arrayUnion(`${jamStr} - ${status}`)
+                };
+
+                if(status.includes("Masuk")) {
+                    updateData.lokasi_masuk = "Kiosk Sekolah";
+                    updateData.jam_masuk = serverTimestamp();
+                } else if (status.includes("Pulang")) {
+                    updateData.lokasi_pulang = "Kiosk Sekolah";
+                    updateData.jam_pulang = serverTimestamp();
+                }
+
+                await setDoc(docRef, updateData, { merge: true });
+
+                // 4. Feedback
+                bicara(pesanSuara);
+                statusBox.innerHTML = `<span class="text-green-400 font-bold">✅ ${status} Berhasil</span>`;
+                
+                Swal.fire({
+                    icon: 'success', title: status.includes("Masuk") ? 'Masuk Berhasil' : 'Pulang Berhasil',
+                    text: pesanSuara, timer: 2000, showConfirmButton: false, background: '#1e293b', color: '#fff'
+                }).then(() => resetScanner());
+
+            } catch (error) {
+                bicara("Maaf, Gagal memproses");
+                statusBox.innerHTML = `<span class="text-red-400 font-bold">❌ ${error.message}</span>`;
+                Swal.fire({ icon: 'error', title: 'Gagal', text: error.message, timer: 2000, showConfirmButton: false, background: '#1e293b', color: '#fff' }).then(() => resetScanner());
+            }
+        }
+
+        function resetScanner() {
+            isProcessing = false;
+            try { html5QrcodeScanner.resume(); } catch(e) {}
+            document.getElementById('statusBox').innerHTML = `<p class="text-slate-400 text-sm animate-pulse">Siap Scan Barcode...</p>`;
+        }
+
+        window.addEventListener('load', function() {
+            lucide.createIcons();
+            html5QrcodeScanner = new Html5Qrcode("reader");
+            html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 }, onScanSuccess).then(() => {
+                document.getElementById('camLoading').style.display = 'none';
+                document.getElementById('statusBox').innerHTML = `<p class="text-green-400 font-bold text-sm">KAMERA AKTIF!</p>`;
+            });
+        });
+    </script>
+</body>
+</html>

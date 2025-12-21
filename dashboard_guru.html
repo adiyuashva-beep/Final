@@ -1,0 +1,522 @@
+<script>
+    // 1. GEMBOK KEAMANAN (Cek apakah Admin sudah login?)
+    if (localStorage.getItem('admin_token') !== 'RAHASIA_NEGARA_SMAN1') {
+        alert("Akses Ditolak! Harap Login dulu.");
+        window.location.href = 'login_admin.html';
+    }
+</script>
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin & BK - SiGanteng</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
+    <style>
+        /* CSS LAYOUT (TIDAK BERUBAH) */
+        body { margin: 0; font-family: 'Outfit', sans-serif; background-color: #f1f5f9; display: flex; height: 100vh; overflow: hidden; color: #1e293b; }
+        .sidebar { width: 260px; background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%); color: white; display: flex; flex-direction: column; padding: 25px; flex-shrink: 0; }
+        .logo { font-size: 24px; font-weight: 800; color: #38bdf8; margin-bottom: 40px; border-bottom: 1px solid #334155; padding-bottom: 20px; text-align: center; letter-spacing: 1px; }
+        .menu-item { text-decoration: none; color: #94a3b8; padding: 15px; margin-bottom: 8px; border-radius: 12px; transition: 0.3s; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .menu-item:hover, .menu-item.aktif { background-color: rgba(255,255,255,0.1); color: white; }
+        .menu-logout { margin-top: auto; color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+        .konten-utama { flex: 1; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; }
+        .header-atas { background: white; padding: 20px 30px; border-radius: 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); }
+        
+        /* DASHBOARD */
+        #view-harian { display: block; }
+        .grid-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
+        .card-stat { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border-bottom: 4px solid #e2e8f0; }
+        .stat-hijau { border-color: #10b981; } .stat-merah { border-color: #ef4444; } .stat-kuning { border-color: #f59e0b; }
+        .angka { font-size: 32px; font-weight: 800; color: #0f172a; margin: 5px 0 0; }
+        
+        .mbg-section { background: white; padding: 25px; border-radius: 20px; margin-bottom: 30px; border: 1px solid #e2e8f0; }
+        .mbg-title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid #f1f5f9; padding-bottom: 15px; }
+        .grid-mbg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .btn-mbg { padding: 20px; border-radius: 15px; border: none; color: white; cursor: pointer; text-align: left; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .btn-mbg:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
+        .mbg-x { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        .mbg-xi { background: linear-gradient(135deg, #10b981, #059669); }
+        .mbg-xii { background: linear-gradient(135deg, #f59e0b, #d97706); }
+
+        .grid-kelas { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; }
+        .card-kelas { background: white; padding: 20px; border-radius: 15px; text-align: center; cursor: pointer; border: 1px solid #f1f5f9; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .card-kelas:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); border-color: #3b82f6; }
+
+        /* REKAP & PREVIEW */
+        #view-rekap, #view-preview-mbg { display: none; background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); flex: 1; overflow: hidden; flex-direction: column; }
+        .filter-bar { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; background: #f8fafc; padding: 15px; border-radius: 15px; border: 1px solid #e2e8f0; align-items: center; }
+        select { padding: 10px 15px; border-radius: 10px; border: 1px solid #cbd5e1; font-family: inherit; font-weight: 600; color: #334155; cursor: pointer; }
+        .btn-cari { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 700; cursor: pointer; }
+        .btn-download { background: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 700; cursor: pointer; margin-left: auto; display: flex; align-items: center; gap: 8px; }
+
+        .table-wrapper { flex: 1; overflow: auto; border: 1px solid #e2e8f0; border-radius: 10px; position: relative; }
+        table { border-collapse: collapse; width: 100%; font-size: 13px; }
+        th, td { padding: 10px; text-align: center; border: 1px solid #e2e8f0; white-space: nowrap; }
+        th { background: #f1f5f9; color: #475569; font-weight: 800; position: sticky; top: 0; z-index: 10; }
+        .sticky-col { position: sticky; left: 0; background: white; z-index: 5; border-right: 2px solid #e2e8f0; min-width: 150px; text-align: left; padding-left: 15px; }
+        th.sticky-col { background: #f1f5f9; z-index: 11; }
+
+        .modal-detail { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center; z-index: 999; }
+        .box-detail { background:white; padding:30px; border-radius:20px; width:90%; max-width:800px; max-height:80vh; overflow-y:auto; }
+
+        .bg-hijau { background: #dcfce7; color: #166534; font-weight: bold; }
+        .bg-merah { background: #fee2e2; color: #991b1b; font-weight: bold; }
+        td[title] { cursor: help; }
+        #loading-utama { position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:9999; display:flex; justify-content:center; align-items:center; flex-direction:column; }
+    </style>
+</head>
+<body>
+
+    <div id="loading-utama">
+        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
+        <h3 class="mt-3 fw-bold text-primary">SiGanteng</h3>
+        <p class="text-muted">Menyaring Data Siswa...</p>
+    </div>
+
+    <div class="sidebar">
+        <div class="logo">🚀 SiGanteng</div>
+        <div class="menu-item aktif" id="menu-harian" onclick="gantiMenu('harian')">
+            <i class='bx bxs-dashboard'></i> Dashboard & MBG
+        </div>
+        <div class="menu-item" id="menu-rekap" onclick="gantiMenu('rekap')">
+            <i class='bx bxs-calendar'></i> Rekap Bulanan
+        </div>
+        
+        <div class="menu-item" onclick="window.open('monitor.html', '_blank')">
+            <i class='bx bxs-tv'></i> Buka Layar Monitor
+        </div>
+
+        <div class="menu-item menu-logout" onclick="logout()">
+            <i class='bx bx-log-out'></i> Keluar
+        </div>
+    </div>
+
+    <div class="konten-utama">
+        <div class="header-atas">
+            <div>
+                <h2 style="margin:0; font-weight:800;" id="judul-halaman">Dashboard Harian</h2>
+                <p style="margin:5px 0 0; color:#64748b; font-size:14px;" id="sub-judul">Pantauan Realtime & Logistik MBG</p>
+            </div>
+            <div style="font-weight:700; color:#0f172a;" id="jam-real">00:00:00</div>
+        </div>
+
+        <div id="view-harian">
+            <div class="grid-stats">
+                <div class="card-stat stat-hijau">
+                    <span style="font-size:12px; color:#64748b; font-weight:700;">TOTAL HADIR</span>
+                    <p class="angka" id="stat-hadir">0</p>
+                </div>
+                <div class="card-stat stat-kuning">
+                    <span style="font-size:12px; color:#64748b; font-weight:700;">IZIN / SAKIT</span>
+                    <p class="angka" id="stat-izin">0</p>
+                </div>
+                <div class="card-stat stat-merah">
+                    <span style="font-size:12px; color:#64748b; font-weight:700;">BELUM ABSEN</span>
+                    <p class="angka" id="stat-alpha">0</p>
+                </div>
+                <div class="card-stat">
+                    <span style="font-size:12px; color:#64748b; font-weight:700;">TOTAL SISWA (UNIK)</span>
+                    <p class="angka" id="stat-total">0</p>
+                </div>
+            </div>
+
+            <div class="mbg-section">
+                <div class="mbg-title">
+                    <h3 style="margin:0; color:#334155;"><i class='bx bxs-bowl-hot'></i> Laporan Harian Per Angkatan (MBG)</h3>
+                    <span style="font-size:12px; color:#ef4444; font-weight:600;">*Data Realtime</span>
+                </div>
+                <div class="grid-mbg">
+                    <button class="btn-mbg mbg-x" onclick="previewAngkatan('X')">
+                        <div><h2 style="margin:0;">KELAS X</h2><small>Cetak Laporan Logistik</small></div>
+                        <i class='bx bxs-printer' style="font-size:30px; opacity:0.5;"></i>
+                    </button>
+                    <button class="btn-mbg mbg-xi" onclick="previewAngkatan('XI')">
+                        <div><h2 style="margin:0;">KELAS XI</h2><small>Cetak Laporan Logistik</small></div>
+                        <i class='bx bxs-printer' style="font-size:30px; opacity:0.5;"></i>
+                    </button>
+                    <button class="btn-mbg mbg-xii" onclick="previewAngkatan('XII')">
+                        <div><h2 style="margin:0;">KELAS XII</h2><small>Cetak Laporan Logistik</small></div>
+                        <i class='bx bxs-printer' style="font-size:30px; opacity:0.5;"></i>
+                    </button>
+                </div>
+            </div>
+
+            <h3 style="color:#475569; margin-bottom:15px;">📂 Detail Per Kelas:</h3>
+            <div class="grid-kelas" id="grid-kelas-container">
+                <p>Memuat data kelas...</p>
+            </div>
+        </div>
+
+        <div id="view-rekap">
+            <div class="filter-bar">
+                <select id="pilih-bulan"></select>
+                <select id="pilih-tahun"></select>
+                <select id="pilih-kelas-rekap"><option value="">-- Pilih Kelas --</option></select>
+                <button class="btn-cari" onclick="loadRekapBulanan()">🔍 Tampilkan</button>
+                <button class="btn-download" onclick="downloadTable('tabel-rekap', 'REKAP_BULANAN')">
+                    <i class='bx bxs-file-export'></i> Download Excel
+                </button>
+            </div>
+            <div class="table-wrapper">
+                <table id="tabel-rekap">
+                    <thead><tr id="header-row"></tr></thead>
+                    <tbody id="body-rekap"><tr><td colspan="35" style="padding:30px;">Pilih filter lalu klik Tampilkan.</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="view-preview-mbg">
+            <div class="filter-bar">
+                <h3 style="margin:0; flex:1;" id="judul-preview">Laporan Logistik Kelas X</h3>
+                <button class="btn-cari" onclick="kembaliKeDash()" style="background:#64748b;">Kembali</button>
+                <button class="btn-download" onclick="downloadTable('tabel-mbg', 'LAPORAN_MBG')">
+                    <i class='bx bxs-printer'></i> Print / Download
+                </button>
+            </div>
+            <div class="table-wrapper">
+                <table id="tabel-mbg" style="min-width: 100%;">
+                    <thead>
+                        <tr style="background:#f1f5f9;">
+                            <th>No</th>
+                            <th style="text-align:left;">Nama Kelas</th>
+                            <th>Total Siswa</th>
+                            <th class="bg-hijau">Hadir (Jatah Makan)</th>
+                            <th class="bg-merah">Tidak Hadir (Sisa)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="body-mbg"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="modal-detail" id="modal-detail">
+            <div class="box-detail">
+                <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+                    <h2 style="margin:0;" id="judul-modal">Detail Kelas</h2>
+                    <button onclick="tutupModal()" style="background:#ef4444; color:white; border:none; padding:5px 15px; border-radius:5px; cursor:pointer;">Tutup</button>
+                </div>
+                <p class="small text-muted mb-3">*Jika ada nama ganda, cek NISN-nya.</p>
+                <table style="min-width:100%;">
+                    <thead>
+                        <tr style="background:#f1f5f9;">
+                            <th>No</th>
+                            <th>NISN</th>
+                            <th>Nama Siswa</th>
+                            <th>Status</th>
+                            <th>Jam Masuk</th>
+                            <th>Keterangan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="body-detail-harian"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, collection, query, where, getDocs, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo",
+            authDomain: "siganteng-absensi.firebaseapp.com",
+            databaseURL: "https://siganteng-absensi-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "siganteng-absensi",
+            storageBucket: "siganteng-absensi.firebasestorage.app", 
+            messagingSenderId: "917873420012",
+            appId: "1:917873420012:web:0fe1a9eddc5f94959ba7c9"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let listSiswa = [];
+        let kelompokKelas = {};
+        let listKelas = [];
+        let dataHarianCache = {};
+
+        window.addEventListener('load', async () => {
+            await tarikDataSiswa();
+            setupDropdown();
+            pantauHarianRealtime();
+            document.getElementById('loading-utama').style.display = 'none';
+        });
+
+        // 1. TARIK DATA SISWA (ANTI GANDA)
+        async function tarikDataSiswa() {
+            try {
+                const q = query(collection(db, "users")); 
+                const snap = await getDocs(q);
+                
+                listSiswa = [];
+                kelompokKelas = {};
+                const nisnTerdaftar = new Set(); 
+
+                snap.forEach(doc => {
+                    const s = doc.data();
+                    const nisnClean = String(s.username).replace(/[^a-zA-Z0-9]/g, ''); 
+                    const kelasClean = String(s.kelas).trim();
+
+                    if (!nisnTerdaftar.has(nisnClean)) {
+                        nisnTerdaftar.add(nisnClean); 
+                        const siswaObj = { ...s, username: nisnClean, kelas: kelasClean };
+                        
+                        listSiswa.push(siswaObj);
+                        if(!kelompokKelas[kelasClean]) kelompokKelas[kelasClean] = [];
+                        kelompokKelas[kelasClean].push(siswaObj);
+                    }
+                });
+
+                listKelas = Object.keys(kelompokKelas).sort();
+                
+                const sel = document.getElementById('pilih-kelas-rekap');
+                sel.innerHTML = '<option value="">-- Pilih Kelas --</option>';
+                listKelas.forEach(k => sel.add(new Option(k, k)));
+
+                document.getElementById('stat-total').innerText = listSiswa.length;
+
+            } catch (e) {
+                alert("Gagal tarik data siswa: " + e.message);
+            }
+        }
+
+        // 2. PANTAU HARIAN
+        function pantauHarianRealtime() {
+            const todayStr = new Date().toLocaleDateString('fr-CA'); 
+            const q = query(collection(db, "absensi"), where("tanggal", "==", todayStr));
+
+            onSnapshot(q, (snap) => {
+                dataHarianCache = {}; 
+                let hadir = 0, izin = 0;
+
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    const nisnClean = String(data.nisn).replace(/[^a-zA-Z0-9]/g, ''); 
+                    dataHarianCache[nisnClean] = data;
+
+                    const st = data.status_terakhir;
+                    if(st === 'Masuk' || st === 'Terlambat' || st === 'Kembali' || st === 'Pulang' || st === 'Izin Keluar') hadir++;
+                    else if(st === 'Sakit' || st === 'Izin') izin++;
+                });
+
+                document.getElementById('stat-hadir').innerText = hadir;
+                document.getElementById('stat-izin').innerText = izin;
+                document.getElementById('stat-alpha').innerText = listSiswa.length - (hadir + izin);
+
+                renderGridKelas();
+            });
+        }
+
+        function renderGridKelas() {
+            const container = document.getElementById('grid-kelas-container');
+            container.innerHTML = '';
+
+            listKelas.forEach(kls => {
+                let hadirKls = 0;
+                let totKls = kelompokKelas[kls] ? kelompokKelas[kls].length : 0;
+                
+                if(kelompokKelas[kls]) {
+                    kelompokKelas[kls].forEach(s => { 
+                        if(dataHarianCache[s.username]) hadirKls++; 
+                    });
+                }
+                
+                let pct = totKls > 0 ? (hadirKls/totKls)*100 : 0;
+                let color = pct == 100 ? '#10b981' : (pct > 50 ? '#3b82f6' : '#f59e0b');
+
+                container.innerHTML += `
+                    <div class="card-kelas" onclick="window.bukaModalHarian('${kls}')" style="border-left:5px solid ${color}">
+                        <h3 style="margin:0; font-size:18px;">${kls}</h3>
+                        <p style="margin:5px 0; font-size:12px; color:#64748b;">${totKls} Siswa</p>
+                        <div style="margin-top:10px; font-weight:bold; color:${color};">${hadirKls} Data Masuk</div>
+                    </div>`;
+            });
+        }
+
+        // 3. REKAP BULANAN
+        window.loadRekapBulanan = async function() {
+            const bln = parseInt(document.getElementById('pilih-bulan').value);
+            const thn = document.getElementById('pilih-tahun').value;
+            const kls = document.getElementById('pilih-kelas-rekap').value;
+
+            if(!kls) { alert("Pilih kelas dulu!"); return; }
+
+            const tbody = document.getElementById('body-rekap');
+            const thead = document.getElementById('header-row');
+            tbody.innerHTML = '<tr><td colspan="35">⏳ Sedang menarik data dari Firestore...</td></tr>';
+
+            const jmlHari = new Date(thn, bln + 1, 0).getDate();
+            let htmlHead = `<th class="sticky-col">No</th><th class="sticky-col">Nama Siswa</th>`;
+            for(let d=1; d<=jmlHari; d++) htmlHead += `<th>${d}</th>`;
+            htmlHead += `<th class="bg-hijau">H</th><th style="background:#fef3c7">I</th><th class="bg-merah">A</th>`;
+            thead.innerHTML = htmlHead;
+
+            const blnStr = (bln+1).toString().padStart(2, '0');
+            const startStr = `${thn}-${blnStr}-01`;
+            const endStr = `${thn}-${blnStr}-31`;
+
+            try {
+                const q = query(collection(db, "absensi"), where("tanggal", ">=", startStr), where("tanggal", "<=", endStr));
+                const snap = await getDocs(q);
+                
+                let mapAbsen = {}; 
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    if (String(d.kelas).trim() === kls) {
+                        const nisn = String(d.nisn).replace(/[^a-zA-Z0-9]/g, '');
+                        if(!mapAbsen[nisn]) mapAbsen[nisn] = {};
+                        mapAbsen[nisn][d.tanggal] = d;
+                    }
+                });
+
+                let htmlBody = '';
+                if (!kelompokKelas[kls]) {
+                    tbody.innerHTML = '<tr><td colspan="35">Data kelas tidak ditemukan.</td></tr>'; return;
+                }
+
+                const siswaUrut = kelompokKelas[kls].sort((a,b) => a.nama.localeCompare(b.nama));
+
+                siswaUrut.forEach((s, i) => {
+                    let row = `<td>${i+1}</td><td class="sticky-col" style="font-weight:600;">${s.nama}</td>`;
+                    let h=0, iz=0, a=0;
+                    for(let d=1; d<=jmlHari; d++) {
+                        const tglCek = `${thn}-${blnStr}-${d.toString().padStart(2, '0')}`;
+                        const dataHari = mapAbsen[s.username] && mapAbsen[s.username][tglCek]; 
+                        let cell = '-', cls = '', tooltip = '';
+                        const dayNum = new Date(tglCek).getDay();
+                        const isPassed = new Date(tglCek) <= new Date();
+
+                        if(dataHari) {
+                            const st = dataHari.status_terakhir;
+                            if(st === 'Masuk' || st === 'Terlambat' || st === 'Pulang' || st === 'Kembali' || st === 'Izin Keluar') {
+                                cell = 'H'; cls = 'sel-hadir'; h++;
+                                const jm = dataHari.jam_masuk ? new Date(dataHari.jam_masuk.seconds * 1000).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : '-';
+                                const jp = dataHari.jam_pulang ? new Date(dataHari.jam_pulang.seconds * 1000).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : '-';
+                                tooltip = `Masuk: ${jm} | Pulang: ${jp}`;
+                            } else { cell = 'I'; cls = 'sel-izin'; iz++; tooltip = dataHari.keterangan; }
+                        } else {
+                            if(dayNum===0||dayNum===6) { cell=''; cls='sel-libur'; }
+                            else if(isPassed) { cell='A'; cls='sel-alpha'; a++; }
+                        }
+                        
+                        let style = "";
+                        if(cls==='sel-hadir') style="background:#dcfce7; color:green; font-weight:bold;";
+                        if(cls==='sel-izin') style="background:#fef3c7; color:#b45309; font-weight:bold;";
+                        if(cls==='sel-alpha') style="background:#fee2e2; color:red;";
+                        row += `<td style="${style}" title="${tooltip}">${cell}<span style="display:none;">${tooltip}</span></td>`;
+                    }
+                    row += `<td style="font-weight:bold;">${h}</td><td>${iz}</td><td style="color:red; font-weight:bold;">${a}</td>`;
+                    htmlBody += `<tr>${row}</tr>`;
+                });
+                tbody.innerHTML = htmlBody;
+
+            } catch(e) {
+                alert("Gagal Rekap: " + e.message);
+            }
+        }
+
+        window.previewAngkatan = function(tingkat) {
+            document.getElementById('view-harian').style.display = 'none';
+            document.getElementById('view-preview-mbg').style.display = 'flex';
+            document.getElementById('judul-preview').innerText = `Laporan Logistik Harian - Tingkat ${tingkat}`;
+
+            const tbody = document.getElementById('body-mbg');
+            tbody.innerHTML = '';
+
+            const kelasTarget = listKelas.filter(k => {
+                const n = k.toUpperCase();
+                if(n.includes("GOPLE")) return false; 
+                return (tingkat==='X' && (n.startsWith('X ') || n.startsWith('10'))) ||
+                       (tingkat==='XI' && (n.startsWith('XI ') || n.startsWith('11'))) ||
+                       (tingkat==='XII' && (n.startsWith('XII ') || n.startsWith('12')));
+            });
+
+            let no=1, gTot=0, gHad=0, gSis=0;
+            kelasTarget.forEach(kls => {
+                let tot = kelompokKelas[kls] ? kelompokKelas[kls].length : 0;
+                let had = 0;
+                if (kelompokKelas[kls]) {
+                    kelompokKelas[kls].forEach(s => { if(dataHarianCache[s.username]) had++; });
+                }
+                let sis = tot - had;
+                gTot+=tot; gHad+=had; gSis+=sis;
+                tbody.innerHTML += `<tr><td>${no++}</td><td style="text-align:left;">${kls}</td><td>${tot}</td><td class="bg-hijau">${had}</td><td class="bg-merah">${sis}</td></tr>`;
+            });
+            tbody.innerHTML += `<tr style="background:#e2e8f0; font-weight:800;"><td colspan="2">TOTAL</td><td>${gTot}</td><td style="color:#166534;">${gHad} JATAH</td><td style="color:#991b1b;">${gSis} SISA</td></tr>`;
+        }
+
+        window.bukaModalHarian = function(kelas) {
+            document.getElementById('modal-detail').style.display = 'flex';
+            document.getElementById('judul-modal').innerText = `Detail Harian - ${kelas}`;
+            const tbody = document.getElementById('body-detail-harian');
+            tbody.innerHTML = '<tr><td colspan="6">Memuat...</td></tr>';
+            
+            if (kelompokKelas[kelas]) {
+                const siswaUrut = kelompokKelas[kelas].sort((a,b) => a.nama.localeCompare(b.nama));
+                let html = '';
+                siswaUrut.forEach((s, i) => {
+                    const data = dataHarianCache[s.username];
+                    let st = '<span style="color:red">Alpha</span>', jam = '-', ket = '-';
+                    if(data) {
+                        const status = data.status_terakhir;
+                        const jamObj = data.jam_masuk ? new Date(data.jam_masuk.seconds*1000) : null;
+                        jam = jamObj ? jamObj.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : '-';
+                        if(status === 'Masuk' || status === 'Terlambat' || status === 'Pulang' || status === 'Izin Keluar') {
+                            st = `<span style="color:green; font-weight:bold">${status}</span>`;
+                            if(data.riwayat_kegiatan) ket = data.riwayat_kegiatan[data.riwayat_kegiatan.length-1];
+                        } else { st = `<span style="color:orange">${status}</span>`; ket = data.keterangan; }
+                    }
+                    html += `<tr><td>${i+1}</td><td>${s.username}</td><td style="text-align:left;">${s.nama}</td><td>${st}</td><td>${jam}</td><td>${ket}</td></tr>`;
+                });
+                tbody.innerHTML = html;
+            }
+        }
+
+        window.gantiMenu = (m) => {
+            document.querySelectorAll('.menu-item').forEach(e=>e.classList.remove('aktif'));
+            document.getElementById('view-harian').style.display = 'none';
+            document.getElementById('view-rekap').style.display = 'none';
+            document.getElementById('view-preview-mbg').style.display = 'none';
+            if(m==='harian'){ document.getElementById('menu-harian').classList.add('aktif'); document.getElementById('view-harian').style.display='block'; }
+            if(m==='rekap'){ document.getElementById('menu-rekap').classList.add('aktif'); document.getElementById('view-rekap').style.display='flex'; }
+        }
+        window.kembaliKeDash = () => window.gantiMenu('harian');
+        window.tutupModal = () => document.getElementById('modal-detail').style.display='none';
+        
+        window.logout = () => { 
+            if(confirm("Keluar Admin?")) {
+                localStorage.removeItem('admin_token'); // Hapus kunci
+                window.location.href='login_admin.html'; 
+            }
+        }
+        
+        window.downloadTable = (tableId, filename) => {
+             const table = document.getElementById(tableId);
+             let html = table.outerHTML;
+             html = html.replace(/<span style="display:none;">/g, '<br><span style="font-size:10px; color:gray;">');
+             html = html.replace(/<table/g, '<table border="1" style="font-family:Arial; border-collapse:collapse;"');
+             const link = document.createElement("a");
+             link.href = 'data:application/vnd.ms-excel;charset=utf-8,' + encodeURIComponent(html);
+             link.download = `${filename}_${new Date().getTime()}.xls`;
+             document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        }
+
+        function setupDropdown() {
+            const today = new Date();
+            const bulanNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            const selBulan = document.getElementById('pilih-bulan');
+            bulanNames.forEach((b, i) => { let opt = new Option(b, i); if(i === today.getMonth()) opt.selected = true; selBulan.add(opt); });
+            const selTahun = document.getElementById('pilih-tahun');
+            selTahun.add(new Option(today.getFullYear(), today.getFullYear()));
+        }
+        
+        setInterval(() => { document.getElementById('jam-real').innerText = new Date().toLocaleTimeString('id-ID'); }, 1000);
+
+    </script>
+</body>
+</html>

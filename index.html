@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Si Ganteng SMAN 1 Pejagoan</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        body {
+            margin: 0; font-family: 'Outfit', sans-serif;
+            background-color: #0f172a;
+            background-image: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+            height: 100vh; display: flex; align-items: center; justify-content: center;
+            color: white; overflow: hidden;
+        }
+        .login-card {
+            background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1); padding: 40px 30px;
+            border-radius: 20px; width: 100%; max-width: 400px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3); text-align: center;
+            position: relative; z-index: 10;
+        }
+        .brand-logo {
+            font-size: 50px; color: #38bdf8; margin-bottom: 10px;
+            filter: drop-shadow(0 0 10px rgba(56,189,248,0.5));
+            animation: float 3s ease-in-out infinite;
+        }
+        h2 { margin: 0; font-weight: 800; letter-spacing: 1px; }
+        p { color: #94a3b8; font-size: 0.9em; margin-top: 5px; margin-bottom: 30px; }
+        .input-group { margin-bottom: 20px; text-align: left; }
+        .input-group label { display: block; color: #94a3b8; font-size: 0.85em; margin-bottom: 8px; font-weight: 600; }
+        .input-field {
+            width: 100%; padding: 12px 15px; background: rgba(15, 23, 42, 0.6);
+            border: 1px solid #334155; border-radius: 10px; color: white;
+            font-size: 1em; outline: none; transition: 0.3s; box-sizing: border-box;
+        }
+        .input-field:focus { border-color: #38bdf8; box-shadow: 0 0 10px rgba(56, 189, 248, 0.2); }
+        .btn-login {
+            width: 100%; padding: 14px; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white; border: none; border-radius: 12px; font-weight: 700; font-size: 1em;
+            cursor: pointer; transition: 0.3s; margin-top: 10px;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+        .btn-login:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6); }
+        .link-help {
+            display: inline-block; margin-top: 20px; color: #94a3b8; text-decoration: none;
+            font-size: 0.9em; transition: 0.3s; border-bottom: 1px dashed rgba(148, 163, 184, 0.5); padding-bottom: 2px;
+        }
+        .link-help:hover { color: #38bdf8; border-color: #38bdf8; }
+        .footer { position: absolute; bottom: 20px; width: 100%; text-align: center; color: #475569; font-size: 0.75em; }
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.9); z-index: 50;
+            display: none; justify-content: center; align-items: center; flex-direction: column;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loader">
+        <i class='bx bx-loader-alt bx-spin' style="font-size: 50px; color: #38bdf8;"></i>
+        <p style="margin-top: 15px; color: white;">Memproses Masuk...</p>
+    </div>
+
+    <div class="login-card">
+        <div class="brand-logo"><i class='bx bxs-graduation'></i></div>
+        <h2>SI GANTENG</h2>
+        <p>SMAN 1 PEJAGOAN</p>
+
+        <form id="formLogin">
+            <div class="input-group">
+                <label>NISN</label>
+                <input type="number" id="nisn" class="input-field" placeholder="Ketik NISN..." required autocomplete="off">
+            </div>
+
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" id="password" class="input-field" placeholder="Default: 123456" required>
+            </div>
+
+            <button type="submit" class="btn-login">MASUK SEKARANG <i class='bx bx-right-arrow-alt'></i></button>
+        </form>
+
+        <a href="cari.html" class="link-help">
+            <i class='bx bx-search'></i> Lupa NISN? Cari Disini
+        </a>
+    </div>
+
+    <div class="footer">&copy; 2025 IT Team SMAN 1 Pejagoan</div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo",
+            authDomain: "siganteng-absensi.firebaseapp.com",
+            projectId: "siganteng-absensi",
+            storageBucket: "siganteng-absensi.firebasestorage.app",
+            messagingSenderId: "917873420012",
+            appId: "1:917873420012:web:0fe1a9eddc5f94959ba7c9"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        document.getElementById('formLogin').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const nisn = document.getElementById('nisn').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const loader = document.getElementById('loader');
+
+            if(!nisn || !password) return;
+
+            loader.style.display = 'flex';
+
+            try {
+                // --- 1. MODE DEMO / JALUR KHUSUS OPERATOR ---
+                // Masukkan 12345 biar bisa masuk tanpa database
+                if(nisn === '12345' && password === '12345') {
+                    setTimeout(() => {
+                        const dataDemo = {
+                            nama: "Budi Santoso (Demo)",
+                            nisn: "12345",
+                            kelas: "XI MIPA 2",
+                            username: "12345"
+                        };
+                        simpanDanRedirect(dataDemo);
+                    }, 1000);
+                    return; 
+                }
+                // --------------------------------------------
+
+                // --- 2. CEK USER DI FIREBASE ---
+                // Mencari di koleksi 'users' dimana field 'username' == input NISN
+                const snapshot = await db.collection('users').where('username', '==', nisn).get();
+
+                if (snapshot.empty) throw new Error("NISN tidak ditemukan! Coba menu 'Cari Disini'.");
+
+                let userData = null;
+                snapshot.forEach(doc => { userData = doc.data(); });
+
+                // --- 3. CEK PASSWORD ---
+                if (String(userData.password) === String(password)) {
+                    simpanDanRedirect(userData);
+                } else {
+                    throw new Error("Password salah! Hubungi Admin jika lupa.");
+                }
+
+            } catch (error) {
+                Swal.fire({
+                    icon: 'error', 
+                    title: 'Gagal Masuk', 
+                    text: error.message,
+                    confirmButtonColor: '#3b82f6'
+                });
+                loader.style.display = 'none';
+            }
+        });
+
+        function simpanDanRedirect(data) {
+            // Simpan ke LocalStorage agar siswa.html bisa membacanya
+            localStorage.setItem('userSiswa', JSON.stringify(data));
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil Masuk!',
+                text: `Selamat Datang, ${data.nama}`,
+                timer: 1500,
+                showConfirmButton: false,
+                background: '#1e293b',
+                color: '#fff'
+            }).then(() => {
+                // ARAHKAN KE FILE WADAH BARU KITA
+                window.location.href = 'siswa.html'; 
+            });
+        }
+    </script>
+</body>
+</html>
