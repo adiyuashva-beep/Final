@@ -40,7 +40,7 @@
                 </div>
             </div>
 
-            <div class="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-6 text-white shadow-xl shadow-blue-500/20 mb-10 relative overflow-hidden group">
+            <div class="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-6 text-white shadow-xl shadow-blue-500/20 mb-8 relative overflow-hidden group">
                 <div class="relative z-10">
                     <p class="text-blue-200 text-xs font-semibold uppercase tracking-widest mb-1">Status Hari Ini</p>
                     <h1 class="text-3xl font-extrabold tracking-tight mt-1" id="hero-status">Belum Absen</h1>
@@ -49,8 +49,16 @@
             </div>
 
             <h3 class="font-bold text-slate-700 text-lg mb-4">Menu Utama</h3>
-            <div id="wadah-menu" class="grid grid-cols-2 gap-4">
+            <div id="wadah-menu" class="grid grid-cols-2 gap-4 mb-8">
                 </div>
+
+            <div class="mt-4">
+                <h3 class="text-slate-400 text-xs font-bold uppercase mb-3 tracking-wider">Layanan Sekolah</h3>
+                <div id="grid-menu-dinamis" class="grid grid-cols-2 gap-4">
+                    <div class="bg-slate-200 h-20 rounded-2xl animate-pulse"></div>
+                    <div class="bg-slate-200 h-20 rounded-2xl animate-pulse"></div>
+                </div>
+            </div>
         </div>
 
 
@@ -145,8 +153,6 @@
             </div>
         </div>
 
-        <div id="page-jadwal" class="hidden-page p-6 fade-in"><button onclick="kembali()" class="text-blue-600 font-bold mb-4">← Kembali</button><h2 class="text-2xl font-bold">Jadwal Pelajaran</h2><p class="text-slate-500">Fitur ini akan segera hadir.</p></div>
-        <div id="page-ekskul" class="hidden-page p-6 fade-in"><button onclick="kembali()" class="text-blue-600 font-bold mb-4">← Kembali</button><h2 class="text-2xl font-bold">Info Ekskul</h2><p class="text-slate-500">Fitur ini akan segera hadir.</p></div>
         <div id="page-profil" class="hidden-page p-6 fade-in"><button onclick="kembali()" class="text-blue-600 font-bold mb-4">← Kembali</button><h2 class="text-2xl font-bold">Profil Siswa</h2><button onclick="logout()" class="mt-4 w-full bg-red-50 text-red-600 font-bold py-3 rounded-xl">Logout</button></div>
 
     </main>
@@ -192,10 +198,11 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getFirestore, doc, setDoc, onSnapshot, arrayUnion, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        // ⚠️ IMPORT FIREBASE TELAH DIPERBAIKI (Sudah ada collection, query, getDocs)
+        import { getFirestore, doc, setDoc, onSnapshot, arrayUnion, serverTimestamp, collection, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
-        // CONFIG
+        // CONFIG (SESUAIKAN JIKA PERLU)
         const firebaseConfig = {
             apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo",
             authDomain: "siganteng-absensi.firebaseapp.com",
@@ -227,10 +234,17 @@
                 document.getElementById('dash-nama').innerText = userSiswa.nama;
                 document.getElementById('dash-kelas').innerText = userSiswa.kelas || "SISWA";
                 document.getElementById('dash-foto').src = `https://ui-avatars.com/api/?name=${userSiswa.nama}&background=2563eb&color=fff&size=128&bold=true`;
-                renderMenu(); mulaiJam(); pantauDataRealtime(); cekGPS();
+                
+                // JALANKAN SEMUA FUNGSI UTAMA
+                renderMenu(); 
+                mulaiJam(); 
+                pantauDataRealtime(); 
+                cekGPS();
+                loadMenuDinamis(); // <--- FUNGSI BARU DIPANGGIL DISINI
             } else { window.location.href = 'index.html'; }
         });
 
+        // MENU UTAMA STATIS
         const databaseMenu = [
             { nama: "Absen Masuk", ikon: "scan-line",     warna: "emerald", aksi: "bukaHalaman('page-absen')" },
             { nama: "Izin / Sakit", ikon: "ambulance",    warna: "orange",  aksi: "bukaHalaman('page-sakit')" },
@@ -250,6 +264,7 @@
             lucide.createIcons();
         }
 
+        // FUNGSI NAVIGASI
         window.bukaHalaman = (id) => {
             document.querySelectorAll('[id^="page-"]').forEach(el => el.classList.add('hidden-page'));
             document.getElementById(id).classList.remove('hidden-page');
@@ -431,10 +446,8 @@
         onSnapshot(doc(db, "pengaturan", "sekolah"), (doc) => {
             if(doc.exists()) {
                 configSekolah = doc.data();
-                // Update Radius di Peta secara realtime kalau admin ubah
                 if(map) {
-                    // Hapus lingkaran lama, buat baru (Logic penyederhanaan)
-                    // (Di implementasi pro nanti bisa update properti circle)
+                    // Update Peta kalau pro (logic simpel dulu)
                 }
             }
         });
@@ -460,8 +473,6 @@
                 }
             } else {
                 // Mode Disiplin: OFF (Santuy)
-                // Loloskan saja tanpa cek jarak
-                // console.log("Mode GPS dimatikan oleh Admin");
             }
             
             return true; 
@@ -474,6 +485,48 @@
         window.klikIzinKeluar = klikIzinKeluar; window.klikKembali = klikKembali; window.bukaKartu = bukaKartu; window.tutupKartu = tutupKartu;
         window.bukaCam = bukaCam; window.tutupKamera = tutupKamera; window.jepretFoto = jepretFoto; window.logout = logout;
         window.pilihJenisIzin = pilihJenisIzin; window.kirimLaporanIzin = kirimLaporanIzin;
+
+        // --- FITUR DYNAMIC MENU (JALAN TOL) ---
+        function loadMenuDinamis() {
+            const container = document.getElementById('grid-menu-dinamis');
+            
+            // Query ke Database (Ambil menu_siswa)
+            const q = query(collection(db, "menu_siswa")); 
+
+            onSnapshot(q, (snapshot) => {
+                container.innerHTML = ''; // Bersihkan Skeleton
+
+                if(snapshot.empty) {
+                    container.innerHTML = '<p class="col-span-2 text-center text-slate-400 text-xs italic">Belum ada layanan tambahan.</p>';
+                    return;
+                }
+
+                snapshot.forEach(doc => {
+                    const d = doc.data();
+                    
+                    // Efek Warna (Highlight)
+                    let bgClass = "bg-white border-slate-100 hover:bg-slate-50";
+                    let textClass = "text-slate-800";
+                    
+                    // Kalo Highlight (Biru)
+                    if (d.highlight) {
+                        bgClass = "bg-blue-50 border-blue-200 hover:bg-blue-100";
+                        textClass = "text-blue-700";
+                    }
+
+                    container.innerHTML += `
+                        <a href="${d.link}" target="_blank" class="block p-4 rounded-3xl border ${bgClass} transition flex items-center gap-4 group shadow-sm">
+                            <div class="text-3xl group-hover:scale-110 transition">${d.icon}</div>
+                            <div>
+                                <h4 class="font-bold text-sm ${textClass}">${d.judul}</h4>
+                                <p class="text-[10px] text-slate-400">Klik untuk buka</p>
+                            </div>
+                        </a>
+                    `;
+                });
+            });
+        }
+        
     </script>
 </body>
 </html>
