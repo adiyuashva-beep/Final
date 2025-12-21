@@ -54,7 +54,9 @@
             <button onclick="nav('mbg')" id="nav-mbg" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
                 <i data-lucide="utensils" class="w-5 h-5"></i> Laporan MBG
             </button>
-            
+            <button onclick="nav('menu-manager')" id="nav-menu-manager" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
+    <i data-lucide="layout-grid" class="w-5 h-5"></i> Kelola Tombol
+</button>
             <div id="menu-super" class="hidden border-t border-slate-800 pt-4 mt-4">
                 <p class="px-4 text-[10px] font-bold text-slate-600 uppercase mb-2">Database & Config</p>
                 <button onclick="nav('data')" id="nav-data" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
@@ -163,7 +165,56 @@
                 <table id="tabel-mbg-detail" class="w-full text-sm border border-slate-300"><thead class="bg-slate-100"><tr><th class="border p-2">Kelas</th><th class="border p-2">Total Siswa</th><th class="border p-2 bg-green-100 text-green-800">Jatah Makan</th><th class="border p-2 bg-red-100 text-red-800">Sisa</th></tr></thead><tbody id="tbody-mbg"></tbody></table>
             </div>
         </div>
+<div id="view-menu-manager" class="hidden space-y-6 fade-in">
+    <h2 class="text-3xl font-bold text-white">Manajemen Tombol Siswa</h2>
+    <p class="text-slate-400 text-sm">Tambahkan fitur/link eksternal ke Dashboard Siswa secara real-time.</p>
 
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+            <h3 class="font-bold text-white mb-4">Tambah Tombol Baru</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs font-bold text-slate-500 uppercase">Judul Tombol</label>
+                    <input type="text" id="menuJudul" class="w-full bg-slate-800 text-white p-3 rounded-lg border border-slate-700 outline-none" placeholder="Contoh: E-Library">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-500 uppercase">Ikon (Emoji)</label>
+                    <input type="text" id="menuIcon" class="w-full bg-slate-800 text-white p-3 rounded-lg border border-slate-700 outline-none" placeholder="Contoh: 📚, 📢, 🗳️">
+                    <p class="text-[10px] text-slate-500 mt-1">*Pakai Emoji biar ringan & gampang.</p>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-500 uppercase">Link Tujuan</label>
+                    <input type="text" id="menuLink" class="w-full bg-slate-800 text-white p-3 rounded-lg border border-slate-700 outline-none" placeholder="https://...">
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="menuWarna" class="w-4 h-4">
+                    <label class="text-sm text-slate-300">Highlight (Warna Beda)</label>
+                </div>
+                <button onclick="simpanMenuBaru()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg shadow-lg shadow-blue-500/20">
+                    <i data-lucide="plus-circle" class="inline w-4 h-4 mr-2"></i> Terbitkan Tombol
+                </button>
+            </div>
+        </div>
+
+        <div class="md:col-span-2 bg-slate-900 p-6 rounded-2xl border border-slate-800">
+            <h3 class="font-bold text-white mb-4">Daftar Tombol Aktif</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-400">
+                    <thead class="bg-slate-950 text-xs uppercase font-bold text-slate-500">
+                        <tr>
+                            <th class="p-3">Ikon</th>
+                            <th class="p-3">Judul</th>
+                            <th class="p-3">Link</th>
+                            <th class="p-3 text-right">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-menu-list" class="divide-y divide-slate-800">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
         <div id="view-data" class="hidden space-y-6 fade-in">
             <h2 class="text-3xl font-bold text-white">Import Database Sekolah</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -488,6 +539,94 @@
         async function loadSettings() { onSnapshot(doc(db, "pengaturan", "sekolah"), (doc) => { if(doc.exists()) { const d = doc.data(); document.getElementById('toggleGPS').checked = d.validasi_gps_aktif; document.getElementById('inputLat').value = d.lokasi_lat; document.getElementById('inputLng').value = d.lokasi_lng; document.getElementById('inputRadius').value = d.radius_meter; } }); }
         window.simpanConfig = async () => { const lat = parseFloat(document.getElementById('inputLat').value); const lng = parseFloat(document.getElementById('inputLng').value); const rad = parseInt(document.getElementById('inputRadius').value); const gps = document.getElementById('toggleGPS').checked; await setDoc(doc(db, "pengaturan", "sekolah"), { lokasi_lat: lat, lokasi_lng: lng, radius_meter: rad, validasi_gps_aktif: gps }, { merge: true }); Swal.fire('Tersimpan', 'Config Updated', 'success'); }
         setInterval(() => { document.getElementById('jam-real').innerText = new Date().toLocaleTimeString('id-ID'); }, 1000);
+    // --- LOGIKA MENU MANAGER ---
+       import { getFirestore, collection, query, where, onSnapshot, getDocs, addDoc, deleteDoc, doc, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        // 1. Simpan Menu Baru
+        window.simpanMenuBaru = async () => {
+            const judul = document.getElementById('menuJudul').value;
+            const icon = document.getElementById('menuIcon').value || "🔗";
+            const link = document.getElementById('menuLink').value;
+            const isHighlight = document.getElementById('menuWarna').checked;
+
+            if(!judul || !link) return Swal.fire('Eits!', 'Judul dan Link wajib diisi dong Ndan.', 'warning');
+
+            try {
+                // Simpan ke Collection 'menu_siswa'
+                await addDoc(collection(db, "menu_siswa"), {
+                    judul: judul,
+                    icon: icon,
+                    link: link,
+                    highlight: isHighlight,
+                    created_at: new Date().toISOString()
+                });
+                
+                Swal.fire('Mantap!', 'Tombol berhasil diterbitkan ke HP Siswa.', 'success');
+                // Reset Form
+                document.getElementById('menuJudul').value = '';
+                document.getElementById('menuLink').value = '';
+            } catch (e) {
+                console.error(e);
+                Swal.fire('Error', 'Gagal menyimpan menu.', 'error');
+            }
+        }
+
+        // 2. Load Daftar Menu (Realtime)
+        function loadMenuManager() {
+            const q = query(collection(db, "menu_siswa"), orderBy("created_at", "asc"));
+            
+            onSnapshot(q, (snapshot) => {
+                const tbody = document.getElementById('tbody-menu-list');
+                tbody.innerHTML = '';
+
+                if(snapshot.empty) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center italic">Belum ada tombol tambahan.</td></tr>';
+                    return;
+                }
+
+                snapshot.forEach(doc => {
+                    const d = doc.data();
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-slate-800">
+                            <td class="p-3 text-2xl">${d.icon}</td>
+                            <td class="p-3 font-bold text-white">${d.judul}</td>
+                            <td class="p-3 font-mono text-xs truncate max-w-[150px]">${d.link}</td>
+                            <td class="p-3 text-right">
+                                <button onclick="hapusMenu('${doc.id}')" class="text-red-500 hover:text-red-400 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                lucide.createIcons();
+            });
+        }
+
+        // 3. Hapus Menu
+        window.hapusMenu = async (id) => {
+            Swal.fire({
+                title: 'Hapus Tombol?',
+                text: "Siswa tidak akan bisa akses menu ini lagi.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                confirmButtonText: 'Ya, Hapus!'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    await deleteDoc(doc(db, "menu_siswa", id));
+                    Swal.fire('Terhapus!', 'Tombol hilang dari peredaran.', 'success');
+                }
+            })
+        }
+
+        // Panggil loadMenuManager saat halaman dibuka (tambahkan di DOMContentLoaded atau fungsi nav)
+        // Tambahkan ini di dalam fungsi nav(v) yang sudah ada:
+        /*
+        window.nav = (v) => {
+            // ... kode lama ...
+            if(v === 'menu-manager') loadMenuManager(); // <--- TAMBAHAN
+        }
+        */
+    
     </script>
 </body>
 </html>
