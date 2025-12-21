@@ -626,7 +626,12 @@
             if(v === 'menu-manager') loadMenuManager(); // <--- TAMBAHAN
         }
         */
+        // Tempel ini di paling bawah
+        document.addEventListener('DOMContentLoaded', () => {
+             loadMenuManager(); // Paksa nyala di awal
+        });
     
     </script>
 </body>
 </html>
+
