@@ -56,12 +56,10 @@
         .col-center { flex: 1.2; display: flex; flex-direction: column; gap: 15px; }
         .stats-wrapper { flex: 1.5; background: var(--card-bg); border-radius: 15px; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.05); }
         
-        /* FIX DONUT CHART CSS - SEDERHANA SAJA */
         .donut-chart { 
             position: relative; width: 160px; height: 160px; border-radius: 50%; 
-            background: #334155; /* Warna Default (Abu) */
-            display: flex; align-items: center; justify-content: center; margin-bottom: 15px; 
-            transition: background 0.5s ease; /* Transisi halus */
+            background: conic-gradient(var(--c) var(--p), #334155 0deg); 
+            display: flex; align-items: center; justify-content: center; margin-bottom: 15px; transition: 1s; 
         }
         .donut-inner { width: 85%; height: 85%; background: var(--card-bg); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .big-percent { font-size: 2.2em; font-weight: 900; color: white; line-height: 1; }
@@ -142,7 +140,7 @@
 
         <div class="col-center">
             <div class="stats-wrapper">
-                <div class="donut-chart" id="chart-absen">
+                <div class="donut-chart" id="chart-absen" style="--p: 0deg; --c: var(--neon-red);">
                     <div class="donut-inner">
                         <span class="big-percent" id="persen-text">0%</span>
                         <small style="color:#94a3b8; font-size:0.7em;">KEHADIRAN</small>
@@ -205,7 +203,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getFirestore, collection, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-        // --- ⚠️ JANGAN LUPA: KEMBALIKAN CONFIG FIREBASE PUNYA NDAN DI SINI YA! ---
+        // --- ⚠️ CONFIG FIREBASE (SESUAIKAN DENGAN PUNYA NDAN) ---
         const firebaseConfig = {
             apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo",
             authDomain: "siganteng-absensi.firebaseapp.com",
@@ -294,29 +292,42 @@
             });
         }
 
-        // --- FUNGSI UPDATE TAMPILAN (FIXED: PAKSA GANTI BACKGROUND) ---
+        // --- FUNGSI UPDATE TAMPILAN (VERSI DESIMAL PRESISI) ---
         function updateTampilanLayar() {
             const listHadir = dataAbsenHariIni.filter(d => d.status_terakhir !== 'Sakit' && d.status_terakhir !== 'Izin');
             const nisnHadir = dataAbsenHariIni.map(d => d.nisn_clean); 
             
             // 1. STATISTIK DASAR
-            const totalPopulasi = allSiswa.length > 0 ? allSiswa.length : 1; 
+            // Cek: Kalau data siswa belum load, anggap 1 biar gak error pembagian
+            const totalPopulasi = allSiswa.length > 0 ? allSiswa.length : 0; 
+            
             const countIzin = dataAbsenHariIni.filter(d => d.status_terakhir === 'Izin' || d.status_terakhir === 'Sakit').length;
             const countHadir = listHadir.length;
             const totalMasuk = countHadir + countIzin;
             const listBelum = allSiswa.filter(s => !nisnHadir.includes(s.username));
 
             // Update Angka
-            document.getElementById('total-populasi').innerText = allSiswa.length;
+            document.getElementById('total-populasi').innerText = totalPopulasi;
             document.getElementById('total-hadir').innerText = countHadir;
             document.getElementById('total-izin').innerText = countIzin;
             document.getElementById('total-alpha').innerText = listBelum.length;
 
-            // 2. HITUNG PERSEN & UPDATE DONAT (HARDCORE MODE)
-            let rawPercent = (totalMasuk / totalPopulasi) * 100;
-            
-            // Pengaman kalau hasilnya NaN (Not a Number)
-            if (isNaN(rawPercent) || !isFinite(rawPercent)) rawPercent = 0;
+            // 2. HITUNG PERSEN & UPDATE DONAT (LOGIKA BARU)
+            let rawPercent = 0;
+            let derajat = 0;
+
+            if (totalPopulasi > 0) {
+                rawPercent = (totalMasuk / totalPopulasi) * 100;
+                
+                // PENGAMAN: Jika ada yang hadir (rawPercent > 0) tapi kecil banget,
+                // Paksa grafik gerak minimal 1% biar kelihatan di mata
+                if (totalMasuk > 0 && rawPercent < 1) {
+                    derajat = 3.6; // Setara 1% visual (biar kelihatan nongol dikit)
+                } else {
+                    derajat = rawPercent * 3.6;
+                }
+            }
+
             if (rawPercent > 100) rawPercent = 100;
 
             // Tentukan Warna
@@ -324,17 +335,19 @@
             if(rawPercent > 40) warnaDonat = '#f59e0b'; // Kuning
             if(rawPercent > 75) warnaDonat = '#10b981'; // Hijau
 
-            // Update Teks Persen
+            // Update Teks Persen (PAKAI 1 ANGKA BELAKANG KOMA)
+            // Contoh: 0.1% atau 12.5%
             const elText = document.getElementById('persen-text');
             if(elText) {
-                elText.innerText = Math.round(rawPercent) + "%";
+                // toFixed(1) artinya ambil 1 desimal. 
+                // Jika 0, tetap tulis 0%. Jika 0.09, jadi 0.1%
+                elText.innerText = rawPercent.toFixed(1) + "%";
                 elText.style.color = warnaDonat;
             }
 
             // Update Grafik Donat (Inject Style Langsung)
             const elChart = document.getElementById('chart-absen');
             if(elChart) {
-                const derajat = rawPercent * 3.6; // 100% = 360 derajat
                 elChart.style.background = `conic-gradient(${warnaDonat} ${derajat}deg, #334155 0deg)`;
             }
 
@@ -354,7 +367,6 @@
             const listLive = [...listHadir].sort((a,b) => b.jam_display.localeCompare(a.jam_display));
             renderLiveFeed(listLive);
         }
-
         // RENDER GASIK
         function renderGasik(data) {
             const el = document.getElementById('gasik-list');
@@ -386,6 +398,7 @@
             container.style.animation = `scrollUp ${durasi}s linear infinite`;
             
             data.forEach(d => {
+                // Template Beda antara Telat (Ada Foto Kecil) dan Belum (Teks Aja)
                 if(type === 'telat') {
                     container.insertAdjacentHTML('beforeend', `
                         <div class="telat-row">
