@@ -540,7 +540,7 @@
         window.simpanConfig = async () => { const lat = parseFloat(document.getElementById('inputLat').value); const lng = parseFloat(document.getElementById('inputLng').value); const rad = parseInt(document.getElementById('inputRadius').value); const gps = document.getElementById('toggleGPS').checked; await setDoc(doc(db, "pengaturan", "sekolah"), { lokasi_lat: lat, lokasi_lng: lng, radius_meter: rad, validasi_gps_aktif: gps }, { merge: true }); Swal.fire('Tersimpan', 'Config Updated', 'success'); }
         setInterval(() => { document.getElementById('jam-real').innerText = new Date().toLocaleTimeString('id-ID'); }, 1000);
     // --- LOGIKA MENU MANAGER ---
-       import { getFirestore, collection, query, where, onSnapshot, getDocs, addDoc, deleteDoc, doc, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { addDoc, deleteDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"; // Pastikan addDoc & deleteDoc ada di import atas
 
         // 1. Simpan Menu Baru
         window.simpanMenuBaru = async () => {
