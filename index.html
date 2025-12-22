@@ -74,12 +74,12 @@
         <form id="formLogin">
             <div class="input-group">
                 <label>Username / NISN</label>
-                <input type="text" id="username" class="input-field" placeholder="NISN atau NIP Guru..." required autocomplete="off">
+                <input type="text" id="username" class="input-field" placeholder="Ketik Admin / NISN / NIP..." required autocomplete="off">
             </div>
 
             <div class="input-group">
                 <label>Password</label>
-                <input type="password" id="password" class="input-field" placeholder="Default: 123456" required>
+                <input type="password" id="password" class="input-field" placeholder="Masukan Password..." required>
             </div>
 
             <button type="submit" class="btn-login" id="btnLogin">MASUK SEKARANG <i class='bx bx-right-arrow-alt'></i></button>
@@ -109,7 +109,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // LOGIKA LOGIN UTAMA
+        // LOGIKA LOGIN
         document.getElementById('formLogin').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -120,6 +120,19 @@
             if(!u || !p) return;
 
             loader.style.display = 'flex';
+
+            // --- ⚠️ KUNCI DARURAT ADMIN (PASANG INI BIAR BISA MASUK) ---
+            // Ini untuk Login Pertama kali sebelum data admin ada di database
+            if (u === 'admin' && p === '123') {
+                localStorage.setItem('admin_token', 'RAHASIA_NEGARA_SMAN1');
+                sessionStorage.setItem('user_siganteng', JSON.stringify({nama: "Super Admin", role: "admin"}));
+                
+                setTimeout(() => {
+                    window.location.href = 'admin.html';
+                }, 1000);
+                return; 
+            }
+            // -----------------------------------------------------------
 
             try {
                 // 1. CARI USER DI DATABASE
@@ -134,34 +147,23 @@
                 snap.forEach(d => userData = d.data());
 
                 // 2. CEK PASSWORD
-                // (Konversi ke string biar aman kalau passwordnya angka)
                 if (String(userData.password) === String(p)) {
                     
                     // 3. SIMPAN SESI & REDIRECT SESUAI PERAN
-                    
-                    // Simpan sesi universal (dipakai guru.html & admin.html)
                     sessionStorage.setItem('user_siganteng', JSON.stringify(userData));
                     
-                    // Simpan sesi khusus siswa (karena siswa.html pakai localstorage 'userSiswa')
                     if (!userData.role || userData.role === 'siswa') {
                         localStorage.setItem('userSiswa', JSON.stringify(userData));
                     }
 
-                    // TAMPILKAN PESAN SUKSES
                     Swal.fire({
-                        icon: 'success',
-                        title: 'Login Berhasil',
+                        icon: 'success', title: 'Login Berhasil', 
                         text: `Selamat Datang, ${userData.nama}`,
-                        timer: 1500,
-                        showConfirmButton: false,
-                        background: '#1e293b',
-                        color: '#fff'
+                        timer: 1500, showConfirmButton: false, background: '#1e293b', color: '#fff'
                     }).then(() => {
-                        // ARAHKAN KE HALAMAN YANG BENAR
                         const role = userData.role ? userData.role.toLowerCase() : 'siswa';
 
                         if (role === 'admin') {
-                            // Khusus admin, simpan token rahasia juga (sesuai admin.html lama)
                             localStorage.setItem('admin_token', 'RAHASIA_NEGARA_SMAN1');
                             window.location.href = 'admin.html';
                         } 
@@ -179,12 +181,8 @@
 
             } catch (error) {
                 Swal.fire({
-                    icon: 'error', 
-                    title: 'Gagal Masuk', 
-                    text: error.message,
-                    confirmButtonColor: '#3b82f6',
-                    background: '#1e293b',
-                    color: '#fff'
+                    icon: 'error', title: 'Gagal Masuk', text: error.message,
+                    confirmButtonColor: '#3b82f6', background: '#1e293b', color: '#fff'
                 });
                 loader.style.display = 'none';
             }
