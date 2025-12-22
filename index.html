@@ -73,8 +73,8 @@
 
         <form id="formLogin">
             <div class="input-group">
-                <label>NISN</label>
-                <input type="number" id="nisn" class="input-field" placeholder="Ketik NISN..." required autocomplete="off">
+                <label>Username / NISN</label>
+                <input type="text" id="username" class="input-field" placeholder="NISN atau NIP Guru..." required autocomplete="off">
             </div>
 
             <div class="input-group">
@@ -82,7 +82,7 @@
                 <input type="password" id="password" class="input-field" placeholder="Default: 123456" required>
             </div>
 
-            <button type="submit" class="btn-login">MASUK SEKARANG <i class='bx bx-right-arrow-alt'></i></button>
+            <button type="submit" class="btn-login" id="btnLogin">MASUK SEKARANG <i class='bx bx-right-arrow-alt'></i></button>
         </form>
 
         <a href="cari.html" class="link-help">
@@ -92,64 +92,89 @@
 
     <div class="footer">&copy; 2025 IT Team SMAN 1 Pejagoan</div>
 
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    <script>
         const firebaseConfig = {
             apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo",
             authDomain: "siganteng-absensi.firebaseapp.com",
+            databaseURL: "https://siganteng-absensi-default-rtdb.asia-southeast1.firebasedatabase.app",
             projectId: "siganteng-absensi",
             storageBucket: "siganteng-absensi.firebasestorage.app",
             messagingSenderId: "917873420012",
             appId: "1:917873420012:web:0fe1a9eddc5f94959ba7c9"
         };
         
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
+        // LOGIKA LOGIN UTAMA
         document.getElementById('formLogin').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const nisn = document.getElementById('nisn').value.trim();
-            const password = document.getElementById('password').value.trim();
+            const u = document.getElementById('username').value.trim();
+            const p = document.getElementById('password').value.trim();
             const loader = document.getElementById('loader');
 
-            if(!nisn || !password) return;
+            if(!u || !p) return;
 
             loader.style.display = 'flex';
 
             try {
-                // --- 1. MODE DEMO / JALUR KHUSUS OPERATOR ---
-                // Masukkan 12345 biar bisa masuk tanpa database
-                if(nisn === '12345' && password === '12345') {
-                    setTimeout(() => {
-                        const dataDemo = {
-                            nama: "Budi Santoso (Demo)",
-                            nisn: "12345",
-                            kelas: "XI MIPA 2",
-                            username: "12345"
-                        };
-                        simpanDanRedirect(dataDemo);
-                    }, 1000);
-                    return; 
+                // 1. CARI USER DI DATABASE
+                const q = query(collection(db, "users"), where("username", "==", u));
+                const snap = await getDocs(q);
+
+                if (snap.empty) {
+                    throw new Error("Username tidak ditemukan! Pastikan NISN/NIP benar.");
                 }
-                // --------------------------------------------
-
-                // --- 2. CEK USER DI FIREBASE ---
-                // Mencari di koleksi 'users' dimana field 'username' == input NISN
-                const snapshot = await db.collection('users').where('username', '==', nisn).get();
-
-                if (snapshot.empty) throw new Error("NISN tidak ditemukan! Coba menu 'Cari Disini'.");
 
                 let userData = null;
-                snapshot.forEach(doc => { userData = doc.data(); });
+                snap.forEach(d => userData = d.data());
 
-                // --- 3. CEK PASSWORD ---
-                if (String(userData.password) === String(password)) {
-                    simpanDanRedirect(userData);
+                // 2. CEK PASSWORD
+                // (Konversi ke string biar aman kalau passwordnya angka)
+                if (String(userData.password) === String(p)) {
+                    
+                    // 3. SIMPAN SESI & REDIRECT SESUAI PERAN
+                    
+                    // Simpan sesi universal (dipakai guru.html & admin.html)
+                    sessionStorage.setItem('user_siganteng', JSON.stringify(userData));
+                    
+                    // Simpan sesi khusus siswa (karena siswa.html pakai localstorage 'userSiswa')
+                    if (!userData.role || userData.role === 'siswa') {
+                        localStorage.setItem('userSiswa', JSON.stringify(userData));
+                    }
+
+                    // TAMPILKAN PESAN SUKSES
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Login Berhasil',
+                        text: `Selamat Datang, ${userData.nama}`,
+                        timer: 1500,
+                        showConfirmButton: false,
+                        background: '#1e293b',
+                        color: '#fff'
+                    }).then(() => {
+                        // ARAHKAN KE HALAMAN YANG BENAR
+                        const role = userData.role ? userData.role.toLowerCase() : 'siswa';
+
+                        if (role === 'admin') {
+                            // Khusus admin, simpan token rahasia juga (sesuai admin.html lama)
+                            localStorage.setItem('admin_token', 'RAHASIA_NEGARA_SMAN1');
+                            window.location.href = 'admin.html';
+                        } 
+                        else if (role === 'guru') {
+                            window.location.href = 'guru.html';
+                        } 
+                        else {
+                            window.location.href = 'siswa.html';
+                        }
+                    });
+
                 } else {
-                    throw new Error("Password salah! Hubungi Admin jika lupa.");
+                    throw new Error("Password Salah!");
                 }
 
             } catch (error) {
@@ -157,29 +182,13 @@
                     icon: 'error', 
                     title: 'Gagal Masuk', 
                     text: error.message,
-                    confirmButtonColor: '#3b82f6'
+                    confirmButtonColor: '#3b82f6',
+                    background: '#1e293b',
+                    color: '#fff'
                 });
                 loader.style.display = 'none';
             }
         });
-
-        function simpanDanRedirect(data) {
-            // Simpan ke LocalStorage agar siswa.html bisa membacanya
-            localStorage.setItem('userSiswa', JSON.stringify(data));
-            
-            Swal.fire({
-                icon: 'success',
-                title: 'Berhasil Masuk!',
-                text: `Selamat Datang, ${data.nama}`,
-                timer: 1500,
-                showConfirmButton: false,
-                background: '#1e293b',
-                color: '#fff'
-            }).then(() => {
-                // ARAHKAN KE FILE WADAH BARU KITA
-                window.location.href = 'siswa.html'; 
-            });
-        }
     </script>
 </body>
 </html>
