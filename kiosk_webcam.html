@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Kiosk - SiGanteng</title>
+    <title>Smart Kiosk - SiGanteng (Hybrid)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -12,17 +12,29 @@
 
     <style>
         body { font-family: 'Outfit', sans-serif; background: #0f172a; color: white; overflow: hidden; }
+        
+        /* Frame Kamera */
         .scanner-frame {
             position: relative; width: 100%; max-width: 600px; aspect-ratio: 4/3;
             background: #000; border-radius: 20px; overflow: hidden;
             border: 4px solid #3b82f6; box-shadow: 0 0 30px rgba(59, 130, 246, 0.3);
         }
         #reader video { object-fit: cover; width: 100% !important; height: 100% !important; }
+        
+        /* Garis Scan Animasi */
         .scan-line {
             position: absolute; width: 100%; height: 4px; background: #10b981;
             top: 0; left: 0; box-shadow: 0 0 10px #10b981; animation: scan 2s infinite linear; z-index: 10;
         }
         @keyframes scan { 0% {top: 0;} 50% {top: 100%;} 100% {top: 0;} }
+
+        /* Indikator Input Barcode */
+        .keyboard-indicator {
+            position: absolute; bottom: 20px; right: 20px;
+            background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 8px;
+            font-size: 10px; color: #94a3b8; display: flex; align-items: center; gap: 5px;
+        }
+        .active-typing { color: #10b981; border: 1px solid #10b981; }
     </style>
 </head>
 <body class="h-screen flex flex-col items-center justify-center p-4">
@@ -35,6 +47,7 @@
     <div class="scanner-frame mb-6 relative">
         <div class="scan-line"></div>
         <div id="reader" class="w-full h-full bg-black"></div>
+        
         <div id="camLoading" class="absolute inset-0 flex items-center justify-center bg-black z-20">
             <div class="text-center">
                 <i data-lucide="camera" class="w-10 h-10 text-blue-500 animate-bounce mx-auto mb-2"></i>
@@ -43,14 +56,19 @@
         </div>
     </div>
 
-    <div id="statusBox" class="bg-slate-800 border border-slate-700 p-4 rounded-2xl w-full max-w-md text-center shadow-lg">
-        <p class="text-slate-400 text-sm animate-pulse">Menunggu Kamera...</p>
+    <div id="statusBox" class="bg-slate-800 border border-slate-700 p-4 rounded-2xl w-full max-w-md text-center shadow-lg relative">
+        <p class="text-slate-400 text-sm animate-pulse">Siap Scan QR (HP) atau Barcode (Kartu)...</p>
+    </div>
+
+    <div id="barcode-indicator" class="keyboard-indicator">
+        <i data-lucide="keyboard" class="w-4 h-4"></i> USB Scanner Ready
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getFirestore, collection, query, where, getDocs, doc, setDoc, arrayUnion, serverTimestamp, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+        // CONFIG FIREBASE (Sama seperti sebelumnya)
         const firebaseConfig = {
             apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo",
             authDomain: "siganteng-absensi.firebaseapp.com",
@@ -67,8 +85,53 @@
         let html5QrcodeScanner;
         let isProcessing = false;
 
-        // SETTING JAM PULANG OTOMATIS (Di atas jam 11 siang dianggap pulang)
+        // --- VAR UNTUK BARCODE FISIK ---
+        let barcodeBuffer = ""; // Penampung angka
+        let barcodeTimer;       // Timer reset
+
         const JAM_BATAS_PULANG = 11; 
+
+        // ----------------------------------------------------
+        // 1. LOGIKA SCANNER USB (BARCODE FISIK)
+        // ----------------------------------------------------
+        // Alat barcode itu kerjanya kayak Keyboard: ngetik cepat lalu Enter.
+        document.addEventListener('keydown', (e) => {
+            if (isProcessing) return; // Jangan terima input kalau lagi loading
+
+            // Deteksi tombol ENTER (Biasanya akhiran dari scanner)
+            if (e.key === 'Enter') {
+                if (barcodeBuffer.length > 3) { // Minimal 4 digit biar gak kepencet
+                    console.log("Barcode Terdeteksi:", barcodeBuffer);
+                    
+                    // Matikan kamera sebentar biar gak tabrakan
+                    try { html5QrcodeScanner.pause(); } catch(err) {}
+                    
+                    prosesAbsensi(barcodeBuffer, "Barcode Fisik");
+                }
+                barcodeBuffer = ""; // Reset buffer
+                return;
+            }
+
+            // Hanya terima angka/huruf (saring tombol Shift/Ctrl/dll)
+            if (e.key.length === 1) {
+                barcodeBuffer += e.key;
+
+                // Visual Feedback Kecil
+                document.getElementById('barcode-indicator').classList.add('active-typing');
+                
+                // Reset buffer kalau tidak ada ketikan selama 200ms (Scanner itu ngetiknya super cepat)
+                // Ini biar kalau ada orang iseng ngetik manual di keyboard gak dianggap scan
+                clearTimeout(barcodeTimer);
+                barcodeTimer = setTimeout(() => {
+                    barcodeBuffer = "";
+                    document.getElementById('barcode-indicator').classList.remove('active-typing');
+                }, 200); 
+            }
+        });
+
+        // ----------------------------------------------------
+        // 2. FUNGSI UMUM (SAMA DENGAN SEBELUMNYA)
+        // ----------------------------------------------------
 
         function bicara(teks) {
             if ('speechSynthesis' in window) {
@@ -83,12 +146,13 @@
             if (isProcessing) return; 
             isProcessing = true;
             html5QrcodeScanner.pause();
-            prosesAbsensi(decodedText);
+            prosesAbsensi(decodedText, "QR Kamera");
         }
 
-        async function prosesAbsensi(nisn) {
+        async function prosesAbsensi(nisn, metode) {
+            isProcessing = true; // Kunci biar gak double scan
             const statusBox = document.getElementById('statusBox');
-            statusBox.innerHTML = `<span class="text-blue-400 font-bold animate-pulse">Memproses Data: ${nisn}...</span>`;
+            statusBox.innerHTML = `<span class="text-blue-400 font-bold animate-pulse">Memproses (${metode}): ${nisn}...</span>`;
 
             try {
                 // 1. Cari User
@@ -99,49 +163,45 @@
                 let dataSiswa = null;
                 querySnapshot.forEach((doc) => { dataSiswa = doc.data(); });
 
-                // 2. Tentukan Status (Masuk / Pulang) Berdasarkan Jam
+                // 2. Tentukan Status
                 const now = new Date();
                 const jamSekarang = now.getHours();
                 const todayStr = now.toLocaleDateString('fr-CA'); 
                 const docID = `${todayStr}_${nisn}`;
                 const jamStr = now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
 
-                // Logic Pintar:
-                // Cek dulu, apakah siswa ini SUDAH absen masuk hari ini?
                 const docRef = doc(db, "absensi", docID);
                 const docSnap = await getDoc(docRef);
                 
-                let status = "Masuk (Barkode)"; // Default
+                let status = "Masuk"; 
                 let pesanSuara = `Selamat Datang, ${dataSiswa.nama}`;
 
                 if (docSnap.exists()) {
                     const dataAbsen = docSnap.data();
-                    // Kalau sudah ada data 'Masuk' DAN jam sekarang > 11 siang -> Anggap Pulang
                     if ((dataAbsen.status_terakhir.includes("Masuk") || dataAbsen.status_terakhir.includes("Hadir")) && jamSekarang >= JAM_BATAS_PULANG) {
-                        status = "Pulang (Baekode)";
+                        status = "Pulang";
                         pesanSuara = `Hati-hati di jalan, ${dataSiswa.nama}`;
                     } else if (dataAbsen.status_terakhir.includes("Pulang")) {
                         throw new Error("Anda Sudah Absen Pulang!");
                     } else if (jamSekarang < JAM_BATAS_PULANG) {
-                         // Kalau masih pagi tapi scan lagi -> Anggap Masuk (Mungkin scan ulang)
-                         status = "Masuk BARKODE";
-                         pesanSuara = `Selamat Datang Kembali, ${dataSiswa.nama}`;
+                        status = "Masuk";
+                        pesanSuara = `Selamat Datang Kembali, ${dataSiswa.nama}`;
                     }
                 } else {
-                    // Belum pernah absen hari ini
                     if (jamSekarang >= JAM_BATAS_PULANG) {
-                        // Telat banget atau lupa absen pagi? Kita anggap Masuk dulu atau tolak?
-                        // Di sini kita anggap Masuk Terlambat
-                        status = "Masuk (Kiosk)"; 
+                        status = "Masuk (Telat)"; 
                         pesanSuara = `Selamat Datang, ${dataSiswa.nama}`;
                     }
                 }
 
+                // Tambahkan label metode (misal: Masuk via Barcode)
+                const statusLengkap = `${status} (${metode === "Barcode Fisik" ? "Kartu" : "QR"})`;
+
                 // 3. Simpan ke Firebase
                 let updateData = {
                     nisn: nisn, nama: dataSiswa.nama, kelas: dataSiswa.kelas, tanggal: todayStr,
-                    status_terakhir: status,
-                    riwayat_kegiatan: arrayUnion(`${jamStr} - ${status}`)
+                    status_terakhir: statusLengkap,
+                    riwayat_kegiatan: arrayUnion(`${jamStr} - ${statusLengkap}`)
                 };
 
                 if(status.includes("Masuk")) {
@@ -159,12 +219,12 @@
                 statusBox.innerHTML = `<span class="text-green-400 font-bold">✅ ${status} Berhasil</span>`;
                 
                 Swal.fire({
-                    icon: 'success', title: status.includes("Masuk") ? 'Masuk Berhasil' : 'Pulang Berhasil',
+                    icon: 'success', title: status,
                     text: pesanSuara, timer: 2000, showConfirmButton: false, background: '#1e293b', color: '#fff'
                 }).then(() => resetScanner());
 
             } catch (error) {
-                bicara("Maaf, Gagal memproses");
+                bicara("Gagal, " + error.message);
                 statusBox.innerHTML = `<span class="text-red-400 font-bold">❌ ${error.message}</span>`;
                 Swal.fire({ icon: 'error', title: 'Gagal', text: error.message, timer: 2000, showConfirmButton: false, background: '#1e293b', color: '#fff' }).then(() => resetScanner());
             }
@@ -172,8 +232,9 @@
 
         function resetScanner() {
             isProcessing = false;
+            // Nyalakan lagi kamera kalau tadi dipause
             try { html5QrcodeScanner.resume(); } catch(e) {}
-            document.getElementById('statusBox').innerHTML = `<p class="text-slate-400 text-sm animate-pulse">Siap Scan Barcode...</p>`;
+            document.getElementById('statusBox').innerHTML = `<p class="text-slate-400 text-sm animate-pulse">Siap Scan Barcode / QR...</p>`;
         }
 
         window.addEventListener('load', function() {
@@ -181,7 +242,7 @@
             html5QrcodeScanner = new Html5Qrcode("reader");
             html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 }, onScanSuccess).then(() => {
                 document.getElementById('camLoading').style.display = 'none';
-                document.getElementById('statusBox').innerHTML = `<p class="text-green-400 font-bold text-sm">KAMERA AKTIF!</p>`;
+                document.getElementById('statusBox').innerHTML = `<p class="text-green-400 font-bold text-sm">SISTEM HYBRID AKTIF!</p>`;
             });
         });
     </script>
