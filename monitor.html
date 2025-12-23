@@ -198,8 +198,7 @@
     <div class="footer-marquee">
         <marquee scrollamount="8">📢 INFO: SISTEM MONITORING ABSENSI REALTIME (SI GANTENG) SEDANG BERJALAN 🚀 TINGKATKAN KEDISIPLINAN UNTUK MASA DEPAN YANG CERAH! 🔥</marquee>
     </div>
-
-    <script type="module">
+<script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getFirestore, collection, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
@@ -222,8 +221,9 @@
         const DEFAULT_IMG = "https://cdn-icons-png.flaticon.com/512/847/847969.png";
         const today = new Date().toLocaleDateString('fr-CA'); // OTOMATIS HARI INI
 
-        let allSiswa = [];      
+        let allSiswa = [];       
         let dataAbsenHariIni = []; 
+        let validStudentNISNs = new Set(); // Tambahan untuk validasi cepat
 
         // JAM DIGITAL
         setInterval(() => {
@@ -243,20 +243,30 @@
 
         function cleanID(id) { return String(id).trim().replace(/[^a-zA-Z0-9]/g, ''); }
 
-        // --- LOAD MASTER SISWA ---
+        // --- LOAD MASTER SISWA (DIPERBAIKI: FILTER HANYA SISWA) ---
         async function loadMasterSiswa() {
             try {
                 const q = query(collection(db, "users"));
                 const querySnapshot = await getDocs(q); 
                 const nisnSet = new Set();
                 allSiswa = [];
+                validStudentNISNs.clear();
 
                 querySnapshot.forEach(doc => {
                     const d = doc.data();
+                    
+                    // --- 🛡️ FILTER PENTING: CEK ROLE ---
+                    // Kalau role-nya BUKAN siswa (misal: guru, admin, karyawan), JANGAN DIMASUKKAN
+                    const role = d.role ? d.role.toLowerCase() : 'siswa'; // Default siswa jika kosong
+                    if(role !== 'siswa') return; 
+
                     if (d.username) {
                         const nisnClean = cleanID(d.username);
                         if(!nisnSet.has(nisnClean) && nisnClean.length > 0) {
                             nisnSet.add(nisnClean);
+                            // Simpan NISN Siswa ke Set Validasi
+                            validStudentNISNs.add(nisnClean);
+                            
                             allSiswa.push({ username: nisnClean, name: d.name || d.nama || "Siswa", kelas: d.kelas || "-" });
                         }
                     }
@@ -266,7 +276,7 @@
             } catch (error) { console.error(error); }
         }
 
-        // --- MONITORING ---
+        // --- MONITORING (DIPERBAIKI: CEK VALIDASI SISWA) ---
         function startMonitorAbsen() {
             const q = query(collection(db, "absensi"), where("tanggal", "==", today));
 
@@ -275,15 +285,23 @@
                 snapshot.forEach(doc => {
                     const d = doc.data();
                     const urlFoto = d.foto_masuk || d.foto || d.imageUrl || DEFAULT_IMG;
+                    
                     if(d.nisn) {
-                        tempAbsen.push({
-                            ...d,
-                            nisn_clean: cleanID(d.nisn),
-                            jam_display: formatJam(d),
-                            nama_display: d.nama || "Siswa",
-                            kelas_display: d.kelas || "-",
-                            foto_url: urlFoto
-                        });
+                        const nisnBersih = cleanID(d.nisn);
+                        
+                        // --- 🛡️ FILTER KE-2: CEK DATA MASUK ---
+                        // Cek apakah NISN yang absen ini ada di daftar Siswa?
+                        // Kalau Guru iseng absen, NISN-nya gak akan ketemu di sini, jadi gak akan tampil.
+                        if(validStudentNISNs.has(nisnBersih)) {
+                            tempAbsen.push({
+                                ...d,
+                                nisn_clean: nisnBersih,
+                                jam_display: formatJam(d),
+                                nama_display: d.nama || "Siswa",
+                                kelas_display: d.kelas || "-",
+                                foto_url: urlFoto
+                            });
+                        }
                     }
                 });
 
@@ -292,13 +310,11 @@
             });
         }
 
-        // --- FUNGSI UPDATE TAMPILAN (VERSI DESIMAL PRESISI) ---
+        // --- FUNGSI UPDATE TAMPILAN (SAMA SEPERTI SEBELUMNYA) ---
         function updateTampilanLayar() {
             const listHadir = dataAbsenHariIni.filter(d => d.status_terakhir !== 'Sakit' && d.status_terakhir !== 'Izin');
             const nisnHadir = dataAbsenHariIni.map(d => d.nisn_clean); 
             
-            // 1. STATISTIK DASAR
-            // Cek: Kalau data siswa belum load, anggap 1 biar gak error pembagian
             const totalPopulasi = allSiswa.length > 0 ? allSiswa.length : 0; 
             
             const countIzin = dataAbsenHariIni.filter(d => d.status_terakhir === 'Izin' || d.status_terakhir === 'Sakit').length;
@@ -306,52 +322,39 @@
             const totalMasuk = countHadir + countIzin;
             const listBelum = allSiswa.filter(s => !nisnHadir.includes(s.username));
 
-            // Update Angka
             document.getElementById('total-populasi').innerText = totalPopulasi;
             document.getElementById('total-hadir').innerText = countHadir;
             document.getElementById('total-izin').innerText = countIzin;
             document.getElementById('total-alpha').innerText = listBelum.length;
 
-            // 2. HITUNG PERSEN & UPDATE DONAT (LOGIKA BARU)
             let rawPercent = 0;
             let derajat = 0;
 
             if (totalPopulasi > 0) {
                 rawPercent = (totalMasuk / totalPopulasi) * 100;
-                
-                // PENGAMAN: Jika ada yang hadir (rawPercent > 0) tapi kecil banget,
-                // Paksa grafik gerak minimal 1% biar kelihatan di mata
                 if (totalMasuk > 0 && rawPercent < 1) {
-                    derajat = 3.6; // Setara 1% visual (biar kelihatan nongol dikit)
+                    derajat = 3.6; 
                 } else {
                     derajat = rawPercent * 3.6;
                 }
             }
-
             if (rawPercent > 100) rawPercent = 100;
 
-            // Tentukan Warna
-            let warnaDonat = '#ef4444'; // Merah
-            if(rawPercent > 40) warnaDonat = '#f59e0b'; // Kuning
-            if(rawPercent > 75) warnaDonat = '#10b981'; // Hijau
+            let warnaDonat = '#ef4444'; 
+            if(rawPercent > 40) warnaDonat = '#f59e0b'; 
+            if(rawPercent > 75) warnaDonat = '#10b981'; 
 
-            // Update Teks Persen (PAKAI 1 ANGKA BELAKANG KOMA)
-            // Contoh: 0.1% atau 12.5%
             const elText = document.getElementById('persen-text');
             if(elText) {
-                // toFixed(1) artinya ambil 1 desimal. 
-                // Jika 0, tetap tulis 0%. Jika 0.09, jadi 0.1%
                 elText.innerText = rawPercent.toFixed(1) + "%";
                 elText.style.color = warnaDonat;
             }
 
-            // Update Grafik Donat (Inject Style Langsung)
             const elChart = document.getElementById('chart-absen');
             if(elChart) {
                 elChart.style.background = `conic-gradient(${warnaDonat} ${derajat}deg, #334155 0deg)`;
             }
 
-            // 3. RENDER LIST LAINNYA
             listBelum.sort((a,b) => a.kelas.localeCompare(b.kelas));
             renderScrollList(listBelum, 'list-belum', 'belum');
             document.getElementById('badge-belum').innerText = listBelum.length;
@@ -367,6 +370,7 @@
             const listLive = [...listHadir].sort((a,b) => b.jam_display.localeCompare(a.jam_display));
             renderLiveFeed(listLive);
         }
+        
         // RENDER GASIK
         function renderGasik(data) {
             const el = document.getElementById('gasik-list');
@@ -398,7 +402,6 @@
             container.style.animation = `scrollUp ${durasi}s linear infinite`;
             
             data.forEach(d => {
-                // Template Beda antara Telat (Ada Foto Kecil) dan Belum (Teks Aja)
                 if(type === 'telat') {
                     container.insertAdjacentHTML('beforeend', `
                         <div class="telat-row">
