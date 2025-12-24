@@ -7,13 +7,13 @@
     
     <script>
         if (!localStorage.getItem('admin_token')) {
-            alert("Dilarang Masuk! Login dulu.");
+            alert("Sesi habis! Silakan login lagi.");
             window.location.href = 'index.html';
         }
     </script>
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -27,7 +27,14 @@
         .toggle-checkbox:checked { right: 0; border-color: #10b981; }
         .toggle-checkbox:checked + .toggle-label { background-color: #10b981; }
         
-        /* Modal Style */
+        /* Warna Tabel Rekap */
+        .bg-weekend { background-color: #334155; color: #475569; }
+        .bg-hadir { background-color: #065f46; color: #a7f3d0; font-weight: bold; }
+        .bg-sakit { background-color: #1e40af; color: #bfdbfe; font-weight: bold; }
+        .bg-izin { background-color: #854d0e; color: #fef08a; font-weight: bold; }
+        .bg-alpha { background-color: #7f1d1d; color: #fca5a5; font-weight: bold; }
+
+        /* Modal */
         .modal { opacity: 0; visibility: hidden; transition: all 0.3s ease-in-out; }
         .modal.active { opacity: 1; visibility: visible; }
         .modal-content { transform: scale(0.95); transition: all 0.3s ease-in-out; }
@@ -41,16 +48,16 @@
     <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col hidden md:flex">
         <div class="p-6">
             <h1 class="font-black text-2xl tracking-tighter text-blue-500">SiGanteng</h1>
-            <p class="text-xs text-slate-500 tracking-widest uppercase mt-1">Admin Panel v3.3 (Fix Role)</p>
+            <p class="text-xs text-slate-500 tracking-widest uppercase mt-1">Admin Panel v5.0 (Full)</p>
             <div id="badge-role" class="mt-2 inline-block px-2 py-1 rounded bg-slate-800 text-xs font-bold text-slate-300">...</div>
         </div>
 
         <nav class="flex-1 space-y-1 px-3 mt-4">
-            <button onclick="nav('dashboard')" id="nav-dashboard" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
+            <button onclick="nav('dashboard')" id="nav-dashboard" class="nav-item active w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
                 <i data-lucide="layout-dashboard" class="w-5 h-5"></i> Dashboard
             </button>
             <button onclick="nav('rekap')" id="nav-rekap" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
-                <i data-lucide="calendar-days" class="w-5 h-5"></i> Rekap Absen
+                <i data-lucide="calendar-days" class="w-5 h-5"></i> Rekap Absen (BK)
             </button>
             <button onclick="nav('mbg')" id="nav-mbg" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
                 <i data-lucide="utensils" class="w-5 h-5"></i> Laporan MBG
@@ -92,14 +99,14 @@
             <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
                 <div>
                     <h2 class="text-3xl font-bold text-white">Monitoring Harian</h2>
-                    <p class="text-slate-400 text-sm">Realtime Update: <span id="jam-real" class="font-mono text-blue-400">00:00:00</span></p>
+                    <p class="text-slate-400 text-sm">Realtime Update: <span id="jam-real" class="font-mono text-blue-400">...</span></p>
                 </div>
                 <div class="flex gap-2">
                     <button onclick="window.open('kiosk_webcam.html', '_blank')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 text-xs">
                         <i data-lucide="scan-barcode" class="w-4 h-4"></i> Buka Scanner
                     </button>
                     <button onclick="window.open('monitor.html', '_blank')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 text-xs">
-                        <i data-lucide="tv" class="w-4 h-4"></i> Buka Layar Resepsionis
+                        <i data-lucide="tv" class="w-4 h-4"></i> Layar TV
                     </button>
                 </div>
             </div>
@@ -135,17 +142,17 @@
 
         <div id="view-rekap" class="hidden space-y-6 fade-in h-full flex flex-col">
             <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                <h2 class="text-2xl font-bold text-white">Rekap Absensi</h2>
+                <h2 class="text-2xl font-bold text-white">Rekap Absensi (BK)</h2>
                 <div class="flex gap-2 bg-slate-900 p-2 rounded-xl border border-slate-800">
                     <select id="pilih-bulan" class="bg-slate-800 text-white text-xs rounded-lg px-3 py-2 outline-none border border-slate-700"></select>
                     <select id="pilih-tahun" class="bg-slate-800 text-white text-xs rounded-lg px-3 py-2 outline-none border border-slate-700"></select>
                     <select id="pilih-kelas" class="bg-slate-800 text-white text-xs rounded-lg px-3 py-2 outline-none border border-slate-700"><option value="">- Pilih Kelas -</option></select>
-                    <button onclick="loadRekap()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold">Tampilkan</button>
-                    <button onclick="downloadExcel('tabel-rekap')" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-bold"><i data-lucide="file-spreadsheet" class="w-4 h-4"></i></button>
+                    <button onclick="loadRekap()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-bold">Tampilkan</button>
+                    <button onclick="downloadExcel('tabel-rekap')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-bold" title="Download Excel"><i data-lucide="file-spreadsheet" class="w-4 h-4"></i></button>
                 </div>
             </div>
             <div class="flex-1 bg-slate-900 rounded-2xl border border-slate-800 overflow-auto relative">
-                <table id="tabel-rekap" class="w-full text-center text-xs border-collapse table-sticky">
+                <table id="tabel-rekap" class="w-full text-center text-[10px] border-collapse table-sticky whitespace-nowrap">
                     <thead class="text-slate-300 font-bold" id="thead-rekap"></thead>
                     <tbody id="tbody-rekap" class="text-slate-400 divide-y divide-slate-800"></tbody>
                 </table>
@@ -171,9 +178,35 @@
                     <div class="flex gap-2 mt-4"><div class="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded text-xs font-bold">Hadir: <span id="mbg-xii-hadir">0</span></div><div class="bg-red-500/20 text-red-400 px-3 py-1 rounded text-xs font-bold">Sisa: <span id="mbg-xii-sisa">0</span></div></div>
                 </div>
             </div>
-            <div id="container-tabel-mbg" class="hidden bg-white text-slate-900 rounded-2xl p-6 shadow-xl mt-6">
-                <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-lg" id="judul-tabel-mbg">Detail Logistik</h3><button onclick="downloadExcel('tabel-mbg-detail')" class="bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold">Download Cetak</button></div>
-                <table id="tabel-mbg-detail" class="w-full text-sm border border-slate-300"><thead class="bg-slate-100"><tr><th class="border p-2">Kelas</th><th class="border p-2">Total Siswa</th><th class="border p-2 bg-green-100 text-green-800">Jatah Makan</th><th class="border p-2 bg-red-100 text-red-800">Sisa</th></tr></thead><tbody id="tbody-mbg"></tbody></table>
+            
+            <div id="container-tabel-mbg" class="hidden bg-white text-slate-900 rounded-2xl p-6 shadow-xl mt-6 border border-slate-700">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-lg text-slate-800" id="judul-tabel-mbg">Detail Logistik</h3>
+                    <button onclick="downloadExcel('tabel-mbg-detail')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2">
+                        <i data-lucide="printer" class="w-4 h-4"></i> Download Cetak
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table id="tabel-mbg-detail" class="w-full text-sm border border-slate-300">
+                        <thead class="bg-slate-100">
+                            <tr>
+                                <th class="border p-3 text-left">Kelas</th>
+                                <th class="border p-3 text-center">Total Siswa</th>
+                                <th class="border p-3 bg-green-100 text-green-800 text-center">Jatah Makan (Hadir)</th>
+                                <th class="border p-3 bg-red-100 text-red-800 text-center">Sisa (Tidak Hadir)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-mbg" class="text-slate-700"></tbody>
+                        <tfoot class="bg-slate-50 font-bold">
+                            <tr>
+                                <td class="border p-3 text-right">TOTAL KESELURUHAN</td>
+                                <td class="border p-3 text-center" id="mbg-grand-total">0</td>
+                                <td class="border p-3 text-center bg-green-50 text-green-700" id="mbg-grand-hadir">0</td>
+                                <td class="border p-3 text-center bg-red-50 text-red-700" id="mbg-grand-sisa">0</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -183,17 +216,14 @@
                 <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800">
                     <h3 class="font-bold text-white mb-4">Tambah Tombol</h3>
                     <div class="space-y-4">
-                        <input type="text" id="menuJudul" class="w-full bg-slate-800 text-white p-3 rounded-lg border border-slate-700 outline-none" placeholder="Judul (Contoh: E-Library)">
-                        <input type="text" id="menuIcon" class="w-full bg-slate-800 text-white p-3 rounded-lg border border-slate-700 outline-none" placeholder="Ikon (Emoji: 📚)">
-                        <input type="text" id="menuLink" class="w-full bg-slate-800 text-white p-3 rounded-lg border border-slate-700 outline-none" placeholder="Link (https://...)">
-                        <div class="flex items-center gap-2">
-                            <input type="checkbox" id="menuWarna" class="w-4 h-4"> <label class="text-sm text-slate-300">Highlight</label>
-                        </div>
+                        <input type="text" id="menuJudul" class="w-full bg-slate-800 text-white p-3 rounded-lg border border-slate-700" placeholder="Judul">
+                        <input type="text" id="menuIcon" class="w-full bg-slate-800 text-white p-3 rounded-lg border border-slate-700" placeholder="Ikon (Emoji)">
+                        <input type="text" id="menuLink" class="w-full bg-slate-800 text-white p-3 rounded-lg border border-slate-700" placeholder="Link">
+                        <div class="flex items-center gap-2"><input type="checkbox" id="menuWarna" class="w-4 h-4"> <label class="text-sm text-slate-300">Highlight</label></div>
                         <button onclick="simpanMenuBaru()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg">Terbitkan</button>
                     </div>
                 </div>
                 <div class="md:col-span-2 bg-slate-900 p-6 rounded-2xl border border-slate-800">
-                    <h3 class="font-bold text-white mb-4">Daftar Tombol Aktif</h3>
                     <table class="w-full text-left text-sm text-slate-400">
                         <thead class="bg-slate-950 text-xs uppercase font-bold text-slate-500"><tr><th class="p-3">Ikon</th><th class="p-3">Judul</th><th class="p-3">Link</th><th class="p-3 text-right">Aksi</th></tr></thead>
                         <tbody id="tbody-menu-list" class="divide-y divide-slate-800"></tbody>
@@ -206,19 +236,17 @@
             <h2 class="text-3xl font-bold text-white">Import Database</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800">
-                    <h3 class="font-bold text-white text-lg mb-2"><i data-lucide="users" class="inline w-6 h-6 mr-2 text-blue-500"></i> Data Siswa</h3>
-                    <p class="text-xs text-slate-400 mb-4">Format: Nama | NISN | Kelas | Password</p>
+                    <h3 class="font-bold text-white text-lg mb-2">Data Siswa</h3>
                     <input type="file" id="fileSiswa" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 mb-4"/>
                     <button onclick="prosesImport('siswa')" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-lg">Upload Siswa</button>
                 </div>
                 <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800">
-                    <h3 class="font-bold text-white text-lg mb-2"><i data-lucide="briefcase" class="inline w-6 h-6 mr-2 text-orange-500"></i> Guru & Tendik</h3>
-                    <p class="text-xs text-slate-400 mb-4">Format: Nama | NIP | Password | Role | Wali Kelas</p>
+                    <h3 class="font-bold text-white text-lg mb-2">Guru & Tendik</h3>
                     <input type="file" id="fileGuru" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 mb-4"/>
                     <button onclick="prosesImport('guru')" class="w-full bg-orange-600 hover:bg-orange-500 text-white font-bold py-2 rounded-lg">Upload Guru</button>
                 </div>
             </div>
-            <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 text-xs text-slate-400 font-mono"><p><strong>LOG IMPORT:</strong></p><div id="log-import" class="h-40 overflow-y-auto mt-2 space-y-1">Belum ada aktivitas.</div></div>
+            <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 text-xs text-slate-400 font-mono"><div id="log-import" class="h-40 overflow-y-auto"></div></div>
         </div>
 
         <div id="view-settings" class="hidden space-y-6 fade-in">
@@ -226,7 +254,7 @@
             <div class="bg-slate-900 rounded-2xl border border-slate-800 p-6">
                 <div class="flex items-center justify-between mb-4"><div><h3 class="font-bold text-white">Mode Disiplin</h3><p class="text-xs text-slate-400">Wajibkan lokasi di sekolah?</p></div><div class="relative inline-block w-12 align-middle select-none"><input type="checkbox" id="toggleGPS" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer border-slate-600 transition-all duration-300"/><label for="toggleGPS" class="toggle-label block overflow-hidden h-6 rounded-full bg-slate-700 cursor-pointer"></label></div></div>
                 <div class="grid grid-cols-3 gap-4 mt-4"><input type="text" id="inputLat" placeholder="Lat" class="bg-slate-800 text-white p-2 rounded border border-slate-700"><input type="text" id="inputLng" placeholder="Lng" class="bg-slate-800 text-white p-2 rounded border border-slate-700"><input type="number" id="inputRadius" placeholder="Rad" class="bg-slate-800 text-white p-2 rounded border border-slate-700"></div>
-                <button onclick="simpanConfig()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded font-bold w-full">Simpan Konfigurasi</button>
+                <button onclick="simpanConfig()" id="btnSaveConfig" class="mt-4 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded font-bold w-full">Simpan Konfigurasi</button>
             </div>
         </div>
 
@@ -249,7 +277,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getFirestore, collection, query, where, getDocs, onSnapshot, doc, setDoc, addDoc, deleteDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getFirestore, collection, query, where, getDocs, getDoc, onSnapshot, doc, setDoc, addDoc, deleteDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo",
@@ -274,7 +302,7 @@
             setupDropdown();
             await tarikDataSiswa();
             pantauRealtime();
-            loadMenuManager(); // Load tombol
+            loadMenuManager(); 
             if(role === 'SUPER') loadSettings();
             document.getElementById('loading').style.display = 'none';
         });
@@ -302,7 +330,7 @@
             } catch (e) { console.log(e); }
         }
 
-        // 2. PANTAU REALTIME
+        // 2. PANTAU REALTIME (SYNC MBG)
         function pantauRealtime() {
             const todayStr = new Date().toLocaleDateString('fr-CA');
             const q = query(collection(db, "absensi"), where("tanggal", "==", todayStr));
@@ -321,12 +349,20 @@
                 document.getElementById('stat-hadir').innerText = hadir;
                 document.getElementById('stat-izin').innerText = izin;
                 document.getElementById('stat-alpha').innerText = listSiswa.length - (hadir + izin);
+                
                 renderGridKelas();
                 ['X', 'XI', 'XII'].forEach(t => hitungMBG(t));
+                
+                // Refresh Tabel MBG jika sedang dibuka
+                if(!document.getElementById('container-tabel-mbg').classList.contains('hidden')) {
+                    const text = document.getElementById('judul-tabel-mbg').innerText;
+                    if(text.includes("X")) previewMBG('X');
+                    if(text.includes("XI")) previewMBG('XI');
+                    if(text.includes("XII")) previewMBG('XII');
+                }
             });
         }
 
-        // 3. GRID & MBG
         function renderGridKelas() {
             const container = document.getElementById('grid-kelas-container'); container.innerHTML = '';
             Object.keys(mapKelas).sort().forEach(kls => {
@@ -351,11 +387,142 @@
                     mapKelas[kls].forEach(s => { tot++; if(cacheAbsenHariIni[s.nisn]) { const st = cacheAbsenHariIni[s.nisn].status_terakhir; if(st.includes("Masuk") || st.includes("Hadir") || st.includes("Pulang")) had++; } });
                 }
             }
-            document.getElementById(`mbg-${tingkat.toLowerCase()}-hadir`).innerText = had;
-            document.getElementById(`mbg-${tingkat.toLowerCase()}-sisa`).innerText = tot - had;
+            const elHadir = document.getElementById(`mbg-${tingkat.toLowerCase()}-hadir`);
+            const elSisa = document.getElementById(`mbg-${tingkat.toLowerCase()}-sisa`);
+            if(elHadir) elHadir.innerText = had;
+            if(elSisa) elSisa.innerText = tot - had;
         }
 
-        // 4. MENU MANAGER & IMPORT (YANG DIPERBAIKI)
+        window.previewMBG = (tingkat) => {
+            if(Object.keys(mapKelas).length === 0) { Swal.fire('Data Belum Siap', 'Tunggu sebentar...', 'info'); return; }
+            document.getElementById('container-tabel-mbg').classList.remove('hidden');
+            document.getElementById('judul-tabel-mbg').innerText = `Laporan Logistik Kelas ${tingkat}`;
+            const tbody = document.getElementById('tbody-mbg'); tbody.innerHTML = '';
+            let grandTotal = 0; let grandHadir = 0; let grandSisa = 0;
+            Object.keys(mapKelas).sort().forEach(kls => {
+                if (cekTingkat(kls, tingkat)) {
+                    let totalSiswa = mapKelas[kls].length;
+                    let hadirCount = 0;
+                    mapKelas[kls].forEach(s => {
+                        if (cacheAbsenHariIni[s.nisn]) {
+                            const st = cacheAbsenHariIni[s.nisn].status_terakhir;
+                            if(st.includes("Masuk") || st.includes("Hadir") || st.includes("Pulang")) hadirCount++;
+                        }
+                    });
+                    let sisaCount = totalSiswa - hadirCount;
+                    grandTotal += totalSiswa; grandHadir += hadirCount; grandSisa += sisaCount;
+                    tbody.innerHTML += `<tr class="border-b hover:bg-slate-50"><td class="border p-2 font-bold">${kls}</td><td class="border p-2 text-center">${totalSiswa}</td><td class="border p-2 text-center font-bold text-green-600 bg-green-50">${hadirCount}</td><td class="border p-2 text-center font-bold text-red-600 bg-red-50">${sisaCount}</td></tr>`;
+                }
+            });
+            document.getElementById('mbg-grand-total').innerText = grandTotal;
+            document.getElementById('mbg-grand-hadir').innerText = grandHadir;
+            document.getElementById('mbg-grand-sisa').innerText = grandSisa;
+        }
+
+        // --- 4. REKAP BULANAN (MODEL TANGGAL 1-31) ---
+        window.loadRekap = async () => {
+            const bln = parseInt(document.getElementById('pilih-bulan').value) + 1; 
+            const thn = document.getElementById('pilih-tahun').value;
+            const kls = document.getElementById('pilih-kelas').value;
+            if(!kls) return Swal.fire('Pilih Kelas', 'Silakan pilih kelas dulu.', 'warning');
+
+            const blnStr = bln < 10 ? '0' + bln : bln;
+            const daysInMonth = new Date(thn, bln, 0).getDate();
+            
+            // Header Tanggal
+            let headerHTML = '<tr><th class="p-2 border border-slate-700 w-10">No</th><th class="p-2 border border-slate-700 min-w-[200px] text-left">Nama Siswa</th><th class="p-2 border border-slate-700">NISN</th>';
+            for(let d=1; d<=daysInMonth; d++) {
+                const dayOfWeek = new Date(thn, bln-1, d).getDay();
+                let bgHead = (dayOfWeek === 0 || dayOfWeek === 6) ? 'bg-slate-800 text-slate-500' : 'bg-slate-900';
+                headerHTML += `<th class="p-2 border border-slate-700 ${bgHead} w-8 text-center">${d}</th>`;
+            }
+            headerHTML += '<th class="p-2 border border-slate-700 bg-emerald-900">H</th><th class="p-2 border border-slate-700 bg-blue-900">S</th><th class="p-2 border border-slate-700 bg-yellow-900">I</th><th class="p-2 border border-slate-700 bg-red-900">A</th></tr>';
+            document.getElementById('thead-rekap').innerHTML = headerHTML;
+
+            const tbody = document.getElementById('tbody-rekap'); 
+            tbody.innerHTML = '<tr><td colspan="40" class="p-4 text-center">Mengambil data absensi...</td></tr>';
+
+            const start = `${thn}-${blnStr}-01`;
+            const end = `${thn}-${blnStr}-${daysInMonth}`;
+            
+            const q = query(collection(db, "absensi"), where("tanggal", ">=", start), where("tanggal", "<=", end));
+            const snap = await getDocs(q);
+            
+            let dataMap = {}; 
+            if(mapKelas[kls]) {
+                mapKelas[kls].forEach(s => {
+                    dataMap[s.nisn] = { nama: s.nama, att: {}, counts: {h:0, s:0, i:0, a:0} };
+                });
+            }
+
+            snap.forEach(doc => {
+                const d = doc.data();
+                const nisn = String(d.nisn).replace(/[^a-zA-Z0-9]/g, '');
+                if(dataMap[nisn]) {
+                    const tgl = parseInt(d.tanggal.split('-')[2]); 
+                    const st = d.status_terakhir;
+                    let code = 'A';
+                    if(st.includes("Masuk") || st.includes("Hadir") || st.includes("Pulang") || st.includes("Kembali")) { code = 'H'; dataMap[nisn].counts.h++; }
+                    else if(st.includes("Sakit")) { code = 'S'; dataMap[nisn].counts.s++; }
+                    else if(st.includes("Izin")) { code = 'I'; dataMap[nisn].counts.i++; }
+                    dataMap[nisn].att[tgl] = code;
+                }
+            });
+
+            tbody.innerHTML = '';
+            if(Object.keys(dataMap).length === 0) { tbody.innerHTML = '<tr><td colspan="40" class="p-4 text-center">Tidak ada siswa.</td></tr>'; return; }
+
+            Object.keys(dataMap).sort((a,b) => dataMap[a].nama.localeCompare(dataMap[b].nama)).forEach((nisn, idx) => {
+                const r = dataMap[nisn];
+                let rowHTML = `<tr class="hover:bg-slate-800 border-b border-slate-800"><td class="p-2 border border-slate-700 text-center">${idx+1}</td><td class="p-2 border border-slate-700 text-left font-bold text-slate-300">${r.nama}</td><td class="p-2 border border-slate-700 text-center font-mono text-xs">${nisn}</td>`;
+                let totalAlpha = 0;
+                for(let d=1; d<=daysInMonth; d++) {
+                    const dayOfWeek = new Date(thn, bln-1, d).getDay();
+                    const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+                    const status = r.att[d];
+                    let cellClass = ""; let cellText = "";
+                    if (isWeekend) { cellClass = "bg-weekend"; } 
+                    else {
+                        if (status === 'H') { cellClass = "bg-hadir"; cellText = "•"; }
+                        else if (status === 'S') { cellClass = "bg-sakit"; cellText = "S"; }
+                        else if (status === 'I') { cellClass = "bg-izin"; cellText = "I"; }
+                        else { 
+                            const cellDate = new Date(thn, bln-1, d);
+                            if(cellDate < new Date()) { totalAlpha++; cellClass = "bg-alpha"; cellText = "A"; }
+                            else cellText = "-";
+                        }
+                    }
+                    rowHTML += `<td class="p-2 border border-slate-700 text-center ${cellClass}">${cellText}</td>`;
+                }
+                rowHTML += `<td class="p-2 border border-slate-700 font-bold text-emerald-400">${r.counts.h}</td><td class="p-2 border border-slate-700 font-bold text-blue-400">${r.counts.s}</td><td class="p-2 border border-slate-700 font-bold text-yellow-400">${r.counts.i}</td><td class="p-2 border border-slate-700 font-bold text-red-400">${totalAlpha}</td></tr>`;
+                tbody.innerHTML += rowHTML;
+            });
+        }
+
+        // --- 5. PENGATURAN GPS (WAJIB ADA ISINYA) ---
+        async function loadSettings() {
+            const docSnap = await getDoc(doc(db, "pengaturan", "sekolah"));
+            if (docSnap.exists()) {
+                const d = docSnap.data();
+                document.getElementById('toggleGPS').checked = d.validasi_gps_aktif;
+                document.getElementById('inputLat').value = d.lokasi_lat;
+                document.getElementById('inputLng').value = d.lokasi_lng;
+                document.getElementById('inputRadius').value = d.radius_meter;
+            }
+        }
+        window.simpanConfig = async () => {
+            const btn = document.getElementById('btnSaveConfig');
+            btn.innerText = "Menyimpan...";
+            const lat = parseFloat(document.getElementById('inputLat').value);
+            const lng = parseFloat(document.getElementById('inputLng').value);
+            const rad = parseInt(document.getElementById('inputRadius').value);
+            const gps = document.getElementById('toggleGPS').checked;
+            await setDoc(doc(db, "pengaturan", "sekolah"), { lokasi_lat: lat, lokasi_lng: lng, radius_meter: rad, validasi_gps_aktif: gps }, { merge: true });
+            btn.innerText = "Simpan Konfigurasi";
+            Swal.fire('Tersimpan', 'Pengaturan GPS berhasil diperbarui.', 'success');
+        }
+
+        // --- 6. MENU MANAGER & IMPORT ---
         window.simpanMenuBaru = async () => {
             const judul = document.getElementById('menuJudul').value;
             const icon = document.getElementById('menuIcon').value || "🔗";
@@ -383,8 +550,6 @@
         window.hapusMenu = async (id) => {
             Swal.fire({ title: 'Hapus?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'Ya' }).then(async (r) => { if (r.isConfirmed) await deleteDoc(doc(db, "menu_siswa", id)); });
         }
-        
-        // --- INI DIA PERBAIKAN IMPORTNYA ---
         window.prosesImport = async (tipe) => {
             const fileInput = document.getElementById(tipe === 'siswa' ? 'fileSiswa' : 'fileGuru');
             const file = fileInput.files[0]; const logBox = document.getElementById('log-import');
@@ -400,20 +565,14 @@
                     const row = jsonData[i]; if(!row[0]) continue;
                     try {
                         let username = String(row[1]).trim().replace(/[^a-zA-Z0-9]/g, '');
-                        
-                        // LOGIKANYA DIPERBAIKI DISINI:
-                        // Jika Tipe Guru, BACA kolom ke-3 (ROLE) dari Excel. Jangan dipaksa 'guru'.
                         let userData = {};
                         if(tipe === 'siswa') {
                             userData = { nama: row[0], username, password: String(row[2] || "123456"), kelas: String(row[3] || "-").toUpperCase(), role: 'siswa' };
                         } else {
-                            // Cek kolom role di Excel (row[3]), kalau kosong baru default 'guru'
                             let roleExcel = String(row[3] || 'guru').toLowerCase().trim();
                             userData = { nama: row[0], username, password: String(row[2] || "123456"), role: roleExcel, wali_kelas: String(row[4] || "-").toUpperCase() };
-                            // Kalau role-nya admin, jangan simpan 'wali_kelas' (biar bersih)
                             if(roleExcel === 'admin') delete userData.wali_kelas;
                         }
-
                         await setDoc(doc(db, "users", username), userData, {merge: true});
                         sukses++; logBox.innerHTML += `<span class="text-green-500">✔ ${row[0]} ok (${userData.role}).</span><br>`;
                     } catch(err) { logBox.innerHTML += `<span class="text-red-500">❌ Gagal: ${err.message}</span><br>`; }
@@ -435,16 +594,10 @@
             document.getElementById('modal-kelas').classList.add('active');
         }
         window.tutupModalKelas = () => document.getElementById('modal-kelas').classList.remove('active');
-        window.previewMBG = (tingkat) => {
-            // Logika preview MBG (bisa ditambah tampilkan tabel detail jika perlu)
-            nav('mbg'); 
-        }
+        
         function setupDropdown() { const today = new Date(); const blnNames = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agt","Sep","Okt","Nov","Des"]; const selBulan = document.getElementById('pilih-bulan'); blnNames.forEach((b, i) => { let opt = new Option(b, i); if(i===today.getMonth()) opt.selected=true; selBulan.add(opt); }); const selTahun = document.getElementById('pilih-tahun'); for(let y=today.getFullYear()-1; y<=today.getFullYear()+1; y++) selTahun.add(new Option(y, y)); }
-        window.loadRekap = async () => { /* Logika rekap sama seperti sebelumnya */ }
         window.downloadExcel = (id) => { const table = document.getElementById(id); let html = table.outerHTML.replace(/<table/g, '<table border="1"'); const link = document.createElement("a"); link.href = 'data:application/vnd.ms-excel;charset=utf-8,' + encodeURIComponent(html); link.download = `REKAP_${new Date().getTime()}.xls`; link.click(); }
         window.logout = () => { localStorage.clear(); window.location.href='login_admin.html'; }
-        async function loadSettings() { onSnapshot(doc(db, "pengaturan", "sekolah"), (doc) => { if(doc.exists()) { const d = doc.data(); document.getElementById('toggleGPS').checked = d.validasi_gps_aktif; document.getElementById('inputLat').value = d.lokasi_lat; document.getElementById('inputLng').value = d.lokasi_lng; document.getElementById('inputRadius').value = d.radius_meter; } }); }
-        window.simpanConfig = async () => { const lat = parseFloat(document.getElementById('inputLat').value); const lng = parseFloat(document.getElementById('inputLng').value); const rad = parseInt(document.getElementById('inputRadius').value); const gps = document.getElementById('toggleGPS').checked; await setDoc(doc(db, "pengaturan", "sekolah"), { lokasi_lat: lat, lokasi_lng: lng, radius_meter: rad, validasi_gps_aktif: gps }, { merge: true }); Swal.fire('Tersimpan', 'Config Updated', 'success'); }
         setInterval(() => { document.getElementById('jam-real').innerText = new Date().toLocaleTimeString('id-ID'); }, 1000);
     </script>
 </body>
