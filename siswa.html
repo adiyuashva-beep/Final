@@ -15,194 +15,247 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
-        body { font-family: 'Outfit', sans-serif; background-color: #f8fafc; }
+        body { font-family: 'Outfit', sans-serif; background-color: #f1f5f9; }
         .hidden-page { display: none !important; }
         .fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
-        #mapMini { z-index: 0; }
     </style>
 </head>
-<body class="text-slate-800 h-screen flex flex-col overflow-hidden bg-slate-50">
+<body class="text-slate-800 h-screen flex flex-col overflow-hidden bg-slate-100">
 
     <main id="main-container" class="flex-1 overflow-y-auto hide-scroll relative">
         
-        <div id="page-dashboard" class="p-6 fade-in min-h-screen pb-24">
-            <div class="flex items-center justify-between mb-8">
+        <div id="page-dashboard" class="p-6 fade-in min-h-screen pb-32">
+            
+            <div class="flex items-center gap-4 mb-6">
+                <div class="relative group cursor-pointer" onclick="bukaCam('UpdateProfil')">
+                    <div class="w-16 h-16 rounded-full p-1 bg-gradient-to-tr from-blue-500 to-indigo-500 shadow-lg">
+                        <img id="dash-foto" src="" class="w-full h-full rounded-full object-cover border-2 border-white bg-white">
+                    </div>
+                    <div class="absolute bottom-0 right-0 bg-slate-900 text-white p-1.5 rounded-full border-2 border-white shadow-md">
+                        <i data-lucide="camera" class="w-3 h-3"></i>
+                    </div>
+                </div>
                 <div>
-                    <p class="text-slate-400 text-sm font-medium">Sugeng Enjang,</p>
-                    <h2 class="text-2xl font-bold text-slate-800 tracking-tight" id="dash-nama">Memuat...</h2>
-                    <span id="dash-kelas" class="text-[10px] font-extrabold bg-blue-100 text-blue-600 px-2 py-1 rounded mt-1 inline-block uppercase tracking-wider">...</span>
-                </div>
-                <div onclick="bukaHalaman('page-profil')" class="relative cursor-pointer transition transform active:scale-90">
-                    <img id="dash-foto" src="" class="w-12 h-12 rounded-full border-2 border-white shadow-lg bg-white">
+                    <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-0.5">Sugeng Enjang,</p>
+                    <h2 class="text-xl font-black text-slate-800 leading-tight" id="dash-nama">...</h2>
+                    <div class="flex items-center gap-2 mt-1">
+                        <span id="dash-kelas" class="text-[9px] font-black bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-md uppercase tracking-wider">...</span>
+                        <span class="text-[9px] font-black bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-md uppercase tracking-wider">ONLINE</span>
+                    </div>
                 </div>
             </div>
 
-            <div class="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-6 text-white shadow-xl shadow-blue-500/20 mb-8 relative overflow-hidden group">
-                <div class="relative z-10">
-                    <p class="text-blue-200 text-xs font-semibold uppercase tracking-widest mb-1">Status Hari Ini</p>
-                    <h1 class="text-3xl font-extrabold tracking-tight mt-1" id="hero-status">Belum Absen</h1>
+            <div class="bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl shadow-slate-400/50 mb-8 relative overflow-hidden">
+                <div class="relative z-10 flex justify-between items-end">
+                    <div>
+                        <p class="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] mb-2">Status Kehadiran</p>
+                        <h1 class="text-3xl font-black tracking-tighter" id="hero-status">...</h1>
+                        <p class="text-xs text-slate-400 mt-1 font-medium" id="sub-status">Sinkronisasi data...</p>
+                    </div>
+                    <div class="bg-white/10 p-3 rounded-2xl backdrop-blur-sm">
+                        <i data-lucide="activity" class="w-6 h-6 text-emerald-400"></i>
+                    </div>
                 </div>
-                <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full blur-2xl group-hover:scale-110 transition duration-700"></div>
+                <div class="absolute -top-10 -right-10 w-40 h-40 bg-blue-600 rounded-full blur-[60px] opacity-50"></div>
             </div>
 
-            <h3 class="font-bold text-slate-700 text-lg mb-4">Menu Utama</h3>
-            <div id="wadah-menu" class="grid grid-cols-2 gap-4 mb-8">
-                </div>
+            <h3 class="font-bold text-slate-700 text-sm mb-4 flex items-center gap-2">
+                <span class="w-1 h-4 bg-blue-600 rounded-full"></span> Menu Utama
+            </h3>
+            <div id="wadah-menu" class="grid grid-cols-3 gap-3 mb-8"></div>
 
             <div class="mt-4">
-                <h3 class="text-slate-400 text-xs font-bold uppercase mb-3 tracking-wider">Layanan Sekolah</h3>
-                <div id="grid-menu-dinamis" class="grid grid-cols-2 gap-4">
-                    <div class="bg-slate-200 h-20 rounded-2xl animate-pulse"></div>
-                    <div class="bg-slate-200 h-20 rounded-2xl animate-pulse"></div>
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-slate-700 text-sm flex items-center gap-2">
+                        <span class="w-1 h-4 bg-orange-500 rounded-full"></span> Pintasan
+                    </h3>
+                </div>
+                <div id="grid-menu-dinamis" class="grid grid-cols-2 gap-3">
+                    <div class="bg-white h-24 rounded-2xl animate-pulse"></div>
+                    <div class="bg-white h-24 rounded-2xl animate-pulse"></div>
                 </div>
             </div>
         </div>
 
 
-        <div id="page-absen" class="hidden-page p-6 fade-in h-full bg-slate-50">
-            <button onclick="kembali()" class="mb-6 flex items-center text-slate-500 hover:text-blue-600 gap-2 font-medium">
-                <div class="bg-white p-2 rounded-full shadow-sm"><i data-lucide="arrow-left" class="w-5 h-5"></i></div>
-                <span class="font-bold">Kembali ke Dashboard</span>
-            </button>
+        <div id="page-absen" class="hidden-page p-6 fade-in h-full bg-white flex flex-col">
+            <div class="flex items-center justify-between mb-4">
+                <button onclick="kembali()" class="bg-slate-50 p-3 rounded-full border border-slate-100 active:scale-90 transition">
+                    <i data-lucide="chevron-left" class="w-6 h-6 text-slate-700"></i>
+                </button>
+                <span class="font-bold text-sm text-slate-500 uppercase tracking-widest">Absensi</span>
+                <div class="w-10"></div>
+            </div>
 
-            <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 text-center mb-6 relative overflow-hidden">
+            <div class="text-center mb-4">
                 <h1 class="font-black text-5xl text-slate-800 tracking-tighter" id="jamDigital">00:00</h1>
-                <p class="text-slate-400 text-sm font-medium uppercase tracking-widest mb-4" id="tanggalDigital">...</p>
-                
-                <div class="h-40 w-full bg-slate-100 rounded-2xl overflow-hidden border-2 border-slate-200 relative z-0" id="mapContainer">
-                    <div id="mapMini" class="h-full w-full"></div>
-                </div>
-                <div id="jarakBox" class="inline-block -mt-4 relative z-10 bg-slate-800 text-green-400 px-4 py-1 rounded-full text-xs font-bold shadow-lg border border-slate-700">
-                    Menghitung Jarak...
+                <p class="text-slate-400 text-xs font-bold uppercase tracking-[0.2em]" id="tanggalDigital">...</p>
+            </div>
+
+            <div class="relative w-full h-56 rounded-[2rem] overflow-hidden border-4 border-slate-100 shadow-inner mb-6 shrink-0">
+                <div id="mapMini" class="h-full w-full z-0"></div>
+                <div class="absolute bottom-3 left-3 right-3 z-10">
+                    <div id="jarakBox" class="bg-slate-900/80 backdrop-blur text-white text-[10px] font-bold py-2 px-4 rounded-xl text-center shadow-lg transition-all">
+                        GPS Loading...
+                    </div>
                 </div>
             </div>
 
-            <div class="space-y-3 mb-8" id="containerTombol">
-                <button id="btnMasuk" onclick="klikMasuk()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-5 rounded-2xl shadow-lg shadow-blue-500/30 flex items-center justify-between active:scale-95 transition">
-                    <div class="text-left">
-                        <span class="text-blue-100 text-xs block mb-1">Sudah sampai sekolah?</span>
-                        <span class="font-bold text-xl">ABSEN MASUK</span>
+            <div class="space-y-3 mb-8 flex-1 overflow-y-auto" id="containerTombol">
+                <button id="btnMasuk" onclick="klikMasuk()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 rounded-[1.5rem] shadow-xl shadow-blue-500/30 flex items-center gap-4 active:scale-95 transition group">
+                    <div class="bg-white/20 p-3 rounded-2xl group-hover:rotate-12 transition"><i data-lucide="scan-face" class="w-8 h-8"></i></div>
+                    <div class="text-left flex-1">
+                        <span class="text-blue-100 text-[10px] font-bold uppercase tracking-wider block">Sudah di sekolah?</span>
+                        <span class="font-black text-xl">ABSEN MASUK</span>
                     </div>
-                    <div class="bg-white/20 p-3 rounded-full"><i data-lucide="camera" class="w-8 h-8"></i></div>
                 </button>
 
                 <div id="groupDiSekolah" class="hidden space-y-3">
-                    <button onclick="klikPulang()" class="w-full bg-gradient-to-r from-red-500 to-pink-600 text-white p-5 rounded-2xl shadow-lg shadow-red-500/30 flex items-center justify-between active:scale-95 transition">
-                        <div class="text-left">
-                            <span class="text-red-100 text-xs block mb-1">Waktunya pulang?</span>
-                            <span class="font-bold text-xl">ABSEN PULANG</span>
+                    <button onclick="klikPulang()" class="w-full bg-slate-800 text-white p-4 rounded-[1.5rem] shadow-xl flex items-center gap-4 active:scale-95 transition">
+                        <div class="bg-white/10 p-3 rounded-2xl"><i data-lucide="log-out" class="w-8 h-8"></i></div>
+                        <div class="text-left flex-1">
+                            <span class="text-slate-400 text-[10px] font-bold uppercase tracking-wider block">Selesai KBM?</span>
+                            <span class="font-black text-xl">ABSEN PULANG</span>
                         </div>
-                        <div class="bg-white/20 p-3 rounded-full"><i data-lucide="home" class="w-8 h-8"></i></div>
                     </button>
+                    
                     <div class="grid grid-cols-2 gap-3">
-                        <button onclick="klikIzinKeluar()" class="bg-orange-100 text-orange-700 p-4 rounded-2xl font-bold flex flex-col items-center justify-center gap-2 border border-orange-200 active:scale-95 transition">
-                            <i data-lucide="bike" class="w-6 h-6"></i> Izin Keluar
+                        <button onclick="klikIzinKeluar()" class="bg-orange-50 text-orange-600 border border-orange-100 p-3 rounded-2xl font-bold text-xs flex flex-col items-center gap-2 active:scale-95 transition">
+                            <i data-lucide="door-open" class="w-6 h-6"></i> Izin Keluar
                         </button>
-                        <button onclick="klikKembali()" id="btnKembali" class="hidden bg-emerald-100 text-emerald-700 p-4 rounded-2xl font-bold flex flex-col items-center justify-center gap-2 border border-emerald-200 active:scale-95 transition">
-                            <i data-lucide="check-circle" class="w-6 h-6"></i> Saya Kembali
+                        <button onclick="klikKembali()" id="btnKembali" class="hidden bg-emerald-50 text-emerald-600 border border-emerald-100 p-3 rounded-2xl font-bold text-xs flex flex-col items-center gap-2 active:scale-95 transition">
+                            <i data-lucide="map-pin" class="w-6 h-6"></i> Saya Kembali
                         </button>
                     </div>
                 </div>
 
-                <button onclick="bukaKartu()" class="w-full bg-slate-800 text-slate-200 p-4 rounded-2xl font-bold flex items-center justify-center gap-3 border border-slate-700 active:scale-95 transition hover:bg-slate-700 shadow-lg">
-                    <i data-lucide="qr-code" class="w-6 h-6 text-yellow-400"></i>
-                    <span>QR Code / Kartu Digital</span>
+                <button onclick="bukaKartu()" class="w-full bg-white text-slate-800 border border-slate-200 p-3 rounded-2xl font-bold flex items-center justify-center gap-3 active:scale-95 transition shadow-sm">
+                    <i data-lucide="qr-code" class="w-5 h-5 text-slate-400"></i>
+                    <span class="text-sm">Kartu Digital</span>
                 </button>
             </div>
-
-            <h3 class="font-bold text-slate-700 mb-3 ml-1">Riwayat Hari Ini</h3>
-            <div id="listRiwayat" class="space-y-3 pb-10"></div>
+            
+            <div id="listRiwayat" class="text-xs text-center text-slate-400 pb-4"></div>
         </div>
 
 
-        <div id="page-sakit" class="hidden-page p-6 fade-in h-full bg-white">
-            <button onclick="kembali()" class="mb-6 flex items-center text-slate-500 hover:text-blue-600 gap-2 font-medium">
-                <i data-lucide="arrow-left" class="w-5 h-5"></i> Kembali
+        <div id="page-sakit" class="hidden-page p-6 fade-in h-full bg-white overflow-y-auto">
+            <button onclick="kembali()" class="mb-4 flex items-center gap-2 font-bold text-slate-500 text-sm">
+                <i data-lucide="arrow-left" class="w-5 h-5"></i> Batal
             </button>
-            <h2 class="text-2xl font-bold mb-4 text-slate-800">Formulir Berhalangan</h2>
+            <h2 class="text-3xl font-black text-slate-800 mb-1">Izin Tidak Masuk</h2>
+            <p class="text-slate-400 text-xs mb-6">Pilih jenis izin dan lampirkan bukti.</p>
             
             <div class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Jenis Izin</label>
-                    <div class="grid grid-cols-2 gap-3">
-                        <button onclick="pilihJenisIzin('Sakit')" id="btnOptSakit" class="p-4 rounded-xl border-2 border-slate-100 font-bold text-slate-500 focus:border-blue-500 focus:text-blue-600 transition">Sakit</button>
-                        <button onclick="pilihJenisIzin('Izin')" id="btnOptIzin" class="p-4 rounded-xl border-2 border-slate-100 font-bold text-slate-500 focus:border-orange-500 focus:text-orange-600 transition">Keperluan</button>
-                    </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="pilihJenisIzin('Sakit')" id="btnOptSakit" class="p-4 rounded-2xl border-2 border-slate-100 font-bold text-slate-400 transition text-sm flex flex-col items-center gap-2">
+                        <i data-lucide="thermometer" class="w-6 h-6"></i> Sakit
+                    </button>
+                    <button onclick="pilihJenisIzin('Izin')" id="btnOptIzin" class="p-4 rounded-2xl border-2 border-slate-100 font-bold text-slate-400 transition text-sm flex flex-col items-center gap-2">
+                        <i data-lucide="calendar-clock" class="w-6 h-6"></i> Kepentingan
+                    </button>
                 </div>
 
-                <div>
-                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Keterangan</label>
-                    <textarea id="ketIzin" class="w-full bg-slate-50 p-4 rounded-xl border border-slate-200 font-semibold focus:outline-none focus:border-blue-500" rows="3" placeholder="Contoh: Demam tinggi, Surat dokter terlampir..."></textarea>
-                </div>
+                <textarea id="ketIzin" class="w-full bg-slate-50 p-4 rounded-2xl border-2 border-slate-100 font-bold text-sm focus:outline-none focus:border-blue-500 focus:bg-white transition" rows="3" placeholder="Jelaskan alasanmu..."></textarea>
 
                 <div id="areaUploadFoto" class="hidden">
-                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Foto Bukti (Surat/Kondisi)</label>
-                    <button onclick="bukaCam('BuktiSakit')" id="btnAmbilBukti" class="w-full py-6 border-2 border-dashed border-slate-300 rounded-xl text-slate-400 font-bold flex flex-col items-center justify-center gap-2 hover:border-blue-400 hover:text-blue-500 transition">
-                        <i data-lucide="camera" class="w-8 h-8"></i>
-                        <span>Ambil Foto Bukti</span>
-                    </button>
-                    <img id="previewBukti" class="hidden w-full h-40 object-cover rounded-xl mt-2 border border-slate-200">
+                    <div onclick="bukaCam('BuktiSakit')" id="btnAmbilBukti" class="cursor-pointer w-full h-32 border-2 border-dashed border-slate-300 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-slate-50 transition group">
+                        <div class="bg-slate-100 p-3 rounded-full group-hover:bg-blue-100 transition"><i data-lucide="camera" class="w-6 h-6 text-slate-400 group-hover:text-blue-500"></i></div>
+                        <span class="text-xs font-bold text-slate-400">Ambil Foto Bukti</span>
+                    </div>
+                    <img id="previewBukti" class="hidden w-full h-40 object-cover rounded-2xl mt-4 border border-slate-200">
                 </div>
 
-                <button onclick="kirimLaporanIzin()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-500/30 mt-4">
-                    KIRIM LAPORAN
+                <button onclick="kirimLaporanIzin()" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black shadow-xl mt-4 active:scale-95 transition">
+                    KIRIM PERMOHONAN
                 </button>
             </div>
         </div>
 
-        <div id="page-profil" class="hidden-page p-6 fade-in"><button onclick="kembali()" class="text-blue-600 font-bold mb-4">← Kembali</button><h2 class="text-2xl font-bold">Profil Siswa</h2><button onclick="logout()" class="mt-4 w-full bg-red-50 text-red-600 font-bold py-3 rounded-xl">Logout</button></div>
+        <div id="page-profil" class="hidden-page p-6 fade-in h-full bg-white overflow-y-auto">
+             <div class="flex items-center gap-3 mb-6">
+                <button onclick="kembali()" class="bg-slate-50 p-2 rounded-full border"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
+                <h2 class="text-xl font-bold">Edit Profil</h2>
+             </div>
+
+             <div class="flex flex-col items-center mb-6">
+                <div class="w-24 h-24 relative mb-4">
+                     <img id="profil-page-foto" src="" class="w-full h-full rounded-full object-cover border-4 border-slate-100 shadow-lg">
+                     <button onclick="bukaCam('UpdateProfil')" class="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full border-2 border-white"><i data-lucide="camera" class="w-4 h-4"></i></button>
+                </div>
+                <h3 class="font-black text-lg text-slate-800" id="profil-page-nama">...</h3>
+                <p class="text-slate-400 text-sm" id="profil-page-nisn">...</p>
+             </div>
+
+             <div class="bg-slate-50 p-5 rounded-3xl border border-slate-100 space-y-4 mb-6">
+                <h4 class="font-bold text-slate-700 text-sm flex items-center gap-2"><i data-lucide="smartphone" class="w-4 h-4 text-green-600"></i> Database WhatsApp</h4>
+                <div class="text-[10px] text-slate-400 bg-blue-50 text-blue-600 p-2 rounded-lg">
+                    Nomor ini akan digunakan untuk notifikasi otomatis.
+                </div>
+                
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">No. WA Siswa</label>
+                    <input type="tel" id="inputWaSiswa" class="w-full p-3 rounded-xl border border-slate-200 font-bold text-slate-700 focus:border-blue-500 outline-none" placeholder="Contoh: 0812...">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">No. WA Orang Tua</label>
+                    <input type="tel" id="inputWaOrtu" class="w-full p-3 rounded-xl border border-slate-200 font-bold text-slate-700 focus:border-blue-500 outline-none" placeholder="Contoh: 0813...">
+                </div>
+
+                <button onclick="simpanDataWA()" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-green-500/20 active:scale-95 transition">
+                    Simpan Data Kontak
+                </button>
+             </div>
+
+             <button onclick="logout()" class="w-full text-red-500 font-bold bg-red-50 py-4 rounded-xl border border-red-100">Logout Akun</button>
+             <p class="text-center text-[10px] text-slate-300 mt-6 font-mono">SiGanteng v2.1 Beta</p>
+        </div>
 
     </main>
 
-    <div id="modalKamera" class="hidden fixed inset-0 z-50 bg-black flex flex-col items-center justify-center p-4">
-        <h3 class="text-white font-bold mb-4 text-lg" id="judulKamera">Ambil Foto</h3>
-        <div class="relative w-full max-w-sm aspect-[3/4] rounded-3xl overflow-hidden border-4 border-blue-500 shadow-2xl bg-slate-900">
+    <div id="modalKamera" class="hidden fixed inset-0 z-50 bg-slate-900 flex flex-col items-center justify-center">
+        <div class="absolute top-0 w-full p-6 flex justify-between items-center z-20">
+            <h3 class="text-white font-bold text-sm bg-black/20 backdrop-blur px-4 py-2 rounded-full" id="judulKamera">KAMERA</h3>
+            <button onclick="tutupKamera()" class="p-3 rounded-full bg-white/10 text-white backdrop-blur"><i data-lucide="x" class="w-6 h-6"></i></button>
+        </div>
+        <div class="relative w-full h-full">
             <video id="videoStream" autoplay playsinline muted class="w-full h-full object-cover transform -scale-x-100"></video>
             <canvas id="canvasFoto" class="hidden"></canvas>
         </div>
-        <div class="mt-8 flex items-center gap-8">
-            <button onclick="tutupKamera()" class="p-4 rounded-full bg-white/10 text-white hover:bg-white/20 transition"><i data-lucide="x" class="w-6 h-6"></i></button>
-            <button onclick="jepretFoto()" class="w-20 h-20 rounded-full bg-white border-4 border-slate-300 shadow-xl active:scale-90 transition transform hover:border-blue-500 flex items-center justify-center">
-                <div class="w-16 h-16 rounded-full bg-white border-2 border-slate-200"></div>
+        <div class="absolute bottom-0 w-full p-10 flex justify-center items-center z-20 bg-gradient-to-t from-black/80 to-transparent">
+            <button onclick="jepretFoto()" class="w-20 h-20 rounded-full border-4 border-white flex items-center justify-center active:scale-90 transition shadow-lg shadow-white/20">
+                <div class="w-16 h-16 bg-white rounded-full"></div>
             </button>
-            <button class="p-4 rounded-full bg-white/10 text-white hover:bg-white/20 transition"><i data-lucide="rotate-ccw" class="w-6 h-6"></i></button>
         </div>
     </div>
 
-    <div id="modalKartu" class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex flex-col items-center justify-center p-6">
-        <div class="bg-white p-8 rounded-[2.5rem] w-full max-w-xs text-center shadow-2xl transform transition-all scale-100">
-            <h3 class="font-extrabold text-slate-800 text-xl mb-1">KARTU DIGITAL</h3>
-            <p class="text-xs text-slate-400 mb-6">Scan QR ini di Kiosk Sekolah</p>
-            
-            <div class="flex justify-center mb-6">
-                <div id="qrcode" class="border-4 border-slate-100 p-2 rounded-xl"></div>
+    <div id="modalKartu" class="hidden fixed inset-0 z-50 bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-6">
+        <div class="bg-white p-8 rounded-[2.5rem] w-full max-w-xs text-center shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-indigo-500"></div>
+            <h3 class="font-black text-slate-800 text-xl mb-1 mt-4">KARTU PELAJAR</h3>
+            <div class="bg-slate-50 p-4 rounded-3xl border-2 border-dashed border-slate-200 mb-6 inline-block mt-4">
+                <div id="qrcode"></div>
             </div>
-
-            <h2 id="namaDiKartu" class="font-bold text-slate-800 text-lg leading-tight">...</h2>
-            <p id="nisnDiKartu" class="font-mono text-slate-500 tracking-widest font-bold mt-1">...</p>
-
-            <button onclick="tutupKartu()" class="mt-6 w-full bg-red-50 text-red-600 font-bold py-3 rounded-xl hover:bg-red-100 transition">
-                Tutup Kartu
-            </button>
+            <h2 id="namaDiKartu" class="font-black text-slate-800 text-lg leading-tight mb-1">...</h2>
+            <p id="nisnDiKartu" class="font-mono text-slate-600 font-bold text-xs tracking-widest">...</p>
+            <button onclick="tutupKartu()" class="mt-8 w-full py-3 text-slate-400 font-bold text-xs uppercase hover:text-red-500">Tutup</button>
         </div>
     </div>
 
-    <div id="loadingOverlay" class="hidden fixed inset-0 z-[60] bg-slate-900/90 flex flex-col items-center justify-center text-white">
-        <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <h5 class="font-bold">Mengirim Data...</h5>
+    <div id="loadingOverlay" class="hidden fixed inset-0 z-[60] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center">
+        <div class="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <h5 class="font-black text-slate-800 text-xs tracking-[0.2em] animate-pulse">MEMPROSES...</h5>
     </div>
-
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        // ⚠️ IMPORT FIREBASE TELAH DIPERBAIKI (Sudah ada collection, query, getDocs)
-        import { getFirestore, doc, setDoc, onSnapshot, arrayUnion, serverTimestamp, collection, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, updateDoc, onSnapshot, arrayUnion, serverTimestamp, collection, query, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
-        // CONFIG (SESUAIKAN JIKA PERLU)
+        // FIREBASE CONFIG (GANTI SAMA PUNYAMU)
         const firebaseConfig = {
             apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo",
             authDomain: "siganteng-absensi.firebaseapp.com",
@@ -219,9 +272,7 @@
         // VARS
         const SEKOLAH_LAT = -7.6739830; const SEKOLAH_LNG = 109.6319560; const RADIUS_METER = 50;
         let userSiswa = null; let lokasiUser = null; let map = null; let markerSiswa = null;
-        let streamKamera = null; let tipeAbsenAktif = ""; 
-        let tempFotoBukti = null; // Penampungan sementara foto sakit
-        let jenisIzinAktif = "";
+        let streamKamera = null; let tipeAbsenAktif = ""; let tempFotoBukti = null; let jenisIzinAktif = "";
 
         const getTodayID = () => new Date().toLocaleDateString('fr-CA'); 
 
@@ -231,24 +282,105 @@
             if (dataLokal) {
                 userSiswa = JSON.parse(dataLokal);
                 userSiswa.nisn = String(userSiswa.username || userSiswa.nisn);
+                
+                // Isi Data Dashboard
                 document.getElementById('dash-nama').innerText = userSiswa.nama;
                 document.getElementById('dash-kelas').innerText = userSiswa.kelas || "SISWA";
-                document.getElementById('dash-foto').src = `https://ui-avatars.com/api/?name=${userSiswa.nama}&background=2563eb&color=fff&size=128&bold=true`;
                 
-                // JALANKAN SEMUA FUNGSI UTAMA
-                renderMenu(); 
-                mulaiJam(); 
-                pantauDataRealtime(); 
-                cekGPS();
-                loadMenuDinamis(); // <--- FUNGSI BARU DIPANGGIL DISINI
+                // Isi Data Halaman Profil juga
+                document.getElementById('profil-page-nama').innerText = userSiswa.nama;
+                document.getElementById('profil-page-nisn').innerText = userSiswa.nisn;
+
+                loadFotoProfil(); // Load Foto
+                renderMenu(); mulaiJam(); pantauDataRealtime(); cekGPS(); loadMenuDinamis();
+                
+                // LOAD DATA KONTAK WA (Baru)
+                loadDataKontak();
             } else { window.location.href = 'index.html'; }
         });
 
-        // MENU UTAMA STATIS
+        // --- FUNGSI PROFIL & WA (BARU) ---
+        function loadFotoProfil() {
+            const defaultFoto = `https://ui-avatars.com/api/?name=${userSiswa.nama}&background=6366f1&color=fff&size=128&bold=true`;
+            document.getElementById('dash-foto').src = defaultFoto;
+            document.getElementById('profil-page-foto').src = defaultFoto;
+
+            onSnapshot(doc(db, "siswa", userSiswa.nisn), (doc) => {
+                if(doc.exists()) {
+                    const data = doc.data();
+                    if(data.foto_profil) {
+                        document.getElementById('dash-foto').src = data.foto_profil;
+                        document.getElementById('profil-page-foto').src = data.foto_profil;
+                    }
+                    // Isi form WA kalau sudah ada di DB
+                    if(data.wa_siswa) document.getElementById('inputWaSiswa').value = data.wa_siswa;
+                    if(data.wa_ortu) document.getElementById('inputWaOrtu').value = data.wa_ortu;
+                }
+            });
+        }
+
+        // FUNGSI LOAD KONTAK
+        function loadDataKontak() {
+            // Sudah dihandle di dalam onSnapshot loadFotoProfil biar realtime
+        }
+
+        // FORMAT NOMOR WA JADI 62
+        function formatWA(nomor) {
+            if(!nomor) return "";
+            let n = nomor.replace(/\D/g,''); // Hapus karakter selain angka
+            if(n.startsWith('0')) n = '62' + n.substring(1); // Ganti 0 depannya jadi 62
+            return n;
+        }
+
+        window.simpanDataWA = async () => {
+            const waSiswa = formatWA(document.getElementById('inputWaSiswa').value);
+            const waOrtu = formatWA(document.getElementById('inputWaOrtu').value);
+
+            if(!waSiswa && !waOrtu) return Swal.fire('Kosong?', 'Isi minimal salah satu nomor.', 'warning');
+
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+            try {
+                await setDoc(doc(db, "siswa", userSiswa.nisn), {
+                    wa_siswa: waSiswa,
+                    wa_ortu: waOrtu,
+                    last_update_kontak: serverTimestamp()
+                }, { merge: true });
+                
+                Swal.fire('Tersimpan', 'Nomor WhatsApp berhasil disimpan!', 'success');
+            } catch (e) {
+                Swal.fire('Gagal', e.message, 'error');
+            } finally {
+                document.getElementById('loadingOverlay').classList.add('hidden');
+            }
+        }
+
+        // UPDATE FOTO PROFIL
+        async function prosesUpdateProfil(fotoData) {
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+            try {
+                const storageRef = ref(storage, `profil_siswa/${userSiswa.nisn}_${Date.now()}.jpg`);
+                const snap = await uploadString(storageRef, fotoData, 'data_url');
+                const downloadURL = await getDownloadURL(snap.ref);
+                
+                await setDoc(doc(db, "siswa", userSiswa.nisn), {
+                    foto_profil: downloadURL,
+                    last_update_foto: serverTimestamp()
+                }, { merge: true });
+
+                Swal.fire('Mantap', 'Foto profil diperbarui.', 'success');
+            } catch (error) {
+                Swal.fire('Gagal', error.message, 'error');
+            } finally {
+                document.getElementById('loadingOverlay').classList.add('hidden');
+                tutupKamera();
+            }
+        }
+
+        // --- CORE FUNCTIONS (MAP, ABSEN, DLL) ---
         const databaseMenu = [
-            { nama: "Absen Masuk", ikon: "scan-line",     warna: "emerald", aksi: "bukaHalaman('page-absen')" },
-            { nama: "Izin / Sakit", ikon: "ambulance",    warna: "orange",  aksi: "bukaHalaman('page-sakit')" },
-            { nama: "Profil",      ikon: "user-circle",   warna: "blue",    aksi: "bukaHalaman('page-profil')" }
+            { nama: "Absen", ikon: "scan-face", warna: "indigo", aksi: "bukaHalaman('page-absen')" },
+            { nama: "Izin", ikon: "file-pen", warna: "orange", aksi: "bukaHalaman('page-sakit')" },
+            { nama: "Profil", ikon: "user", warna: "slate", aksi: "bukaHalaman('page-profil')" }
         ];
 
         window.renderMenu = () => {
@@ -256,24 +388,50 @@
             wadah.innerHTML = ''; 
             databaseMenu.forEach(menu => {
                 wadah.innerHTML += `
-                    <button onclick="${menu.aksi}" class="group bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-4 transition-all duration-200 active:scale-95 hover:shadow-md hover:border-${menu.warna}-200">
-                        <div class="w-14 h-14 bg-${menu.warna}-50 text-${menu.warna}-600 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 group-hover:rotate-3"><i data-lucide="${menu.ikon}" class="w-7 h-7"></i></div>
-                        <div class="text-center"><span class="block font-bold text-slate-700 text-sm group-hover:text-${menu.warna}-700">${menu.nama}</span></div>
+                    <button onclick="${menu.aksi}" class="bg-white p-4 rounded-3xl border border-slate-100 flex flex-col items-center justify-center gap-2 transition active:scale-95 shadow-sm hover:shadow-md">
+                        <div class="w-12 h-12 bg-${menu.warna}-50 text-${menu.warna}-600 rounded-2xl flex items-center justify-center"><i data-lucide="${menu.ikon}" class="w-6 h-6"></i></div>
+                        <span class="font-bold text-slate-600 text-[10px] uppercase tracking-wide">${menu.nama}</span>
                     </button>`;
             });
             lucide.createIcons();
         }
 
-        // FUNGSI NAVIGASI
         window.bukaHalaman = (id) => {
             document.querySelectorAll('[id^="page-"]').forEach(el => el.classList.add('hidden-page'));
             document.getElementById(id).classList.remove('hidden-page');
-            if(id === 'page-absen') setTimeout(() => { if(!map) initMap(); else map.invalidateSize(); }, 100);
+            if(id === 'page-absen') setTimeout(() => { if(!map) initMap(); else map.invalidateSize(); }, 300);
             lucide.createIcons();
         }
         window.kembali = () => bukaHalaman('page-dashboard');
 
-        // --- MAPS ---
+        window.bukaCam = (tipe) => { 
+            tipeAbsenAktif = tipe; 
+            document.getElementById('modalKamera').classList.remove('hidden');
+            let judul = "KAMERA";
+            if(tipe === 'UpdateProfil') judul = "FOTO PROFIL";
+            else if(tipe === 'BuktiSakit') judul = "BUKTI SAKIT";
+            
+            document.getElementById('judulKamera').innerText = judul;
+            navigator.mediaDevices.getUserMedia({video:{facingMode:'user', aspectRatio: 3/4}}).then(s=>{ streamKamera=s; document.getElementById('videoStream').srcObject=s; }); 
+        }
+        window.tutupKamera = () => { document.getElementById('modalKamera').classList.add('hidden'); if(streamKamera) streamKamera.getTracks().forEach(t=>t.stop()); }
+        
+        window.jepretFoto = () => {
+            const vid = document.getElementById('videoStream'); const can = document.getElementById('canvasFoto');
+            const scale = 480/vid.videoWidth; can.width=480; can.height=vid.videoHeight*scale;
+            can.getContext('2d').drawImage(vid,0,0,can.width,can.height);
+            const fotoData = can.toDataURL('image/jpeg', 0.7);
+
+            if(tipeAbsenAktif === 'UpdateProfil') prosesUpdateProfil(fotoData);
+            else if(tipeAbsenAktif === 'BuktiSakit') {
+                tempFotoBukti = fotoData;
+                document.getElementById('previewBukti').src = fotoData;
+                document.getElementById('previewBukti').classList.remove('hidden');
+                document.getElementById('btnAmbilBukti').innerHTML = `<span class="text-green-600 font-bold">Foto Ada!</span>`;
+                tutupKamera();
+            } else kirimData(tipeAbsenAktif, "Hadir", fotoData);
+        }
+
         function cekGPS() {
             if(navigator.geolocation) {
                 navigator.geolocation.watchPosition((p) => {
@@ -281,20 +439,18 @@
                     if(map) {
                         if(!markerSiswa) markerSiswa = L.marker(lokasiUser).addTo(map); else markerSiswa.setLatLng(lokasiUser);
                         const d = map.distance(lokasiUser, [SEKOLAH_LAT, SEKOLAH_LNG]);
-                        const box = document.getElementById('jarakBox');
-                        box.innerText = `Jarak: ${Math.round(d)} Meter`;
-                        box.className = d <= RADIUS_METER ? "inline-block -mt-4 relative z-10 bg-emerald-100 text-emerald-700 px-4 py-1 rounded-full text-xs font-bold border border-emerald-200" : "inline-block -mt-4 relative z-10 bg-red-100 text-red-700 px-4 py-1 rounded-full text-xs font-bold border border-red-200";
+                        document.getElementById('jarakBox').innerText = d <= RADIUS_METER ? "Di Sekolah" : `Jarak: ${Math.round(d)}m`;
+                        document.getElementById('jarakBox').className = d <= RADIUS_METER ? "bg-emerald-500 text-white text-[10px] font-bold py-2 px-4 rounded-xl shadow-lg" : "bg-rose-500 text-white text-[10px] font-bold py-2 px-4 rounded-xl shadow-lg";
                     }
                 }, null, { enableHighAccuracy: true });
             }
         }
         function initMap() { 
-            map = L.map('mapMini', {zoomControl:false, attributionControl: false}).setView([SEKOLAH_LAT,SEKOLAH_LNG], 16); 
+            map = L.map('mapMini', {zoomControl:false, attributionControl: false}).setView([SEKOLAH_LAT,SEKOLAH_LNG], 17); 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map); 
-            L.circle([SEKOLAH_LAT,SEKOLAH_LNG], {radius:RADIUS_METER, color:'#10b981', fillColor:'#10b981', fillOpacity:0.1}).addTo(map); 
+            L.circle([SEKOLAH_LAT,SEKOLAH_LNG], {radius:RADIUS_METER, color:'#6366f1', fillColor:'#6366f1', fillOpacity:0.2}).addTo(map); 
         }
 
-        // --- REALTIME STATUS ---
         function pantauDataRealtime() {
             const docID = `${getTodayID()}_${userSiswa.nisn}`;
             onSnapshot(doc(db, "absensi", docID), (docSnap) => {
@@ -302,92 +458,29 @@
                 const grpSekolah = document.getElementById('groupDiSekolah');
                 const listRiwayat = document.getElementById('listRiwayat');
                 const statusHero = document.getElementById('hero-status');
+                const subStatus = document.getElementById('sub-status');
                 
                 listRiwayat.innerHTML = '';
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     const st = data.status_terakhir || "";
                     statusHero.innerText = st;
+                    subStatus.innerText = "Terupdate";
+                    
                     const sudahMasuk = st.includes("Masuk") || st.includes("Hadir") || st === "Kembali";
                     const sedangIzin = st === "Izin Keluar";
                     const sudahPulang = st.includes("Pulang");
 
                     if(sudahMasuk) { btnMasuk.classList.add('hidden'); grpSekolah.classList.remove('hidden'); document.getElementById('btnKembali').classList.add('hidden'); }
                     else if(sedangIzin) { btnMasuk.classList.add('hidden'); grpSekolah.classList.remove('hidden'); document.getElementById('btnKembali').classList.remove('hidden'); }
-                    else if(sudahPulang) { btnMasuk.classList.add('hidden'); grpSekolah.classList.add('hidden'); statusHero.innerText = "Sudah Pulang"; }
-
-                    if (data.riwayat_kegiatan) {
-                        [...data.riwayat_kegiatan].reverse().forEach(item => {
-                            listRiwayat.innerHTML += `<div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-500 flex items-center justify-between"><span class="font-bold text-slate-700 text-sm">${item}</span><i data-lucide="check" class="w-4 h-4 text-green-500"></i></div>`;
-                        });
-                        lucide.createIcons();
-                    }
+                    else if(sudahPulang) { btnMasuk.classList.add('hidden'); grpSekolah.classList.add('hidden'); statusHero.innerText = "Selesai"; }
+                    if (data.riwayat_kegiatan) [...data.riwayat_kegiatan].reverse().forEach(item => listRiwayat.innerHTML += `<div>${item}</div>`);
                 } else {
+                    statusHero.innerText = "Belum Hadir";
+                    subStatus.innerText = "Ayo absen";
                     btnMasuk.classList.remove('hidden'); grpSekolah.classList.add('hidden');
-                    listRiwayat.innerHTML = '<div class="text-center text-slate-400 text-sm py-4">Belum ada aktivitas hari ini.</div>';
                 }
             });
-        }
-
-        // --- KAMERA & FOTO ---
-        window.bukaCam = (tipe) => { 
-            tipeAbsenAktif = tipe; 
-            document.getElementById('modalKamera').classList.remove('hidden');
-            document.getElementById('judulKamera').innerText = tipe === 'BuktiSakit' ? 'Foto Bukti Surat/Kondisi' : `Foto Bukti ${tipe}`;
-            navigator.mediaDevices.getUserMedia({video:{facingMode:'user'}}).then(s=>{ streamKamera=s; document.getElementById('videoStream').srcObject=s; }); 
-        }
-        window.tutupKamera = () => { document.getElementById('modalKamera').classList.add('hidden'); if(streamKamera) streamKamera.getTracks().forEach(t=>t.stop()); }
-        
-        window.jepretFoto = () => {
-            const vid = document.getElementById('videoStream'); const can = document.getElementById('canvasFoto');
-            // COMPRESS FOTO: Resize ke 480x640 biar enteng
-            const scale = 480/vid.videoWidth; can.width=480; can.height=vid.videoHeight*scale;
-            can.getContext('2d').drawImage(vid,0,0,can.width,can.height);
-            
-            // Simpan Kualitas 60% (0.6)
-            const fotoData = can.toDataURL('image/jpeg', 0.6);
-
-            if(tipeAbsenAktif === 'BuktiSakit') {
-                // Kalo Mode Izin Sakit: Simpan sementara, jangan upload dulu
-                tempFotoBukti = fotoData;
-                document.getElementById('previewBukti').src = fotoData;
-                document.getElementById('previewBukti').classList.remove('hidden');
-                document.getElementById('btnAmbilBukti').innerHTML = `<i data-lucide="check" class="w-8 h-8 text-green-500"></i><span class="text-green-600">Foto Tersimpan</span>`;
-                lucide.createIcons();
-                tutupKamera();
-            } else {
-                // Kalo Mode Absen Biasa: Langsung Kirim
-                kirimData(tipeAbsenAktif, "Hadir", fotoData);
-            }
-        }
-
-        // --- LOGIKA UTAMA ---
-        window.klikMasuk = () => { if(validasiGPS()) bukaCam("Masuk"); }
-        window.klikPulang = () => { if(validasiGPS()) bukaCam("Pulang"); }
-        window.klikIzinKeluar = () => { const alasan = prompt("Alasan keluar:"); if(alasan) kirimData("Izin Keluar", alasan, "-"); }
-        window.klikKembali = () => { if(validasiGPS() && confirm("Sudah di sekolah?")) kirimData("Kembali", "Kembali ke Sekolah", "-"); }
-
-        // --- LOGIKA IZIN / SAKIT ---
-        window.pilihJenisIzin = (jenis) => {
-            jenisIzinAktif = jenis;
-            document.getElementById('btnOptSakit').className = jenis === 'Sakit' ? "p-4 rounded-xl border-2 border-blue-500 text-blue-600 bg-blue-50 font-bold" : "p-4 rounded-xl border-2 border-slate-100 font-bold text-slate-500";
-            document.getElementById('btnOptIzin').className = jenis === 'Izin' ? "p-4 rounded-xl border-2 border-orange-500 text-orange-600 bg-orange-50 font-bold" : "p-4 rounded-xl border-2 border-slate-100 font-bold text-slate-500";
-            
-            // Kalau Sakit, Wajib Foto
-            const areaUpload = document.getElementById('areaUploadFoto');
-            if(jenis === 'Sakit') areaUpload.classList.remove('hidden');
-            else areaUpload.classList.add('hidden');
-        }
-
-        window.kirimLaporanIzin = async () => {
-            const ket = document.getElementById('ketIzin').value;
-            if(!jenisIzinAktif) return Swal.fire('Pilih Jenis', 'Pilih Sakit atau Izin dulu', 'warning');
-            if(!ket) return Swal.fire('Isi Keterangan', 'Jelaskan alasan izinnya', 'warning');
-            if(jenisIzinAktif === 'Sakit' && !tempFotoBukti) return Swal.fire('Foto Bukti', 'Wajib ambil foto surat/kondisi!', 'warning');
-
-            // Kirim Data
-            kirimData(jenisIzinAktif, ket, tempFotoBukti || "-");
-            bukaHalaman('page-dashboard'); // Balik ke depan
         }
 
         async function kirimData(status, ket, foto) {
@@ -395,139 +488,49 @@
             const todayStr = getTodayID();
             const docID = `${todayStr}_${userSiswa.nisn}`;
             const jamStr = new Date().toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
-
             try {
-                let updateData = {
-                    nisn: userSiswa.nisn, nama: userSiswa.nama, kelas: userSiswa.kelas, tanggal: todayStr,
-                    status_terakhir: status,
-                    riwayat_kegiatan: arrayUnion(`${jamStr} - ${status} (${ket})`)
-                };
+                let updateData = { nisn: userSiswa.nisn, nama: userSiswa.nama, kelas: userSiswa.kelas, tanggal: todayStr, status_terakhir: status, riwayat_kegiatan: arrayUnion(`${jamStr} - ${status} (${ket})`) };
                 if (foto !== "-") {
-                    // Upload ke Folder 'absen' atau 'izin'
-                    const folder = (status === 'Sakit' || status === 'Izin') ? 'surat_izin' : 'absen';
-                    const snap = await uploadString(ref(storage, `${folder}/${todayStr}/${userSiswa.nisn}_${status}_${Date.now()}.jpg`), foto, 'data_url');
+                    const snap = await uploadString(ref(storage, `absen/${todayStr}/${userSiswa.nisn}_${status}_${Date.now()}.jpg`), foto, 'data_url');
                     const url = await getDownloadURL(snap.ref);
-                    
                     if(status === "Masuk") { updateData.foto_masuk = url; updateData.jam_masuk = serverTimestamp(); updateData.lokasi_masuk = lokasiUser?`${lokasiUser.lat},${lokasiUser.lng}`:"-"; }
                     else if(status === "Pulang") { updateData.foto_pulang = url; updateData.jam_pulang = serverTimestamp(); }
-                    else if(status === "Sakit" || status === "Izin") { updateData.foto_bukti = url; }
+                    else { updateData.foto_bukti = url; }
                 }
-                
                 await setDoc(doc(db, "absensi", docID), updateData, { merge: true });
-                tutupKamera();
-                Swal.fire('Berhasil', 'Laporan ' + status + ' terkirim!', 'success');
-            } catch (e) { alert("Gagal: " + e.message); } 
+                Swal.fire('Berhasil', status + ' Tercatat', 'success');
+            } catch (e) { Swal.fire('Error', e.message, 'error'); } 
             finally { document.getElementById('loadingOverlay').classList.add('hidden'); }
         }
 
-        // --- QR CODE (KOTAK) ---
-        window.bukaKartu = () => {
-            document.getElementById('modalKartu').classList.remove('hidden');
-            document.getElementById('namaDiKartu').innerText = userSiswa.nama;
-            document.getElementById('nisnDiKartu').innerText = userSiswa.nisn;
-            
-            // Generate QR KOTAK
-            document.getElementById("qrcode").innerHTML = ""; // Bersihkan dulu
-            new QRCode(document.getElementById("qrcode"), {
-                text: userSiswa.nisn,
-                width: 180,
-                height: 180,
-                colorDark : "#000000",
-                colorLight : "#ffffff",
-                correctLevel : QRCode.CorrectLevel.H
-            });
+        window.klikMasuk = () => { if(validasiGPS()) bukaCam("Masuk"); }
+        window.klikPulang = () => { if(validasiGPS()) bukaCam("Pulang"); }
+        window.klikIzinKeluar = () => { const alasan = prompt("Alasan keluar:"); if(alasan) kirimData("Izin Keluar", alasan, "-"); }
+        window.klikKembali = () => { if(validasiGPS() && confirm("Sudah di sekolah?")) kirimData("Kembali", "Kembali ke Sekolah", "-"); }
+        window.pilihJenisIzin = (jenis) => {
+            jenisIzinAktif = jenis;
+            document.getElementById('btnOptSakit').className = jenis==='Sakit'?"p-4 rounded-2xl border-2 border-blue-500 bg-blue-50 text-blue-600 font-bold":"p-4 rounded-2xl border-2 border-slate-100 font-bold text-slate-400";
+            document.getElementById('btnOptIzin').className = jenis==='Izin'?"p-4 rounded-2xl border-2 border-orange-500 bg-orange-50 text-orange-600 font-bold":"p-4 rounded-2xl border-2 border-slate-100 font-bold text-slate-400";
+            document.getElementById('areaUploadFoto').classList.remove('hidden');
         }
+        window.kirimLaporanIzin = () => { if(!jenisIzinAktif || !document.getElementById('ketIzin').value) return Swal.fire('Lengkapi Data','','warning'); kirimData(jenisIzinAktif, document.getElementById('ketIzin').value, tempFotoBukti||"-"); bukaHalaman('page-dashboard'); }
+        window.validasiGPS = () => lokasiUser ? true : (Swal.fire('GPS Mati','','warning'), false);
+        window.mulaiJam = () => { setInterval(()=>{ document.getElementById('jamDigital').innerText=new Date().toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}); document.getElementById('tanggalDigital').innerText=new Date().toLocaleDateString('id-ID',{weekday: 'long', day:'numeric', month:'long', year:'numeric'}); },1000); }
+        window.logout = () => { if(confirm("Keluar?")) { localStorage.clear(); window.location.href='index.html'; } }
+        window.bukaKartu = () => { document.getElementById('modalKartu').classList.remove('hidden'); document.getElementById('namaDiKartu').innerText=userSiswa.nama; document.getElementById('nisnDiKartu').innerText=userSiswa.nisn; document.getElementById("qrcode").innerHTML=""; new QRCode(document.getElementById("qrcode"), {text:userSiswa.nisn, width:150, height:150}); }
         window.tutupKartu = () => document.getElementById('modalKartu').classList.add('hidden');
-
-        // --- TAMBAHAN: BACA CONFIG DARI ADMIN ---
-        let configSekolah = { validasi_gps_aktif: false, radius_meter: 500 }; // Default Santuy
-        
-        // Pasang listener ke pengaturan (Taruh di dalam DOMContentLoaded)
-        onSnapshot(doc(db, "pengaturan", "sekolah"), (doc) => {
-            if(doc.exists()) {
-                configSekolah = doc.data();
-                if(map) {
-                    // Update Peta kalau pro (logic simpel dulu)
-                }
-            }
-        });
-
-        // --- UPDATE FUNGSI VALIDASI GPS (JADI NURUT ADMIN) ---
-        function validasiGPS() { 
-            if(!lokasiUser){ Swal.fire('Tunggu GPS', 'Sedang mencari titik lokasi...', 'info'); return false; } 
-            
-            // CEK 1: APAKAH ADMIN MENGAKTIFKAN MODE DISIPLIN?
-            if (configSekolah.validasi_gps_aktif) {
-                // Mode Disiplin: ON
-                const d = map.distance(lokasiUser, [SEKOLAH_LAT, SEKOLAH_LNG]);
-                // Gunakan radius dari settingan admin
-                const batasRadius = configSekolah.radius_meter || 500; 
-
-                if (d > batasRadius) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Kejauhan!',
-                        text: `Jarak kamu ${Math.round(d)}m. Admin mewajibkan radius ${batasRadius}m.`
-                    });
-                    return false;
-                }
-            } else {
-                // Mode Disiplin: OFF (Santuy)
-            }
-            
-            return true; 
-        }
-        function mulaiJam() { setInterval(()=>{ document.getElementById('jamDigital').innerText=new Date().toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}); document.getElementById('tanggalDigital').innerText=new Date().toLocaleDateString('id-ID',{weekday: 'long', day:'numeric', month:'long', year:'numeric'}); },1000); }
-        window.logout = () => { if(confirm("Keluar aplikasi?")) { localStorage.clear(); window.location.href='index.html'; } }
-
-        // EXPORTS
-        window.bukaHalaman = bukaHalaman; window.kembali = kembali; window.klikMasuk = klikMasuk; window.klikPulang = klikPulang;
-        window.klikIzinKeluar = klikIzinKeluar; window.klikKembali = klikKembali; window.bukaKartu = bukaKartu; window.tutupKartu = tutupKartu;
-        window.bukaCam = bukaCam; window.tutupKamera = tutupKamera; window.jepretFoto = jepretFoto; window.logout = logout;
-        window.pilihJenisIzin = pilihJenisIzin; window.kirimLaporanIzin = kirimLaporanIzin;
-
-        // --- FITUR DYNAMIC MENU (JALAN TOL) ---
         function loadMenuDinamis() {
             const container = document.getElementById('grid-menu-dinamis');
-            
-            // Query ke Database (Ambil menu_siswa)
-            const q = query(collection(db, "menu_siswa")); 
-
-            onSnapshot(q, (snapshot) => {
-                container.innerHTML = ''; // Bersihkan Skeleton
-
-                if(snapshot.empty) {
-                    container.innerHTML = '<p class="col-span-2 text-center text-slate-400 text-xs italic">Belum ada layanan tambahan.</p>';
-                    return;
-                }
-
-                snapshot.forEach(doc => {
-                    const d = doc.data();
-                    
-                    // Efek Warna (Highlight)
-                    let bgClass = "bg-white border-slate-100 hover:bg-slate-50";
-                    let textClass = "text-slate-800";
-                    
-                    // Kalo Highlight (Biru)
-                    if (d.highlight) {
-                        bgClass = "bg-blue-50 border-blue-200 hover:bg-blue-100";
-                        textClass = "text-blue-700";
-                    }
-
-                    container.innerHTML += `
-                        <a href="${d.link}" target="_blank" class="block p-4 rounded-3xl border ${bgClass} transition flex items-center gap-4 group shadow-sm">
-                            <div class="text-3xl group-hover:scale-110 transition">${d.icon}</div>
-                            <div>
-                                <h4 class="font-bold text-sm ${textClass}">${d.judul}</h4>
-                                <p class="text-[10px] text-slate-400">Klik untuk buka</p>
-                            </div>
-                        </a>
-                    `;
-                });
+            onSnapshot(query(collection(db, "menu_siswa")), (snap) => {
+                container.innerHTML = ''; if(snap.empty) { container.innerHTML='<div class="col-span-2 text-center text-xs text-slate-400">Kosong</div>'; return; }
+                snap.forEach(d => container.innerHTML += `<a href="${d.data().link}" class="p-4 bg-white border border-slate-100 rounded-2xl text-center flex flex-col items-center gap-2"><div class="text-2xl">${d.data().icon}</div><span class="text-[10px] font-bold uppercase">${d.data().judul}</span></a>`);
             });
         }
-        
+
+        window.bukaHalaman = bukaHalaman; window.kembali = kembali; window.klikMasuk = klikMasuk; window.klikPulang = klikPulang;
+        window.klikIzinKeluar = klikIzinKeluar; window.klikKembali = klikKembali; window.bukaKartu = bukaKartu; window.tutupKartu = tutupKartu;
+        window.bukaCam = bukaCam; window.tutupKamera = tutupKamera; window.jepretFoto = jepretFoto;
+        window.pilihJenisIzin = pilihJenisIzin; window.kirimLaporanIzin = kirimLaporanIzin; window.logout = logout; window.simpanDataWA = simpanDataWA;
     </script>
 </body>
 </html>
-
