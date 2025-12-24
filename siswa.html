@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SiGanteng Super App - v3.0 Synced</title>
+    <title>SiGanteng Super App - v3.1 Flexible</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -104,8 +104,8 @@
                             <span class="font-black text-2xl">ABSEN PULANG</span>
                         </div>
                     </button>
-                    <div id="msgBelumPulang" class="hidden text-center bg-slate-50 p-3 rounded-xl border text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                        🔒 Belum Saatnya Pulang
+                    <div id="msgBelumPulang" class="hidden text-center bg-orange-50 p-3 rounded-xl border border-orange-200 text-[10px] font-bold text-orange-600 uppercase tracking-widest">
+                        ⚠️ Belum Jam Pulang (Pastikan Ada Instruksi)
                     </div>
                     
                     <div class="grid grid-cols-2 gap-3 mt-3">
@@ -185,7 +185,6 @@
         import { getFirestore, doc, setDoc, updateDoc, onSnapshot, arrayUnion, serverTimestamp, collection, query, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
-        // FIREBASE CONFIG (SESUAIKAN)
         const firebaseConfig = {
             apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo",
             authDomain: "siganteng-absensi.firebaseapp.com",
@@ -199,15 +198,11 @@
         const db = getFirestore(app);
         const storage = getStorage(app);
 
-        // --- GLOBAL VARIABLES (JANGAN UBAH DULU) ---
-        // Default koordinat (akan ditimpa oleh Admin)
+        // CONFIG (JANGAN UBAH)
         let SEKOLAH_LAT = -7.6739830; 
         let SEKOLAH_LNG = 109.6319560;
-        
         let userSiswa = null; let lokasiUser = null; let map = null; let markerSiswa = null;
         let streamKamera = null; let tipeAbsenAktif = ""; let tempFotoBukti = null;
-        
-        // Config Default (Sambil nunggu sync)
         let configSekolah = { validasi_gps_aktif: true, radius_meter: 50 };
 
         const getTodayID = () => new Date().toLocaleDateString('fr-CA'); 
@@ -224,34 +219,26 @@
                 document.getElementById('profil-page-nama').innerText = userSiswa.nama;
                 document.getElementById('profil-page-nisn').innerText = userSiswa.nisn;
 
-                // --- 1. SINKRONISASI REALTIME DENGAN ADMIN ---
                 syncAdminSettings();
-
                 loadFotoProfil();
                 renderMenu(); mulaiJam(); pantauDataRealtime(); cekGPS(); loadMenuDinamis(); loadDataKontak();
             } else { window.location.href = 'index.html'; }
         });
 
-        // --- FUNGSI SINKRONISASI ADMIN (INI KUNCINYA) ---
         function syncAdminSettings() {
             onSnapshot(doc(db, "pengaturan", "sekolah"), (snap) => {
                 if(snap.exists()) {
                     const data = snap.data();
                     configSekolah = data;
-                    
-                    // UPDATE KOORDINAT DARI ADMIN
                     if(data.lokasi_lat && data.lokasi_lng) {
                         SEKOLAH_LAT = parseFloat(data.lokasi_lat);
                         SEKOLAH_LNG = parseFloat(data.lokasi_lng);
                     }
-                    
-                    console.log("Admin Update:", configSekolah);
-                    if(map) updateMapCircle(); // Update lingkaran peta
+                    if(map) updateMapCircle();
                 }
             });
         }
 
-        // --- FUNGSI PROFIL & WA ---
         function loadFotoProfil() {
             const defaultFoto = `https://ui-avatars.com/api/?name=${userSiswa.nama}&background=6366f1&color=fff&size=128&bold=true`;
             document.getElementById('dash-foto').src = defaultFoto;
@@ -301,10 +288,9 @@
             } catch (error) { Swal.fire('Gagal', error.message, 'error'); } finally { document.getElementById('loadingOverlay').classList.add('hidden'); }
         }
 
-        // --- CORE FUNCTIONS ---
         const databaseMenu = [
             { nama: "Absen", ikon: "scan-face", warna: "indigo", aksi: "bukaHalaman('page-absen')" },
-            { nama: "Izin", ikon: "file-pen", warna: "orange", aksi: "bukaHalaman('page-sakit')" }, // Fix bug: aksi harus string
+            { nama: "Izin", ikon: "file-pen", warna: "orange", aksi: "bukaHalaman('page-sakit')" }, 
             { nama: "Profil", ikon: "user", warna: "slate", aksi: "bukaHalaman('page-profil')" }
         ];
 
@@ -356,21 +342,15 @@
             } else kirimData(tipeAbsenAktif, "Hadir", fotoData);
         }
 
-        // --- GPS VALIDATION & MAP (UPDATED LOGIC) ---
         function cekGPS() {
             if(navigator.geolocation) {
                 navigator.geolocation.watchPosition((p) => {
                     lokasiUser = {lat: p.coords.latitude, lng: p.coords.longitude};
                     if(map) {
                         if(!markerSiswa) markerSiswa = L.marker(lokasiUser).addTo(map); else markerSiswa.setLatLng(lokasiUser);
-                        
-                        // Gunakan variabel SEKOLAH_LAT/LNG yang sudah diupdate dari Admin
                         const d = map.distance(lokasiUser, [SEKOLAH_LAT, SEKOLAH_LNG]);
-                        
-                        // Gunakan radius dari Admin
                         const r = configSekolah.radius_meter || 50;
                         const isDisiplin = configSekolah.validasi_gps_aktif;
-
                         const box = document.getElementById('jarakBox');
                         
                         if (isDisiplin && d > r) {
@@ -387,20 +367,11 @@
 
         window.validasiGPS = () => {
             if(!lokasiUser) { Swal.fire('Tunggu GPS','Mencari lokasi...','info'); return false; }
-            
-            // Hitung jarak ke Sekolah (Yang koordinatnya dinamis)
             const d = map.distance(lokasiUser, [SEKOLAH_LAT, SEKOLAH_LNG]);
-            
-            // Cek Mode Disiplin dari Admin
             if (configSekolah.validasi_gps_aktif) {
                 const r = configSekolah.radius_meter || 50;
                 if (d > r) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Kejauhan, Ndan!',
-                        text: `Jarakmu ${Math.round(d)}m. Admin pasang pagar radius ${r}m. Geser dikit dong!`,
-                        confirmButtonColor: '#f43f5e'
-                    });
+                    Swal.fire({icon: 'error', title: 'Kejauhan, Ndan!', text: `Jarakmu ${Math.round(d)}m. Admin pasang pagar radius ${r}m.`, confirmButtonColor: '#f43f5e'});
                     return false;
                 }
             }
@@ -415,31 +386,16 @@
 
         function updateMapCircle() {
             if(!map) return;
-            // Hapus layer lama biar gak numpuk
-            map.eachLayer((layer) => {
-                if(layer instanceof L.Circle) { map.removeLayer(layer); }
-            });
-
+            map.eachLayer((layer) => { if(layer instanceof L.Circle) { map.removeLayer(layer); } });
             const radius = configSekolah.radius_meter || 50;
-            // Update Pusat Peta ke Koordinat Admin
             map.setView([SEKOLAH_LAT, SEKOLAH_LNG]);
-            
-            L.circle([SEKOLAH_LAT, SEKOLAH_LNG], {
-                radius: radius, 
-                color: configSekolah.validasi_gps_aktif ? '#ef4444' : '#10b981', // Merah kalo disiplin, Hijau kalo bebas
-                fillColor: configSekolah.validasi_gps_aktif ? '#ef4444' : '#10b981', 
-                fillOpacity: 0.2
-            }).addTo(map);
+            L.circle([SEKOLAH_LAT, SEKOLAH_LNG], { radius: radius, color: configSekolah.validasi_gps_aktif ? '#ef4444' : '#10b981', fillColor: configSekolah.validasi_gps_aktif ? '#ef4444' : '#10b981', fillOpacity: 0.2 }).addTo(map);
         }
 
-        // --- LOGIC JADWAL PULANG ---
         function cekBolehPulang() {
-            const now = new Date();
-            const day = now.getDay();
-            const totalMenit = (now.getHours() * 60) + now.getMinutes();
-            // Senin-Kamis (15:30 = 930), Jumat (13:40 = 820)
-            if (day >= 1 && day <= 4) return totalMenit >= 930;
-            if (day === 5) return totalMenit >= 820;
+            const now = new Date(); const day = now.getDay(); const totalMenit = (now.getHours() * 60) + now.getMinutes();
+            if (day >= 1 && day <= 4) return totalMenit >= 930; // 15:30
+            if (day === 5) return totalMenit >= 820; // 13:40
             return false;
         }
 
@@ -466,13 +422,14 @@
                         grpSekolah.classList.remove('hidden'); 
                         document.getElementById('btnKembali').classList.add('hidden'); 
 
+                        // LOGIC FLEKSIBEL: TOMBOL SELALU AKTIF
+                        btnPulang.disabled = false;
+                        btnPulang.classList.remove('opacity-50', 'cursor-not-allowed');
+
+                        // Cek Jam hanya untuk menampilkan peringatan, bukan mengunci
                         if (cekBolehPulang()) {
-                            btnPulang.disabled = false;
-                            btnPulang.classList.remove('opacity-50', 'cursor-not-allowed');
                             msgBelumPulang.classList.add('hidden');
                         } else {
-                            btnPulang.disabled = true;
-                            btnPulang.classList.add('opacity-50', 'cursor-not-allowed');
                             msgBelumPulang.classList.remove('hidden');
                         }
                     }
