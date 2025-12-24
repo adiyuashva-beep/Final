@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SiGanteng Super App - v3.1 Flexible</title>
+    <title>SiGanteng Super App - v3.2 Final</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -105,12 +105,12 @@
                         </div>
                     </button>
                     <div id="msgBelumPulang" class="hidden text-center bg-orange-50 p-3 rounded-xl border border-orange-200 text-[10px] font-bold text-orange-600 uppercase tracking-widest">
-                        ⚠️ Belum Jam Pulang (Pastikan Ada Instruksi)
+                        ⚠️ Belum Jam Pulang
                     </div>
                     
                     <div class="grid grid-cols-2 gap-3 mt-3">
-                        <button onclick="klikIzinKeluar()" class="bg-orange-50 text-orange-600 p-4 rounded-[1.5rem] font-bold text-xs flex flex-col items-center gap-2"><i data-lucide="door-open" class="w-6 h-6"></i> Izin Keluar</button>
-                        <button onclick="klikKembali()" id="btnKembali" class="hidden bg-emerald-50 text-emerald-600 p-4 rounded-[1.5rem] font-bold text-xs flex flex-col items-center gap-2"><i data-lucide="map-pin" class="w-6 h-6"></i> Saya Kembali</button>
+                        <button id="btnIzinKeluar" onclick="klikIzinKeluar()" class="bg-orange-50 text-orange-600 p-4 rounded-[1.5rem] font-bold text-xs flex flex-col items-center gap-2"><i data-lucide="door-open" class="w-6 h-6"></i> Izin Keluar</button>
+                        <button id="btnKembali" onclick="klikKembali()" class="hidden bg-emerald-50 text-emerald-600 p-4 rounded-[1.5rem] font-bold text-xs flex flex-col items-center gap-2"><i data-lucide="map-pin" class="w-6 h-6"></i> Saya Kembali</button>
                     </div>
                 </div>
                 <button onclick="bukaKartu()" class="w-full bg-white text-slate-800 border border-slate-200 p-4 rounded-[1.5rem] font-bold flex items-center justify-center gap-3"><i data-lucide="qr-code" class="w-5 h-5 text-slate-400"></i><span class="text-sm">Kartu Digital</span></button>
@@ -407,6 +407,8 @@
                 const statusHero = document.getElementById('hero-status');
                 const btnPulang = document.getElementById('btnPulang');
                 const msgBelumPulang = document.getElementById('msgBelumPulang');
+                const btnIzinKeluar = document.getElementById('btnIzinKeluar');
+                const btnKembali = document.getElementById('btnKembali');
                 
                 if (docSnap.exists()) {
                     const data = docSnap.data();
@@ -416,11 +418,13 @@
                     
                     const sudahMasuk = st.includes("Masuk") || st.includes("Hadir") || st === "Kembali";
                     const sudahPulang = st.includes("Pulang");
+                    const sedangIzin = st.includes("Izin Keluar");
 
                     if(sudahMasuk) { 
                         btnMasuk.classList.add('hidden'); 
                         grpSekolah.classList.remove('hidden'); 
-                        document.getElementById('btnKembali').classList.add('hidden'); 
+                        btnIzinKeluar.classList.remove('hidden');
+                        btnKembali.classList.add('hidden'); 
 
                         // LOGIC FLEKSIBEL: TOMBOL SELALU AKTIF
                         btnPulang.disabled = false;
@@ -432,6 +436,15 @@
                         } else {
                             msgBelumPulang.classList.remove('hidden');
                         }
+                    }
+                    else if (sedangIzin) {
+                        btnMasuk.classList.add('hidden'); 
+                        grpSekolah.classList.remove('hidden');
+                        btnIzinKeluar.classList.add('hidden');
+                        btnKembali.classList.remove('hidden');
+                        btnPulang.disabled = true; // Kunci tombol pulang saat izin
+                        btnPulang.classList.add('opacity-50', 'cursor-not-allowed');
+                        msgBelumPulang.classList.add('hidden');
                     }
                     else if(sudahPulang) { btnMasuk.classList.add('hidden'); grpSekolah.classList.add('hidden'); statusHero.innerText = "Selesai"; }
                 } else {
@@ -463,7 +476,30 @@
         }
 
         window.klikMasuk = () => { if(validasiGPS()) bukaCam("Masuk"); }
-        window.klikPulang = () => { if(validasiGPS()) bukaCam("Pulang"); }
+        
+        window.klikPulang = () => { 
+            if(validasiGPS()) {
+                if (!cekBolehPulang()) {
+                    Swal.fire({
+                        title: 'Yakin mau pulang?',
+                        text: "Belum jam pulang resmi. Pastikan sudah ada instruksi dari guru/sekolah.",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d33',
+                        cancelButtonColor: '#3085d6',
+                        confirmButtonText: 'Ya, Pulang!',
+                        cancelButtonText: 'Batal'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            bukaCam("Pulang");
+                        }
+                    })
+                } else {
+                    bukaCam("Pulang");
+                }
+            } 
+        }
+        
         window.klikIzinKeluar = () => { const alasan = prompt("Alasan keluar:"); if(alasan) kirimData("Izin Keluar", alasan, "-"); }
         window.klikKembali = () => { if(validasiGPS() && confirm("Sudah di sekolah?")) kirimData("Kembali", "Kembali ke Sekolah", "-"); }
         window.pilihJenisIzin = (jenis) => {
