@@ -1,219 +1,111 @@
-<script>
-    // 1. GEMBOK KEAMANAN (Cek Login Guru)
-    // Nanti pastikan di index.html saat login guru, simpan session 'user_guru'
-    const sesiGuru = sessionStorage.getItem('user_siganteng');
-    if (!sesiGuru) {
-        alert("Harap Login Terlebih Dahulu!");
-        window.location.href = 'index.html';
-    }
-    const guruAktif = JSON.parse(sesiGuru);
-    if(guruAktif.role !== 'guru' && guruAktif.role !== 'admin') { // Admin boleh ngintip
-        alert("Halaman ini khusus Guru/Wali Kelas!");
-        window.location.href = 'index.html';
-    }
-</script>
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Guru - SiGanteng</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
-    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Guru - SiGanteng</title>
     
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <style>
-        /* TEMA WARNA: UNGU (Pembeda dengan Admin yg Biru) */
-        :root { --primary: #6366f1; --bg-sidebar: #312e81; --bg-body: #f8fafc; }
-        
-        body { margin: 0; font-family: 'Outfit', sans-serif; background-color: var(--bg-body); display: flex; height: 100vh; overflow: hidden; color: #1e293b; }
-        .sidebar { width: 260px; background: var(--bg-sidebar); color: white; display: flex; flex-direction: column; padding: 25px; flex-shrink: 0; }
-        .logo { font-size: 22px; font-weight: 800; color: #a5b4fc; margin-bottom: 40px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 20px; display:flex; align-items:center; gap:10px; }
-        
-        .menu-item { text-decoration: none; color: #c7d2fe; padding: 15px; margin-bottom: 8px; border-radius: 12px; transition: 0.3s; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
-        .menu-item:hover, .menu-item.aktif { background-color: rgba(255,255,255,0.1); color: white; border-left: 4px solid #a5b4fc; }
-        .menu-logout { margin-top: auto; color: #fca5a5; background: rgba(239, 68, 68, 0.1); }
-        
-        .konten-utama { flex: 1; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; }
-        .header-top { background: white; padding: 20px 30px; border-radius: 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); }
-        
-        /* VIEWS */
-        .view-section { display: none; animation: fadeIn 0.3s ease; }
-        .view-section.aktif { display: block; }
-        @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-
-        /* TABEL WALI KELAS */
-        .card-box { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 20px; border: 1px solid #e2e8f0; }
-        .filter-area { display: flex; gap: 10px; margin-bottom: 20px; background: #f1f5f9; padding: 15px; border-radius: 12px; align-items: center; }
-        select, input { padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; }
-        
-        table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        th { background: #e0e7ff; color: #3730a3; padding: 12px; text-align: left; font-weight: 800; }
-        td { padding: 12px; border-bottom: 1px solid #f1f5f9; }
-        tr:hover { background: #f8fafc; }
-
-        /* STATUS BADGE */
-        .badge { padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
-        .bg-hadir { background: #dcfce7; color: #166534; }
-        .bg-telat { background: #fef9c3; color: #854d0e; }
-        .bg-sakit { background: #fee2e2; color: #991b1b; }
-        .bg-alpha { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; }
-
-        /* TOMBOL WA */
-        .btn-wa { background: #25D366; color: white; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 12px; text-decoration: none; width: fit-content; transition: 0.2s; }
-        .btn-wa:hover { background: #128c7e; transform: scale(1.05); }
-        
-        /* JURNAL MENGAJAR */
-        .form-group { margin-bottom: 15px; }
-        .label { font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 5px; display: block; }
-        .input-box { width: 100%; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; font-family: inherit; }
-        .btn-simpan { background: var(--primary); color: white; border: none; padding: 12px 25px; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; }
-        .btn-simpan:hover { opacity: 0.9; }
-
-        /* MODAL BUKTI */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 100; }
-        .modal-content { background: white; padding: 20px; border-radius: 15px; max-width: 500px; width: 90%; text-align: center; }
-        .img-bukti { max-width: 100%; max-height: 60vh; border-radius: 10px; margin: 10px 0; border: 2px solid #e2e8f0; }
-
+        body { font-family: 'Outfit', sans-serif; background-color: #f1f5f9; }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .glass-header { background: linear-gradient(135deg, #0f172a 0%, #334155 100%); }
     </style>
 </head>
-<body>
+<body class="text-slate-800 min-h-screen flex flex-col pb-20">
 
-    <div class="sidebar">
-        <div class="logo"><i class='bx bxs-graduation'></i> GURU PENGGERAK</div>
-        
-        <div class="menu-item aktif" onclick="gantiMenu('dashboard')">
-            <i class='bx bxs-dashboard'></i> Dashboard
-        </div>
-        <div class="menu-item" onclick="gantiMenu('wali-kelas')">
-            <i class='bx bxs-user-detail'></i> Wali Kelas (Monitoring)
-        </div>
-        <div class="menu-item" onclick="gantiMenu('jurnal')">
-            <i class='bx bxs-book-content'></i> Jurnal Mengajar
-        </div>
-
-        <div class="menu-item menu-logout" onclick="logout()">
-            <i class='bx bx-log-out'></i> Keluar
-        </div>
-    </div>
-
-    <div class="konten-utama">
-        
-        <div class="header-top">
+    <header class="glass-header p-6 pb-24 rounded-b-[2.5rem] shadow-xl relative z-10 text-white">
+        <div class="flex justify-between items-start mb-6">
             <div>
-                <h2 style="margin:0;">Halo, <span id="nama-guru">Bapak/Ibu Guru</span> 👋</h2>
-                <p style="margin:5px 0 0; color:#64748b; font-size:13px;">Selamat bekerja mencerdaskan bangsa!</p>
+                <p class="text-slate-300 text-[10px] font-bold uppercase tracking-[0.2em]">Panel Pendidik</p>
+                <h1 class="text-2xl font-black">SiGanteng <span class="text-emerald-400">Guru</span></h1>
             </div>
-            <div style="text-align:right;">
-                <div style="font-weight:bold; font-size:18px;" id="jam-real">00:00</div>
-                <div style="font-size:12px; color:#64748b;" id="tgl-real">...</div>
-            </div>
+            <button onclick="logout()" class="bg-white/10 p-2 rounded-full hover:bg-red-500 transition"><i data-lucide="log-out" class="w-5 h-5"></i></button>
         </div>
 
-        <div id="view-dashboard" class="view-section aktif">
-            <div class="card-box" style="background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; border: none;">
-                <h3 style="margin:0;">Status Hari Ini</h3>
-                <p style="opacity: 0.8;">Ringkasan aktivitas Anda</p>
-                <div style="display: flex; gap: 30px; margin-top: 20px;">
-                    <div>
-                        <span style="font-size: 30px; font-weight: 800;" id="count-jurnal">0</span>
-                        <div style="font-size: 12px; opacity: 0.8;">JURNAL DIISI</div>
-                    </div>
-                    <div>
-                        <span style="font-size: 30px; font-weight: 800;" id="count-siswa-wali">0</span>
-                        <div style="font-size: 12px; opacity: 0.8;">SISWA WALI</div>
-                    </div>
-                </div>
+        <div class="flex items-center gap-4">
+            <div class="w-16 h-16 rounded-2xl bg-white p-1">
+                <img id="foto-guru" src="" class="w-full h-full rounded-xl object-cover">
+            </div>
+            <div>
+                <h2 id="nama-guru" class="text-lg font-bold leading-tight">...</h2>
+                <p id="nip-guru" class="text-xs font-mono text-slate-300 mt-1">...</p>
+                <div id="badge-wali" class="hidden mt-2 inline-block bg-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded">WALI KELAS</div>
             </div>
         </div>
+    </header>
 
-        <div id="view-wali-kelas" class="view-section">
-            <div class="card-box">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                    <h3 style="margin:0;"><i class='bx bx-radar'></i> Pantau Kelas Perwalian</h3>
-                </div>
+    <main class="flex-1 px-5 -mt-16 relative z-20 space-y-6">
+
+        <div class="bg-white p-6 rounded-[2rem] shadow-lg border border-slate-100">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-slate-700 text-sm uppercase tracking-widest">Presensi Harian</h3>
+                <div id="status-absen" class="text-[10px] font-bold bg-slate-100 text-slate-500 px-3 py-1 rounded-full">Belum Absen</div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="prosesAbsen('Masuk')" class="bg-emerald-50 border border-emerald-100 p-4 rounded-2xl flex flex-col items-center gap-2 active:scale-95 transition">
+                    <div class="bg-emerald-500 text-white p-2 rounded-full"><i data-lucide="log-in" class="w-5 h-5"></i></div>
+                    <span class="text-xs font-bold text-emerald-700">DATANG</span>
+                </button>
+                <button onclick="prosesAbsen('Pulang')" class="bg-slate-50 border border-slate-200 p-4 rounded-2xl flex flex-col items-center gap-2 active:scale-95 transition">
+                    <div class="bg-slate-700 text-white p-2 rounded-full"><i data-lucide="log-out" class="w-5 h-5"></i></div>
+                    <span class="text-xs font-bold text-slate-700">PULANG</span>
+                </button>
+            </div>
+            <div id="jarakBox" class="mt-4 text-center text-[10px] font-mono text-slate-400">Menunggu GPS...</div>
+        </div>
+
+        <div class="bg-white p-6 rounded-[2rem] shadow-lg border border-slate-100">
+            <h3 class="font-bold text-slate-700 text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
+                <i data-lucide="book-open" class="w-4 h-4 text-blue-500"></i> Jurnal Mengajar
+            </h3>
+            <div class="space-y-3">
+                <select id="jurnal-kelas" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs font-bold text-slate-600 outline-none transition focus:border-blue-500">
+                    <option value="">- Memuat Data Kelas... -</option>
+                </select>
                 
-                <div class="filter-area">
-                    <label style="font-weight:bold; font-size:13px;">Pilih Kelas:</label>
-                    <select id="pilih-kelas-wali" onchange="loadDataWaliKelas()">
-                        <option value="">-- Pilih Kelas --</option>
-                        </select>
-                    <button onclick="loadDataWaliKelas()" class="btn-wa" style="background:#6366f1;">🔄 Refresh Data</button>
-                </div>
-
-                <div style="overflow-x:auto;">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th width="5%">No</th>
-                                <th>Nama Siswa</th>
-                                <th>Status Hari Ini</th>
-                                <th>Aksi (Hubungi Ortu)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabel-wali-kelas">
-                            <tr><td colspan="4" style="text-align:center; padding:20px;">Pilih kelas terlebih dahulu.</td></tr>
-                        </tbody>
-                    </table>
-                </div>
+                <input type="text" id="jurnal-mapel" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs font-bold text-slate-600 outline-none transition focus:border-blue-500" placeholder="Mata Pelajaran (Cth: Matematika)">
+                <textarea id="jurnal-materi" rows="2" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs font-bold text-slate-600 outline-none transition focus:border-blue-500" placeholder="Materi / Bahasan Hari Ini..."></textarea>
+                <button onclick="kirimJurnal()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold text-xs shadow-lg shadow-blue-500/30 active:scale-95 transition">SIMPAN JURNAL</button>
             </div>
         </div>
 
-        <div id="view-jurnal" class="view-section">
-            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
-                <div class="card-box">
-                    <h3 style="margin-top:0;">📝 Input Jurnal</h3>
-                    <div class="form-group">
-                        <span class="label">Kelas Mengajar</span>
-                        <select id="input-kelas" class="input-box">
-                            <option value="">-- Pilih Kelas --</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <span class="label">Mata Pelajaran</span>
-                        <input type="text" id="input-mapel" class="input-box" placeholder="Contoh: Matematika Wajib">
-                    </div>
-                    <div class="form-group">
-                        <span class="label">Jam Ke-</span>
-                        <input type="text" id="input-jam" class="input-box" placeholder="Contoh: 1-2">
-                    </div>
-                    <div class="form-group">
-                        <span class="label">Materi / Kegiatan</span>
-                        <textarea id="input-materi" class="input-box" rows="3" placeholder="Ringkasan materi..."></textarea>
-                    </div>
-                    <div class="form-group">
-                        <span class="label">Siswa Tidak Hadir (Opsional)</span>
-                        <input type="text" id="input-bolos" class="input-box" placeholder="Ketik nama siswa...">
-                    </div>
-                    <button onclick="simpanJurnal()" class="btn-simpan">SIMPAN JURNAL</button>
-                </div>
-
-                <div class="card-box">
-                    <h3 style="margin-top:0;">📚 Riwayat Mengajar Hari Ini</h3>
-                    <div id="list-jurnal" style="display: flex; flex-direction: column; gap: 10px;">
-                        <p style="color:#94a3b8; font-style:italic;">Belum ada jurnal hari ini.</p>
-                    </div>
-                </div>
+        <div id="panel-wali-kelas" class="hidden bg-orange-50 p-6 rounded-[2rem] shadow-lg border border-orange-100">
+            <h3 class="font-bold text-orange-800 text-sm uppercase tracking-widest mb-2 flex items-center gap-2">
+                <i data-lucide="users" class="w-4 h-4"></i> Kelas Anda: <span id="nama-kelas-wali">...</span>
+            </h3>
+            <div class="grid grid-cols-3 gap-2 text-center mt-4">
+                <div class="bg-white p-3 rounded-xl shadow-sm"><h4 class="text-emerald-500 font-black text-xl" id="wali-hadir">0</h4><p class="text-[9px] font-bold text-slate-400">HADIR</p></div>
+                <div class="bg-white p-3 rounded-xl shadow-sm"><h4 class="text-blue-500 font-black text-xl" id="wali-izin">0</h4><p class="text-[9px] font-bold text-slate-400">IZIN</p></div>
+                <div class="bg-white p-3 rounded-xl shadow-sm"><h4 class="text-red-500 font-black text-xl" id="wali-alpha">0</h4><p class="text-[9px] font-bold text-slate-400">ALPHA</p></div>
             </div>
+            <button onclick="lihatDetailKelas()" class="w-full mt-4 bg-white text-orange-600 border border-orange-200 py-2 rounded-xl text-[10px] font-bold">LIHAT DETAIL SISWA</button>
         </div>
 
-    </div>
+    </main>
 
-    <div id="modalBukti" class="modal-overlay" onclick="tutupModal()">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <h3>Bukti Izin / Sakit</h3>
-            <img id="img-preview" src="" class="img-bukti" alt="Bukti">
-            <br>
-            <button onclick="tutupModal()" style="padding:10px 20px; background:#ef4444; color:white; border:none; border-radius:5px; cursor:pointer;">Tutup</button>
-        </div>
+    <div id="map-container" class="hidden"></div>
+
+    <div id="modalKamera" class="hidden fixed inset-0 z-50 bg-black flex flex-col items-center justify-center">
+        <div class="absolute top-0 w-full p-6 flex justify-end z-30"><button onclick="tutupKamera()" class="text-white"><i data-lucide="x" class="w-8 h-8"></i></button></div>
+        <video id="videoStream" autoplay playsinline muted class="w-full h-full object-cover"></video>
+        <canvas id="canvasFoto" class="hidden"></canvas>
+        <div class="absolute bottom-10 z-30"><button onclick="jepret()" class="w-16 h-16 bg-white rounded-full border-4 border-slate-300"></button></div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getFirestore, collection, query, where, getDocs, addDoc, onSnapshot, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, query, where, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
-        // --- CONFIG FIREBASE (WAJIB GANTI) ---
+        // FIREBASE CONFIG (SESUAIKAN DENGAN PROJECT MU)
         const firebaseConfig = {
             apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo",
             authDomain: "siganteng-absensi.firebaseapp.com",
@@ -223,220 +115,239 @@
             messagingSenderId: "917873420012",
             appId: "1:917873420012:web:0fe1a9eddc5f94959ba7c9"
         };
-
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const storage = getStorage(app);
 
-        // VARIABEL GLOBAL
-        let listSiswaKelas = [];
-        let dataAbsenHariIni = {};
-        const todayStr = new Date().toLocaleDateString('fr-CA');
+        // STATE
+        let userGuru = null;
+        let lokasiUser = null;
+        let configSekolah = { validasi_gps_aktif: true, radius_meter: 50 };
+        let streamKamera = null;
+        let tipeAbsenAktif = "";
 
-        // INIT
-        window.addEventListener('load', () => {
-            document.getElementById('nama-guru').innerText = guruAktif.nama || "Guru Hebat";
-            
-            // Generate Pilihan Kelas (Manual dulu atau ambil dari DB)
-            const kelasList = ["X 1", "X 2", "X 3", "XI 1", "XI 2", "XI 3", "XII 1", "XII 2", "XII 3", "XII 4"];
-            const selWali = document.getElementById('pilih-kelas-wali');
-            const selJurnal = document.getElementById('input-kelas');
-            
-            kelasList.forEach(k => {
-                selWali.add(new Option(k, k));
-                selJurnal.add(new Option(k, k));
-            });
+        // Default Lokasi (Akan ditimpa Admin)
+        let SEKOLAH_LAT = -7.6739830; 
+        let SEKOLAH_LNG = 109.6319560;
 
-            // Load Jurnal Hari Ini
-            loadJurnalHarian();
-            
-            // Jam Realtime
-            setInterval(() => {
-                const now = new Date();
-                document.getElementById('jam-real').innerText = now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
-                document.getElementById('tgl-real').innerText = now.toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
-            }, 1000);
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            // Cek Session
+            const sess = sessionStorage.getItem('user_siganteng');
+            if (sess) {
+                userGuru = JSON.parse(sess);
+                initDashboard();
+                syncAdmin();
+                cekGPS();
+                loadDaftarKelas(); // Panggil fungsi otomatis
+                
+                // Cek Wali Kelas
+                if(userGuru.wali_kelas && userGuru.wali_kelas !== "-") {
+                    initWaliKelas(userGuru.wali_kelas);
+                }
+            } else {
+                window.location.href = 'index.html';
+            }
         });
 
-        // --- FITUR 1: WALI KELAS MONITORING (THE TEROR MACHINE) ---
-        window.loadDataWaliKelas = async () => {
-            const kelas = document.getElementById('pilih-kelas-wali').value;
-            if(!kelas) return;
+        function initDashboard() {
+            document.getElementById('nama-guru').innerText = userGuru.nama;
+            document.getElementById('nip-guru').innerText = "NIP/NUPTK: " + userGuru.username;
+            document.getElementById('foto-guru').src = `https://ui-avatars.com/api/?name=${userGuru.nama}&background=10b981&color=fff&bold=true`;
+        }
 
-            const tbody = document.getElementById('tabel-wali-kelas');
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">⏳ Sedang mengambil data siswa...</td></tr>';
-
-            try {
-                // 1. Ambil Siswa di Kelas Itu
-                const qSiswa = query(collection(db, "users"), where("kelas", "==", kelas)); // Pastikan field 'kelas' ada di users
-                const snapSiswa = await getDocs(qSiswa);
-                
-                listSiswaKelas = [];
-                snapSiswa.forEach(doc => {
-                    const d = doc.data();
-                    if(d.role !== 'guru') listSiswaKelas.push({ ...d, username: d.username });
-                });
-
-                document.getElementById('count-siswa-wali').innerText = listSiswaKelas.length;
-
-                // 2. Ambil Absen Hari Ini
-                const qAbsen = query(collection(db, "absensi"), where("tanggal", "==", todayStr));
-                const snapAbsen = await getDocs(qAbsen);
-                
-                dataAbsenHariIni = {};
-                snapAbsen.forEach(doc => {
-                    const d = doc.data();
-                    const nisn = String(d.nisn).replace(/[^a-zA-Z0-9]/g, '');
-                    dataAbsenHariIni[nisn] = d;
-                });
-
-                // 3. Render Tabel
-                tbody.innerHTML = '';
-                if(listSiswaKelas.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Tidak ada data siswa di kelas ini.</td></tr>';
-                    return;
+        // --- 1. SYNC ADMIN (RADIUS) ---
+        function syncAdmin() {
+            onSnapshot(doc(db, "pengaturan", "sekolah"), (snap) => {
+                if(snap.exists()) {
+                    configSekolah = snap.data();
+                    if(configSekolah.lokasi_lat) SEKOLAH_LAT = configSekolah.lokasi_lat;
+                    if(configSekolah.lokasi_lng) SEKOLAH_LNG = configSekolah.lokasi_lng;
                 }
+            });
+        }
 
-                // Urutkan Nama
-                listSiswaKelas.sort((a,b) => a.nama.localeCompare(b.nama));
+        // --- 2. GPS LOGIC ---
+        function cekGPS() {
+            if(navigator.geolocation) {
+                navigator.geolocation.watchPosition((p) => {
+                    lokasiUser = { lat: p.coords.latitude, lng: p.coords.longitude };
+                    // Hitung Jarak Manual
+                    const R = 6371e3; 
+                    const φ1 = lokasiUser.lat * Math.PI/180;
+                    const φ2 = SEKOLAH_LAT * Math.PI/180;
+                    const Δφ = (SEKOLAH_LAT - lokasiUser.lat) * Math.PI/180;
+                    const Δλ = (SEKOLAH_LNG - lokasiUser.lng) * Math.PI/180;
+                    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) * Math.sin(Δλ/2);
+                    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                    const d = R * c;
 
-                listSiswaKelas.forEach((siswa, idx) => {
-                    const nisn = String(siswa.username).replace(/[^a-zA-Z0-9]/g, '');
-                    const absen = dataAbsenHariIni[nisn];
-                    let statusHtml = '<span class="badge bg-alpha">BELUM ABSEN</span>';
-                    let tombolWa = '';
-                    let btnBukti = '';
-
-                    // Siapkan Pesan WA "Teror"
-                    // Asumsi: Kita belum punya No HP Ortu di DB, jadi kita biarkan kosong biar Guru isi nomornya manual saat klik, 
-                    // ATAU kalau ada field no_hp, pakai itu.
-                    let noHpOrtu = siswa.no_hp_ortu || ""; 
-                    // Format Pesan
-                    let pesan = `Assalamualaikum Bapak/Ibu Wali Murid dari ${siswa.nama} (Kelas ${kelas}). Kami menginformasikan bahwa siswa tersebut BELUM melakukan absensi pagi ini di sekolah. Mohon konfirmasinya. Terima kasih.`;
+                    const box = document.getElementById('jarakBox');
+                    const limit = configSekolah.radius_meter || 50;
                     
-                    if(absen) {
-                        const st = absen.status_terakhir;
-                        if(st.includes('Masuk') || st.includes('Hadir') || st.includes('Pulang')) {
-                            const jam = new Date(absen.jam_masuk.seconds * 1000).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
-                            statusHtml = `<span class="badge bg-hadir">HADIR (${jam})</span>`;
-                        } else if(st === 'Sakit' || st === 'Izin') {
-                            statusHtml = `<span class="badge bg-sakit">${st.toUpperCase()}</span>`;
-                            if(absen.foto_bukti) {
-                                btnBukti = `<button onclick="lihatBukti('${absen.foto_bukti}')" style="cursor:pointer; border:none; background:none; color:blue; text-decoration:underline; font-size:11px; margin-left:5px;">(Lihat Bukti)</button>`;
-                            }
-                        }
+                    if(configSekolah.validasi_gps_aktif && d > limit) {
+                        box.innerHTML = `<span class="text-red-500 font-bold">Lokasi: ${Math.round(d)}m (Luar Area)</span>`;
                     } else {
-                        // Kalau Alpha, Munculkan Tombol WA
-                        // Link WA API
-                        const linkWa = `https://wa.me/${noHpOrtu}?text=${encodeURIComponent(pesan)}`;
-                        tombolWa = `<a href="${linkWa}" target="_blank" class="btn-wa"><i class='bx bxl-whatsapp'></i> Hubungi Ortu</a>`;
+                        box.innerHTML = `<span class="text-emerald-500 font-bold">Lokasi Valid: ${Math.round(d)}m</span>`;
                     }
-
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${idx+1}</td>
-                            <td style="font-weight:600;">${siswa.nama} ${btnBukti}</td>
-                            <td>${statusHtml}</td>
-                            <td>${tombolWa || '<span style="color:#cbd5e1; font-size:11px;">- Aman -</span>'}</td>
-                        </tr>
-                    `;
-                });
-
-            } catch (e) {
-                console.error(e);
-                tbody.innerHTML = `<tr><td colspan="4" style="color:red;">Error: ${e.message}</td></tr>`;
+                }, null, { enableHighAccuracy: true });
             }
         }
 
-        // --- FITUR 2: JURNAL MENGAJAR ---
-        window.simpanJurnal = async () => {
-            const kelas = document.getElementById('input-kelas').value;
-            const mapel = document.getElementById('input-mapel').value;
-            const jam = document.getElementById('input-jam').value;
-            const materi = document.getElementById('input-materi').value;
-            const bolos = document.getElementById('input-bolos').value;
-
-            if(!kelas || !mapel || !materi) {
-                Swal.fire("Lengkapi Data", "Kelas, Mapel, dan Materi wajib diisi.", "warning");
-                return;
+        // --- 3. ABSENSI CORE ---
+        window.prosesAbsen = (tipe) => {
+            if(!lokasiUser) return Swal.fire('GPS','Sedang mencari lokasi...','info');
+            // Validasi Jarak Dummy
+            const map = L.map(document.createElement('div')); 
+            const d = map.distance([lokasiUser.lat, lokasiUser.lng], [SEKOLAH_LAT, SEKOLAH_LNG]);
+            
+            if(configSekolah.validasi_gps_aktif && d > (configSekolah.radius_meter || 50)) {
+                return Swal.fire('Kejauhan!', 'Bapak/Ibu belum di area sekolah.', 'error');
             }
+
+            tipeAbsenAktif = tipe;
+            document.getElementById('modalKamera').classList.remove('hidden');
+            navigator.mediaDevices.getUserMedia({video: {facingMode: 'user'}}).then(s => {
+                streamKamera = s; document.getElementById('videoStream').srcObject = s;
+            });
+        }
+
+        window.tutupKamera = () => {
+            document.getElementById('modalKamera').classList.add('hidden');
+            if(streamKamera) streamKamera.getTracks().forEach(t=>t.stop());
+        }
+
+        window.jepret = async () => {
+            const vid = document.getElementById('videoStream');
+            const can = document.getElementById('canvasFoto');
+            can.width = 480; can.height = 480;
+            can.getContext('2d').drawImage(vid,0,0,480,480);
+            const foto = can.toDataURL('image/jpeg', 0.7);
+            
+            const todayStr = new Date().toLocaleDateString('fr-CA');
+            const idDoc = `${todayStr}_${userGuru.username}`; 
+            
+            try {
+                tutupKamera();
+                Swal.fire({title:'Menyimpan...', didOpen:()=>Swal.showLoading()});
+                
+                const snap = await uploadString(ref(storage, `absen_guru/${todayStr}/${userGuru.username}_${tipeAbsenAktif}.jpg`), foto, 'data_url');
+                const url = await getDownloadURL(snap.ref);
+
+                let data = {
+                    nisn: userGuru.username,
+                    nama: userGuru.nama,
+                    kelas: 'GURU',
+                    role: 'guru',
+                    tanggal: todayStr,
+                    status_terakhir: tipeAbsenAktif + " (Guru)"
+                };
+
+                if(tipeAbsenAktif === 'Masuk') {
+                    data.jam_masuk = serverTimestamp();
+                    data.foto_masuk = url;
+                } else {
+                    data.jam_pulang = serverTimestamp();
+                    data.foto_pulang = url;
+                }
+
+                await setDoc(doc(db, "absensi", idDoc), data, {merge: true});
+                document.getElementById('status-absen').innerText = "Sudah " + tipeAbsenAktif;
+                document.getElementById('status-absen').className = "text-[10px] font-bold bg-emerald-100 text-emerald-600 px-3 py-1 rounded-full";
+                
+                Swal.fire('Berhasil', 'Presensi terekam.', 'success');
+
+            } catch(e) { Swal.fire('Error', e.message, 'error'); }
+        }
+
+        // --- 4. JURNAL MENGAJAR (OTOMATIS DARI DATABASE) ---
+        async function loadDaftarKelas() {
+            const sel = document.getElementById('jurnal-kelas');
+            sel.innerHTML = '<option value="">Sedang memuat data kelas...</option>';
+
+            try {
+                const q = query(collection(db, "users"), where("role", "==", "siswa"));
+                const snap = await getDocs(q);
+                
+                const kelasUnik = new Set();
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    if (data.kelas && data.kelas.trim() !== "" && data.kelas !== "-") {
+                        kelasUnik.add(data.kelas.toUpperCase().trim());
+                    }
+                });
+
+                const kelasSorted = Array.from(kelasUnik).sort();
+                sel.innerHTML = '<option value="">- Pilih Kelas (Realtime) -</option>';
+                
+                if (kelasSorted.length === 0) {
+                    sel.innerHTML += '<option value="" disabled>Belum ada data siswa</option>';
+                } else {
+                    kelasSorted.forEach(k => {
+                        const opt = document.createElement('option');
+                        opt.value = k;
+                        opt.text = k;
+                        sel.add(opt);
+                    });
+                }
+            } catch (e) {
+                console.error("Gagal load kelas:", e);
+                sel.innerHTML = '<option value="">Gagal memuat data</option>';
+            }
+        }
+
+        window.kirimJurnal = async () => {
+            const kls = document.getElementById('jurnal-kelas').value;
+            const mapel = document.getElementById('jurnal-mapel').value;
+            const materi = document.getElementById('jurnal-materi').value;
+
+            if(!kls || !mapel || !materi) return Swal.fire('Isi Lengkap','','warning');
 
             try {
                 await addDoc(collection(db, "jurnal_guru"), {
-                    nama_guru: guruAktif.nama,
-                    kelas: kelas,
+                    nip: userGuru.username,
+                    nama_guru: userGuru.nama,
+                    kelas: kls,
                     mapel: mapel,
-                    jam_ke: jam,
                     materi: materi,
-                    siswa_bolos: bolos || "-",
-                    tanggal: todayStr,
-                    created_at: new Date().toISOString()
+                    waktu: serverTimestamp(),
+                    tanggal: new Date().toLocaleDateString('fr-CA')
                 });
-                
-                Swal.fire("Berhasil", "Jurnal tersimpan!", "success");
-                
-                // Reset Form
-                document.getElementById('input-materi').value = "";
-                document.getElementById('input-bolos').value = "";
-                // loadJurnalHarian() akan otomatis update karena pakai onSnapshot (listener) di bawah
-
-            } catch(e) {
-                Swal.fire("Error", e.message, "error");
-            }
+                Swal.fire('Tersimpan', 'Jurnal berhasil diupload.', 'success');
+                document.getElementById('jurnal-materi').value = '';
+            } catch(e) { Swal.fire('Gagal', e.message, 'error'); }
         }
 
-        function loadJurnalHarian() {
-            const q = query(collection(db, "jurnal_guru"), where("tanggal", "==", todayStr), where("nama_guru", "==", guruAktif.nama));
+        // --- 5. WALI KELAS MODE ---
+        function initWaliKelas(kelasWali) {
+            document.getElementById('panel-wali-kelas').classList.remove('hidden');
+            document.getElementById('nama-kelas-wali').innerText = kelasWali;
+            document.getElementById('badge-wali').classList.remove('hidden');
+
+            const todayStr = new Date().toLocaleDateString('fr-CA');
+            const q = query(collection(db, "absensi"), where("tanggal", "==", todayStr), where("kelas", "==", kelasWali));
             
             onSnapshot(q, (snap) => {
-                const container = document.getElementById('list-jurnal');
-                container.innerHTML = '';
-                let count = 0;
-
-                snap.forEach(doc => {
-                    const d = doc.data();
-                    count++;
-                    container.innerHTML += `
-                        <div style="background:#f8fafc; padding:15px; border-radius:10px; border-left:4px solid #6366f1;">
-                            <div style="display:flex; justify-content:space-between;">
-                                <strong style="color:#312e81;">${d.kelas} - ${d.mapel}</strong>
-                                <span style="font-size:11px; background:#e0e7ff; padding:2px 8px; border-radius:10px;">Jam ${d.jam_ke}</span>
-                            </div>
-                            <p style="margin:5px 0; font-size:13px; color:#475569;">${d.materi}</p>
-                            ${d.siswa_bolos !== '-' ? `<small style="color:#ef4444;">Bolos: ${d.siswa_bolos}</small>` : ''}
-                        </div>
-                    `;
+                let h=0, i=0;
+                snap.forEach(d => {
+                    const st = d.data().status_terakhir;
+                    if(st.includes("Masuk") || st.includes("Hadir")) h++;
+                    else if(st.includes("Sakit") || st.includes("Izin")) i++;
                 });
-
-                document.getElementById('count-jurnal').innerText = count;
-                if(count === 0) container.innerHTML = '<p style="color:#94a3b8; font-style:italic;">Belum ada jurnal hari ini.</p>';
+                document.getElementById('wali-hadir').innerText = h;
+                document.getElementById('wali-izin').innerText = i;
+                document.getElementById('wali-alpha').innerText = "?"; 
             });
         }
 
-        // FUNGSI UTILITY
-        window.lihatBukti = (url) => {
-            document.getElementById('img-preview').src = url;
-            document.getElementById('modalBukti').style.display = 'flex';
-        }
-        window.tutupModal = () => {
-            document.getElementById('modalBukti').style.display = 'none';
-        }
-
-        window.gantiMenu = (menu) => {
-            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('aktif'));
-            document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('aktif'));
-            
-            document.getElementById('view-' + menu).classList.add('aktif');
-            // Highlight menu sidebar (manual selektor sederhana)
-            // (Disini kita biarkan sederhana tanpa highlight sidebar dinamis biar script pendek)
+        window.lihatDetailKelas = () => {
+            Swal.fire('Info', 'Fitur detail siswa akan segera hadir di update v2.0', 'info');
         }
 
         window.logout = () => {
-            if(confirm("Keluar dari akun Guru?")) {
-                sessionStorage.removeItem('user_siganteng');
-                window.location.href = 'index.html';
-            }
+            sessionStorage.clear(); localStorage.clear();
+            window.location.href = 'index.html';
         }
-
     </script>
 </body>
 </html>
