@@ -96,6 +96,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+        // GANTI CONFIG INI SESUAI PROJECT KAMU YA NDAN
         const firebaseConfig = {
             apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo",
             authDomain: "siganteng-absensi.firebaseapp.com",
@@ -121,18 +122,15 @@
 
             loader.style.display = 'flex';
 
-            // --- ⚠️ KUNCI DARURAT ADMIN (PASANG INI BIAR BISA MASUK) ---
-            // Ini untuk Login Pertama kali sebelum data admin ada di database
+            // --- ⚠️ KUNCI DARURAT ADMIN ---
             if (u === 'admin' && p === '123') {
                 localStorage.setItem('admin_token', 'RAHASIA_NEGARA_SMAN1');
                 sessionStorage.setItem('user_siganteng', JSON.stringify({nama: "Super Admin", role: "admin"}));
-                
-                setTimeout(() => {
-                    window.location.href = 'admin.html';
-                }, 1000);
+                localStorage.setItem('admin_role', 'SUPER'); // Biar menu super muncul
+                setTimeout(() => { window.location.href = 'admin.html'; }, 1000);
                 return; 
             }
-            // -----------------------------------------------------------
+            // -----------------------------
 
             try {
                 // 1. CARI USER DI DATABASE
@@ -146,12 +144,17 @@
                 let userData = null;
                 snap.forEach(d => userData = d.data());
 
-                // 2. CEK PASSWORD
-                if (String(userData.password) === String(p)) {
+                // === LOGIKA SMART LOGIN (SISWA VS ORTU) ===
+                
+                const passSiswa = String(userData.password);
+                const passOrtu = userData.password_ortu ? String(userData.password_ortu) : "ortu" + String(userData.username); // Default: ortu+NISN
+
+                // SKENARIO A: LOGIN SEBAGAI PEMILIK AKUN (SISWA/GURU/ADMIN)
+                if (String(p) === passSiswa) {
                     
-                    // 3. SIMPAN SESI & REDIRECT SESUAI PERAN
                     sessionStorage.setItem('user_siganteng', JSON.stringify(userData));
                     
+                    // Khusus Siswa kita simpan di LocalStorage biar awet (untuk file siswa.html)
                     if (!userData.role || userData.role === 'siswa') {
                         localStorage.setItem('userSiswa', JSON.stringify(userData));
                     }
@@ -164,18 +167,37 @@
                         const role = userData.role ? userData.role.toLowerCase() : 'siswa';
 
                         if (role === 'admin') {
-                            localStorage.setItem('admin_token', 'RAHASIA_NEGARA_SMAN1');
+                            localStorage.setItem('admin_token', 'TOKEN_RESMI');
+                            localStorage.setItem('admin_role', 'SUPER');
                             window.location.href = 'admin.html';
                         } 
                         else if (role === 'guru') {
-                            window.location.href = 'guru.html';
+                            window.location.href = 'guru.html'; // Nanti kita buat
                         } 
                         else {
                             window.location.href = 'siswa.html';
                         }
                     });
 
-                } else {
+                } 
+                // SKENARIO B: LOGIN SEBAGAI ORANG TUA
+                else if (String(p) === passOrtu) {
+                    
+                    // Simpan data anak ke LocalStorage (karena orangtua.html butuh data anaknya)
+                    // Kita pakai key 'userSiswa' juga gak masalah, karena strukturnya sama
+                    localStorage.setItem('userSiswa', JSON.stringify(userData));
+
+                    Swal.fire({
+                        icon: 'success', title: 'Akses Wali Murid', 
+                        text: `Monitoring Siswa: ${userData.nama}`,
+                        timer: 1500, showConfirmButton: false, background: '#1e293b', color: '#fff'
+                    }).then(() => {
+                        window.location.href = 'orangtua.html';
+                    });
+
+                }
+                // SKENARIO C: PASSWORD SALAH TOTAL
+                else {
                     throw new Error("Password Salah!");
                 }
 
