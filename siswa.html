@@ -15,62 +15,72 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
-        body { font-family: 'Outfit', sans-serif; background-color: #f1f5f9; }
+        body { font-family: 'Outfit', sans-serif; background-color: #f8fafc; }
         .hidden-page { display: none !important; }
         .fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Animasi Ring Profil */
+        .story-ring {
+            background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); 
+            padding: 3px;
+            border-radius: 50%;
+        }
     </style>
 </head>
-<body class="text-slate-800 h-screen flex flex-col overflow-hidden bg-slate-100">
+<body class="text-slate-800 h-screen flex flex-col overflow-hidden bg-slate-50">
 
     <main id="main-container" class="flex-1 overflow-y-auto hide-scroll relative">
         
         <div id="page-dashboard" class="p-6 fade-in min-h-screen pb-32">
             
-            <div class="flex items-center gap-4 mb-6">
-                <div class="relative group cursor-pointer" onclick="bukaCam('UpdateProfil')">
-                    <div class="w-16 h-16 rounded-full p-1 bg-gradient-to-tr from-blue-500 to-indigo-500 shadow-lg">
-                        <img id="dash-foto" src="" class="w-full h-full rounded-full object-cover border-2 border-white bg-white">
+            <div class="flex flex-col items-center justify-center mb-8 mt-4">
+                <div class="relative group cursor-pointer active:scale-95 transition" onclick="bukaCam('UpdateProfil')">
+                    <div class="story-ring w-32 h-32 shadow-xl shadow-pink-500/20">
+                        <img id="dash-foto" src="" class="w-full h-full rounded-full object-cover border-4 border-white bg-white">
                     </div>
-                    <div class="absolute bottom-0 right-0 bg-slate-900 text-white p-1.5 rounded-full border-2 border-white shadow-md">
-                        <i data-lucide="camera" class="w-3 h-3"></i>
+                    <div class="absolute bottom-1 right-1 bg-slate-900 text-white p-2 rounded-full border-4 border-white shadow-lg">
+                        <i data-lucide="camera" class="w-4 h-4"></i>
                     </div>
                 </div>
-                <div>
-                    <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-0.5">Sugeng Enjang,</p>
-                    <h2 class="text-xl font-black text-slate-800 leading-tight" id="dash-nama">...</h2>
-                    <div class="flex items-center gap-2 mt-1">
-                        <span id="dash-kelas" class="text-[9px] font-black bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-md uppercase tracking-wider">...</span>
-                        <span class="text-[9px] font-black bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-md uppercase tracking-wider">ONLINE</span>
+                
+                <div class="text-center mt-4">
+                    <p class="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Sugeng Enjang,</p>
+                    <h2 class="text-2xl font-black text-slate-800 leading-tight" id="dash-nama">...</h2>
+                    <div class="flex items-center justify-center gap-2 mt-2">
+                        <span id="dash-kelas" class="text-[10px] font-black bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full uppercase tracking-wider">...</span>
+                        <div class="h-1 w-1 bg-slate-300 rounded-full"></div>
+                        <span class="text-[10px] font-bold text-slate-500 uppercase">SISWA AKTIF</span>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl shadow-slate-400/50 mb-8 relative overflow-hidden">
+            <div class="bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl shadow-slate-400/50 mb-8 relative overflow-hidden transform hover:scale-[1.02] transition duration-300">
                 <div class="relative z-10 flex justify-between items-end">
                     <div>
                         <p class="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] mb-2">Status Kehadiran</p>
                         <h1 class="text-3xl font-black tracking-tighter" id="hero-status">...</h1>
-                        <p class="text-xs text-slate-400 mt-1 font-medium" id="sub-status">Sinkronisasi data...</p>
+                        <p class="text-[10px] text-slate-400 mt-2 font-mono" id="sub-status">Update: ...</p>
                     </div>
-                    <div class="bg-white/10 p-3 rounded-2xl backdrop-blur-sm">
+                    <div class="bg-white/10 p-3 rounded-2xl backdrop-blur-sm animate-pulse">
                         <i data-lucide="activity" class="w-6 h-6 text-emerald-400"></i>
                     </div>
                 </div>
                 <div class="absolute -top-10 -right-10 w-40 h-40 bg-blue-600 rounded-full blur-[60px] opacity-50"></div>
+                <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-purple-600 rounded-full blur-[50px] opacity-40"></div>
             </div>
 
-            <h3 class="font-bold text-slate-700 text-sm mb-4 flex items-center gap-2">
-                <span class="w-1 h-4 bg-blue-600 rounded-full"></span> Menu Utama
+            <h3 class="font-bold text-slate-700 text-sm mb-4 flex items-center gap-2 ml-1">
+                <span class="w-1.5 h-1.5 bg-blue-600 rounded-full"></span> Menu Utama
             </h3>
             <div id="wadah-menu" class="grid grid-cols-3 gap-3 mb-8"></div>
 
             <div class="mt-4">
-                <div class="flex justify-between items-center mb-4">
+                <div class="flex justify-between items-center mb-4 ml-1">
                     <h3 class="font-bold text-slate-700 text-sm flex items-center gap-2">
-                        <span class="w-1 h-4 bg-orange-500 rounded-full"></span> Pintasan
+                        <span class="w-1.5 h-1.5 bg-orange-500 rounded-full"></span> Pintasan
                     </h3>
                 </div>
                 <div id="grid-menu-dinamis" class="grid grid-cols-2 gap-3">
@@ -91,54 +101,61 @@
             </div>
 
             <div class="text-center mb-4">
-                <h1 class="font-black text-5xl text-slate-800 tracking-tighter" id="jamDigital">00:00</h1>
+                <h1 class="font-black text-6xl text-slate-800 tracking-tighter" id="jamDigital">00:00</h1>
                 <p class="text-slate-400 text-xs font-bold uppercase tracking-[0.2em]" id="tanggalDigital">...</p>
             </div>
 
-            <div class="relative w-full h-56 rounded-[2rem] overflow-hidden border-4 border-slate-100 shadow-inner mb-6 shrink-0">
+            <div class="relative w-full h-52 rounded-[2.5rem] overflow-hidden border-4 border-slate-50 shadow-inner mb-6 shrink-0">
                 <div id="mapMini" class="h-full w-full z-0"></div>
                 <div class="absolute bottom-3 left-3 right-3 z-10">
-                    <div id="jarakBox" class="bg-slate-900/80 backdrop-blur text-white text-[10px] font-bold py-2 px-4 rounded-xl text-center shadow-lg transition-all">
+                    <div id="jarakBox" class="bg-slate-900/80 backdrop-blur text-white text-[10px] font-bold py-2.5 px-4 rounded-xl text-center shadow-lg transition-all border border-white/10">
                         GPS Loading...
                     </div>
                 </div>
             </div>
 
             <div class="space-y-3 mb-8 flex-1 overflow-y-auto" id="containerTombol">
-                <button id="btnMasuk" onclick="klikMasuk()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 rounded-[1.5rem] shadow-xl shadow-blue-500/30 flex items-center gap-4 active:scale-95 transition group">
-                    <div class="bg-white/20 p-3 rounded-2xl group-hover:rotate-12 transition"><i data-lucide="scan-face" class="w-8 h-8"></i></div>
-                    <div class="text-left flex-1">
+                <button id="btnMasuk" onclick="klikMasuk()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-5 rounded-[2rem] shadow-xl shadow-blue-500/30 flex items-center gap-4 active:scale-95 transition group relative overflow-hidden">
+                    <div class="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition duration-500"></div>
+                    <div class="bg-white/20 p-3 rounded-2xl group-hover:rotate-12 transition relative z-10"><i data-lucide="scan-face" class="w-8 h-8"></i></div>
+                    <div class="text-left flex-1 relative z-10">
                         <span class="text-blue-100 text-[10px] font-bold uppercase tracking-wider block">Sudah di sekolah?</span>
-                        <span class="font-black text-xl">ABSEN MASUK</span>
+                        <span class="font-black text-2xl">ABSEN MASUK</span>
                     </div>
                 </button>
 
                 <div id="groupDiSekolah" class="hidden space-y-3">
-                    <button onclick="klikPulang()" class="w-full bg-slate-800 text-white p-4 rounded-[1.5rem] shadow-xl flex items-center gap-4 active:scale-95 transition">
+                    <button id="btnPulang" onclick="klikPulang()" class="w-full bg-slate-800 text-white p-5 rounded-[2rem] shadow-xl flex items-center gap-4 active:scale-95 transition">
                         <div class="bg-white/10 p-3 rounded-2xl"><i data-lucide="log-out" class="w-8 h-8"></i></div>
                         <div class="text-left flex-1">
                             <span class="text-slate-400 text-[10px] font-bold uppercase tracking-wider block">Selesai KBM?</span>
-                            <span class="font-black text-xl">ABSEN PULANG</span>
+                            <span class="font-black text-2xl">ABSEN PULANG</span>
                         </div>
                     </button>
+                    <div id="msgBelumPulang" class="hidden text-center bg-slate-100 p-3 rounded-xl border border-slate-200">
+                        <p class="text-xs font-bold text-slate-500 flex items-center justify-center gap-2">
+                            <i data-lucide="lock" class="w-3 h-3"></i> Belum waktunya pulang
+                        </p>
+                        <p class="text-[10px] text-slate-400 mt-1">Senin-Kamis: 15.30 | Jumat: 13.40</p>
+                    </div>
                     
-                    <div class="grid grid-cols-2 gap-3">
-                        <button onclick="klikIzinKeluar()" class="bg-orange-50 text-orange-600 border border-orange-100 p-3 rounded-2xl font-bold text-xs flex flex-col items-center gap-2 active:scale-95 transition">
+                    <div class="grid grid-cols-2 gap-3 mt-3">
+                        <button onclick="klikIzinKeluar()" class="bg-orange-50 text-orange-600 border border-orange-100 p-4 rounded-[1.5rem] font-bold text-xs flex flex-col items-center gap-2 active:scale-95 transition hover:bg-orange-100">
                             <i data-lucide="door-open" class="w-6 h-6"></i> Izin Keluar
                         </button>
-                        <button onclick="klikKembali()" id="btnKembali" class="hidden bg-emerald-50 text-emerald-600 border border-emerald-100 p-3 rounded-2xl font-bold text-xs flex flex-col items-center gap-2 active:scale-95 transition">
+                        <button onclick="klikKembali()" id="btnKembali" class="hidden bg-emerald-50 text-emerald-600 border border-emerald-100 p-4 rounded-[1.5rem] font-bold text-xs flex flex-col items-center gap-2 active:scale-95 transition hover:bg-emerald-100">
                             <i data-lucide="map-pin" class="w-6 h-6"></i> Saya Kembali
                         </button>
                     </div>
                 </div>
 
-                <button onclick="bukaKartu()" class="w-full bg-white text-slate-800 border border-slate-200 p-3 rounded-2xl font-bold flex items-center justify-center gap-3 active:scale-95 transition shadow-sm">
+                <button onclick="bukaKartu()" class="w-full bg-white text-slate-800 border border-slate-200 p-4 rounded-[1.5rem] font-bold flex items-center justify-center gap-3 active:scale-95 transition shadow-sm hover:bg-slate-50">
                     <i data-lucide="qr-code" class="w-5 h-5 text-slate-400"></i>
                     <span class="text-sm">Kartu Digital</span>
                 </button>
             </div>
             
-            <div id="listRiwayat" class="text-xs text-center text-slate-400 pb-4"></div>
+            <div id="listRiwayat" class="text-xs text-center text-slate-400 pb-4 font-medium"></div>
         </div>
 
 
@@ -177,57 +194,69 @@
 
         <div id="page-profil" class="hidden-page p-6 fade-in h-full bg-white overflow-y-auto">
              <div class="flex items-center gap-3 mb-6">
-                <button onclick="kembali()" class="bg-slate-50 p-2 rounded-full border"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
+                <button onclick="kembali()" class="bg-slate-50 p-2 rounded-full border active:scale-90 transition"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
                 <h2 class="text-xl font-bold">Edit Profil</h2>
              </div>
 
              <div class="flex flex-col items-center mb-6">
-                <div class="w-24 h-24 relative mb-4">
-                     <img id="profil-page-foto" src="" class="w-full h-full rounded-full object-cover border-4 border-slate-100 shadow-lg">
-                     <button onclick="bukaCam('UpdateProfil')" class="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full border-2 border-white"><i data-lucide="camera" class="w-4 h-4"></i></button>
+                <div class="w-28 h-28 relative mb-4">
+                     <img id="profil-page-foto" src="" class="w-full h-full rounded-full object-cover border-4 border-slate-100 shadow-xl">
+                     <button onclick="bukaCam('UpdateProfil')" class="absolute bottom-0 right-0 bg-blue-600 text-white p-2.5 rounded-full border-4 border-white shadow-sm active:scale-90 transition"><i data-lucide="camera" class="w-4 h-4"></i></button>
                 </div>
-                <h3 class="font-black text-lg text-slate-800" id="profil-page-nama">...</h3>
-                <p class="text-slate-400 text-sm" id="profil-page-nisn">...</p>
+                <h3 class="font-black text-xl text-slate-800" id="profil-page-nama">...</h3>
+                <p class="text-slate-400 text-sm font-mono bg-slate-50 px-3 py-1 rounded-lg mt-1" id="profil-page-nisn">...</p>
              </div>
 
-             <div class="bg-slate-50 p-5 rounded-3xl border border-slate-100 space-y-4 mb-6">
+             <div class="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 space-y-4 mb-6">
                 <h4 class="font-bold text-slate-700 text-sm flex items-center gap-2"><i data-lucide="smartphone" class="w-4 h-4 text-green-600"></i> Database WhatsApp</h4>
-                <div class="text-[10px] text-slate-400 bg-blue-50 text-blue-600 p-2 rounded-lg">
-                    Nomor ini akan digunakan untuk notifikasi otomatis.
+                <div class="text-[10px] text-slate-400 bg-blue-50 text-blue-600 p-3 rounded-xl leading-relaxed">
+                    Pastikan nomor aktif agar notifikasi kehadiran masuk secara otomatis.
                 </div>
                 
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">No. WA Siswa</label>
-                    <input type="tel" id="inputWaSiswa" class="w-full p-3 rounded-xl border border-slate-200 font-bold text-slate-700 focus:border-blue-500 outline-none" placeholder="Contoh: 0812...">
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">No. WA Siswa</label>
+                    <input type="tel" id="inputWaSiswa" class="w-full p-4 rounded-2xl border border-slate-200 font-bold text-slate-700 focus:border-blue-500 outline-none transition" placeholder="Contoh: 0812...">
                 </div>
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">No. WA Orang Tua</label>
-                    <input type="tel" id="inputWaOrtu" class="w-full p-3 rounded-xl border border-slate-200 font-bold text-slate-700 focus:border-blue-500 outline-none" placeholder="Contoh: 0813...">
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">No. WA Orang Tua</label>
+                    <input type="tel" id="inputWaOrtu" class="w-full p-4 rounded-2xl border border-slate-200 font-bold text-slate-700 focus:border-blue-500 outline-none transition" placeholder="Contoh: 0813...">
                 </div>
 
-                <button onclick="simpanDataWA()" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-green-500/20 active:scale-95 transition">
-                    Simpan Data Kontak
+                <button onclick="simpanDataWA()" class="w-full bg-green-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-green-500/20 active:scale-95 transition mt-2">
+                    Simpan Kontak
                 </button>
              </div>
 
-             <button onclick="logout()" class="w-full text-red-500 font-bold bg-red-50 py-4 rounded-xl border border-red-100">Logout Akun</button>
-             <p class="text-center text-[10px] text-slate-300 mt-6 font-mono">SiGanteng v2.1 Beta</p>
+             <button onclick="logout()" class="w-full text-red-500 font-bold bg-red-50 py-4 rounded-2xl border border-red-100 mb-8 active:scale-95 transition">Logout Akun</button>
         </div>
 
     </main>
 
-    <div id="modalKamera" class="hidden fixed inset-0 z-50 bg-slate-900 flex flex-col items-center justify-center">
-        <div class="absolute top-0 w-full p-6 flex justify-between items-center z-20">
-            <h3 class="text-white font-bold text-sm bg-black/20 backdrop-blur px-4 py-2 rounded-full" id="judulKamera">KAMERA</h3>
-            <button onclick="tutupKamera()" class="p-3 rounded-full bg-white/10 text-white backdrop-blur"><i data-lucide="x" class="w-6 h-6"></i></button>
+    <div id="modalKamera" class="hidden fixed inset-0 z-50 bg-black flex flex-col items-center justify-center">
+        <div class="absolute top-0 w-full p-6 flex justify-between items-center z-30">
+            <h3 class="text-white font-bold text-sm bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10" id="judulKamera">KAMERA</h3>
+            <button onclick="tutupKamera()" class="p-3 rounded-full bg-white/10 text-white backdrop-blur hover:bg-red-500/80 transition"><i data-lucide="x" class="w-6 h-6"></i></button>
         </div>
-        <div class="relative w-full h-full">
+        
+        <div class="relative w-full h-full bg-black">
             <video id="videoStream" autoplay playsinline muted class="w-full h-full object-cover transform -scale-x-100"></video>
             <canvas id="canvasFoto" class="hidden"></canvas>
+            
+            <div class="absolute inset-0 z-20 pointer-events-none flex flex-col justify-between p-8">
+                <div class="flex justify-between">
+                    <div class="w-16 h-16 border-t-4 border-l-4 border-white rounded-tl-3xl shadow-sm"></div>
+                    <div class="w-16 h-16 border-t-4 border-r-4 border-white rounded-tr-3xl shadow-sm"></div>
+                </div>
+                <div class="flex justify-between">
+                    <div class="w-16 h-16 border-b-4 border-l-4 border-white rounded-bl-3xl shadow-sm"></div>
+                    <div class="w-16 h-16 border-b-4 border-r-4 border-white rounded-br-3xl shadow-sm"></div>
+                </div>
+            </div>
         </div>
-        <div class="absolute bottom-0 w-full p-10 flex justify-center items-center z-20 bg-gradient-to-t from-black/80 to-transparent">
-            <button onclick="jepretFoto()" class="w-20 h-20 rounded-full border-4 border-white flex items-center justify-center active:scale-90 transition shadow-lg shadow-white/20">
-                <div class="w-16 h-16 bg-white rounded-full"></div>
+
+        <div class="absolute bottom-0 w-full p-12 flex justify-center items-center z-30 bg-gradient-to-t from-black/90 via-black/50 to-transparent">
+            <button onclick="jepretFoto()" class="w-20 h-20 rounded-full border-[6px] border-white/50 flex items-center justify-center active:scale-90 transition shadow-2xl hover:border-white">
+                <div class="w-14 h-14 bg-white rounded-full shadow-inner"></div>
             </button>
         </div>
     </div>
@@ -241,12 +270,12 @@
             </div>
             <h2 id="namaDiKartu" class="font-black text-slate-800 text-lg leading-tight mb-1">...</h2>
             <p id="nisnDiKartu" class="font-mono text-slate-600 font-bold text-xs tracking-widest">...</p>
-            <button onclick="tutupKartu()" class="mt-8 w-full py-3 text-slate-400 font-bold text-xs uppercase hover:text-red-500">Tutup</button>
+            <button onclick="tutupKartu()" class="mt-8 w-full py-4 bg-slate-50 rounded-xl text-slate-400 font-bold text-xs uppercase hover:text-red-500 hover:bg-red-50 transition">Tutup</button>
         </div>
     </div>
 
     <div id="loadingOverlay" class="hidden fixed inset-0 z-[60] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center">
-        <div class="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
         <h5 class="font-black text-slate-800 text-xs tracking-[0.2em] animate-pulse">MEMPROSES...</h5>
     </div>
 
@@ -255,7 +284,7 @@
         import { getFirestore, doc, setDoc, updateDoc, onSnapshot, arrayUnion, serverTimestamp, collection, query, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
-        // FIREBASE CONFIG (GANTI SAMA PUNYAMU)
+        // FIREBASE CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo",
             authDomain: "siganteng-absensi.firebaseapp.com",
@@ -283,23 +312,17 @@
                 userSiswa = JSON.parse(dataLokal);
                 userSiswa.nisn = String(userSiswa.username || userSiswa.nisn);
                 
-                // Isi Data Dashboard
                 document.getElementById('dash-nama').innerText = userSiswa.nama;
                 document.getElementById('dash-kelas').innerText = userSiswa.kelas || "SISWA";
-                
-                // Isi Data Halaman Profil juga
                 document.getElementById('profil-page-nama').innerText = userSiswa.nama;
                 document.getElementById('profil-page-nisn').innerText = userSiswa.nisn;
 
-                loadFotoProfil(); // Load Foto
-                renderMenu(); mulaiJam(); pantauDataRealtime(); cekGPS(); loadMenuDinamis();
-                
-                // LOAD DATA KONTAK WA (Baru)
-                loadDataKontak();
+                loadFotoProfil();
+                renderMenu(); mulaiJam(); pantauDataRealtime(); cekGPS(); loadMenuDinamis(); loadDataKontak();
             } else { window.location.href = 'index.html'; }
         });
 
-        // --- FUNGSI PROFIL & WA (BARU) ---
+        // --- FUNGSI PROFIL & WA ---
         function loadFotoProfil() {
             const defaultFoto = `https://ui-avatars.com/api/?name=${userSiswa.nama}&background=6366f1&color=fff&size=128&bold=true`;
             document.getElementById('dash-foto').src = defaultFoto;
@@ -312,71 +335,47 @@
                         document.getElementById('dash-foto').src = data.foto_profil;
                         document.getElementById('profil-page-foto').src = data.foto_profil;
                     }
-                    // Isi form WA kalau sudah ada di DB
                     if(data.wa_siswa) document.getElementById('inputWaSiswa').value = data.wa_siswa;
                     if(data.wa_ortu) document.getElementById('inputWaOrtu').value = data.wa_ortu;
                 }
             });
         }
+        function loadDataKontak() { } // Handled by Snapshot above
 
-        // FUNGSI LOAD KONTAK
-        function loadDataKontak() {
-            // Sudah dihandle di dalam onSnapshot loadFotoProfil biar realtime
-        }
-
-        // FORMAT NOMOR WA JADI 62
         function formatWA(nomor) {
             if(!nomor) return "";
-            let n = nomor.replace(/\D/g,''); // Hapus karakter selain angka
-            if(n.startsWith('0')) n = '62' + n.substring(1); // Ganti 0 depannya jadi 62
+            let n = nomor.replace(/\D/g,''); 
+            if(n.startsWith('0')) n = '62' + n.substring(1); 
             return n;
         }
 
         window.simpanDataWA = async () => {
             const waSiswa = formatWA(document.getElementById('inputWaSiswa').value);
             const waOrtu = formatWA(document.getElementById('inputWaOrtu').value);
-
             if(!waSiswa && !waOrtu) return Swal.fire('Kosong?', 'Isi minimal salah satu nomor.', 'warning');
-
             document.getElementById('loadingOverlay').classList.remove('hidden');
             try {
-                await setDoc(doc(db, "siswa", userSiswa.nisn), {
-                    wa_siswa: waSiswa,
-                    wa_ortu: waOrtu,
-                    last_update_kontak: serverTimestamp()
-                }, { merge: true });
-                
-                Swal.fire('Tersimpan', 'Nomor WhatsApp berhasil disimpan!', 'success');
-            } catch (e) {
-                Swal.fire('Gagal', e.message, 'error');
-            } finally {
-                document.getElementById('loadingOverlay').classList.add('hidden');
-            }
+                await setDoc(doc(db, "siswa", userSiswa.nisn), { wa_siswa: waSiswa, wa_ortu: waOrtu, last_update_kontak: serverTimestamp() }, { merge: true });
+                Swal.fire('Tersimpan', 'Nomor WhatsApp aman!', 'success');
+            } catch (e) { Swal.fire('Gagal', e.message, 'error'); } finally { document.getElementById('loadingOverlay').classList.add('hidden'); }
         }
 
-        // UPDATE FOTO PROFIL
         async function prosesUpdateProfil(fotoData) {
             document.getElementById('loadingOverlay').classList.remove('hidden');
             try {
                 const storageRef = ref(storage, `profil_siswa/${userSiswa.nisn}_${Date.now()}.jpg`);
                 const snap = await uploadString(storageRef, fotoData, 'data_url');
                 const downloadURL = await getDownloadURL(snap.ref);
+                await setDoc(doc(db, "siswa", userSiswa.nisn), { foto_profil: downloadURL, last_update_foto: serverTimestamp() }, { merge: true });
                 
-                await setDoc(doc(db, "siswa", userSiswa.nisn), {
-                    foto_profil: downloadURL,
-                    last_update_foto: serverTimestamp()
-                }, { merge: true });
-
-                Swal.fire('Mantap', 'Foto profil diperbarui.', 'success');
-            } catch (error) {
-                Swal.fire('Gagal', error.message, 'error');
-            } finally {
-                document.getElementById('loadingOverlay').classList.add('hidden');
+                // AUTO CLOSE KAMERA UNTUK PROFIL
                 tutupKamera();
-            }
+                Swal.fire({ title: 'Ganteng Maksimal!', text: 'Foto profil baru terpasang.', icon: 'success', timer: 1500, showConfirmButton: false });
+            
+            } catch (error) { Swal.fire('Gagal', error.message, 'error'); } finally { document.getElementById('loadingOverlay').classList.add('hidden'); }
         }
 
-        // --- CORE FUNCTIONS (MAP, ABSEN, DLL) ---
+        // --- CORE FUNCTIONS ---
         const databaseMenu = [
             { nama: "Absen", ikon: "scan-face", warna: "indigo", aksi: "bukaHalaman('page-absen')" },
             { nama: "Izin", ikon: "file-pen", warna: "orange", aksi: "bukaHalaman('page-sakit')" },
@@ -408,9 +407,8 @@
             tipeAbsenAktif = tipe; 
             document.getElementById('modalKamera').classList.remove('hidden');
             let judul = "KAMERA";
-            if(tipe === 'UpdateProfil') judul = "FOTO PROFIL";
+            if(tipe === 'UpdateProfil') judul = "SELFIE GANTENG";
             else if(tipe === 'BuktiSakit') judul = "BUKTI SAKIT";
-            
             document.getElementById('judulKamera').innerText = judul;
             navigator.mediaDevices.getUserMedia({video:{facingMode:'user', aspectRatio: 3/4}}).then(s=>{ streamKamera=s; document.getElementById('videoStream').srcObject=s; }); 
         }
@@ -440,7 +438,7 @@
                         if(!markerSiswa) markerSiswa = L.marker(lokasiUser).addTo(map); else markerSiswa.setLatLng(lokasiUser);
                         const d = map.distance(lokasiUser, [SEKOLAH_LAT, SEKOLAH_LNG]);
                         document.getElementById('jarakBox').innerText = d <= RADIUS_METER ? "Di Sekolah" : `Jarak: ${Math.round(d)}m`;
-                        document.getElementById('jarakBox').className = d <= RADIUS_METER ? "bg-emerald-500 text-white text-[10px] font-bold py-2 px-4 rounded-xl shadow-lg" : "bg-rose-500 text-white text-[10px] font-bold py-2 px-4 rounded-xl shadow-lg";
+                        document.getElementById('jarakBox').className = d <= RADIUS_METER ? "bg-emerald-500 text-white text-[10px] font-bold py-2.5 px-4 rounded-xl shadow-lg border border-white/20" : "bg-rose-500 text-white text-[10px] font-bold py-2.5 px-4 rounded-xl shadow-lg border border-white/20";
                     }
                 }, null, { enableHighAccuracy: true });
             }
@@ -451,6 +449,29 @@
             L.circle([SEKOLAH_LAT,SEKOLAH_LNG], {radius:RADIUS_METER, color:'#6366f1', fillColor:'#6366f1', fillOpacity:0.2}).addTo(map); 
         }
 
+        // --- LOGIC JADWAL PULANG (BARU) ---
+        function cekBolehPulang() {
+            const now = new Date();
+            const day = now.getDay(); // 0=Min, 1=Sen, 5=Jum
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+            const totalMenit = (hour * 60) + minute;
+
+            // Aturan Jadwal
+            const jadwal = {
+                'Senin-Kamis': 15 * 60 + 30, // 15:30 -> 930 menit
+                'Jumat': 13 * 60 + 40        // 13:40 -> 820 menit
+            };
+
+            // Logika (Sen-Kam = 1-4, Jum = 5)
+            if (day >= 1 && day <= 4) {
+                return totalMenit >= jadwal['Senin-Kamis'];
+            } else if (day === 5) {
+                return totalMenit >= jadwal['Jumat'];
+            }
+            return false; // Sabtu/Minggu atau diluar jam
+        }
+
         function pantauDataRealtime() {
             const docID = `${getTodayID()}_${userSiswa.nisn}`;
             onSnapshot(doc(db, "absensi", docID), (docSnap) => {
@@ -459,25 +480,43 @@
                 const listRiwayat = document.getElementById('listRiwayat');
                 const statusHero = document.getElementById('hero-status');
                 const subStatus = document.getElementById('sub-status');
+                const btnPulang = document.getElementById('btnPulang');
+                const msgBelumPulang = document.getElementById('msgBelumPulang');
                 
                 listRiwayat.innerHTML = '';
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     const st = data.status_terakhir || "";
                     statusHero.innerText = st;
-                    subStatus.innerText = "Terupdate";
+                    subStatus.innerText = "Terupdate: " + new Date().toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
                     
                     const sudahMasuk = st.includes("Masuk") || st.includes("Hadir") || st === "Kembali";
                     const sedangIzin = st === "Izin Keluar";
                     const sudahPulang = st.includes("Pulang");
 
-                    if(sudahMasuk) { btnMasuk.classList.add('hidden'); grpSekolah.classList.remove('hidden'); document.getElementById('btnKembali').classList.add('hidden'); }
-                    else if(sedangIzin) { btnMasuk.classList.add('hidden'); grpSekolah.classList.remove('hidden'); document.getElementById('btnKembali').classList.remove('hidden'); }
+                    if(sudahMasuk) { 
+                        btnMasuk.classList.add('hidden'); 
+                        grpSekolah.classList.remove('hidden'); 
+                        document.getElementById('btnKembali').classList.add('hidden'); 
+
+                        // LOGIC KUNCI TOMBOL PULANG
+                        if (cekBolehPulang()) {
+                            btnPulang.disabled = false;
+                            btnPulang.classList.remove('opacity-50', 'cursor-not-allowed');
+                            msgBelumPulang.classList.add('hidden');
+                        } else {
+                            btnPulang.disabled = true;
+                            btnPulang.classList.add('opacity-50', 'cursor-not-allowed');
+                            msgBelumPulang.classList.remove('hidden');
+                        }
+                    }
+                    else if(sedangIzin) { btnMasuk.classList.add('hidden'); grpSekolah.classList.remove('hidden'); document.getElementById('btnKembali').classList.remove('hidden'); msgBelumPulang.classList.add('hidden'); btnPulang.classList.add('hidden'); }
                     else if(sudahPulang) { btnMasuk.classList.add('hidden'); grpSekolah.classList.add('hidden'); statusHero.innerText = "Selesai"; }
-                    if (data.riwayat_kegiatan) [...data.riwayat_kegiatan].reverse().forEach(item => listRiwayat.innerHTML += `<div>${item}</div>`);
+                    
+                    if (data.riwayat_kegiatan) [...data.riwayat_kegiatan].reverse().forEach(item => listRiwayat.innerHTML += `<div class="py-1 border-b border-slate-50">${item}</div>`);
                 } else {
                     statusHero.innerText = "Belum Hadir";
-                    subStatus.innerText = "Ayo absen";
+                    subStatus.innerText = "Ayo absen sekarang";
                     btnMasuk.classList.remove('hidden'); grpSekolah.classList.add('hidden');
                 }
             });
@@ -498,7 +537,11 @@
                     else { updateData.foto_bukti = url; }
                 }
                 await setDoc(doc(db, "absensi", docID), updateData, { merge: true });
-                Swal.fire('Berhasil', status + ' Tercatat', 'success');
+                
+                // AUTO CLOSE SETELAH KIRIM DATA (Permintaanmu)
+                tutupKamera();
+                Swal.fire({ title: 'Berhasil!', text: status + ' Tercatat', icon: 'success', timer: 1500, showConfirmButton: false });
+            
             } catch (e) { Swal.fire('Error', e.message, 'error'); } 
             finally { document.getElementById('loadingOverlay').classList.add('hidden'); }
         }
