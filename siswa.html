@@ -6,9 +6,6 @@
 <meta name="theme-color" content="#0d6efd">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SiGanteng Super App - v3.2 Final</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -529,13 +526,12 @@
         window.bukaCam = bukaCam; window.tutupKamera = tutupKamera; window.jepretFoto = jepretFoto; window.logout = logout; window.simpanDataWA = simpanDataWA;
         window.bukaKartu = bukaKartu; window.tutupKartu = tutupKartu; window.pilihJenisIzin = pilihJenisIzin; window.kirimLaporanIzin = kirimLaporanIzin;
     </script>
-    <script>
-  // Script PWA SiGanteng
+  <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js')
-        .then((reg) => console.log('Aplikasi Siap: SW Terdaftar', reg.scope))
-        .catch((err) => console.log('Gagal Daftar SW:', err));
+        .then((reg) => console.log('PWA SiGanteng Aktif'))
+        .catch((err) => console.error('PWA Error:', err));
     });
   }
 </script>
