@@ -67,6 +67,9 @@
             <button onclick="nav('menu-manager')" id="nav-menu-manager" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
                 <i data-lucide="layout-grid" class="w-5 h-5"></i> Kelola Tombol
             </button>
+            <button onclick="nav('libur')" id="nav-libur" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
+                <i data-lucide="calendar-off" class="w-5 h-5"></i> Kelola Hari Libur
+            </button>
             
             <button onclick="window.open('kiosk_webcam.html', '_blank')" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-emerald-400 hover:text-white hover:bg-emerald-900/20 rounded-lg transition border border-emerald-900/50 mt-2">
                 <i data-lucide="scan-barcode" class="w-5 h-5"></i> Mode Kiosk (Scan)
@@ -222,6 +225,46 @@
             </div>
         </div>
 
+        <div id="view-libur" class="hidden space-y-6 fade-in">
+            <h2 class="text-3xl font-bold text-white">Kelola Hari Libur</h2>
+            <p class="text-slate-400 text-sm">Siswa tidak akan dianggap Alpa jika tanggal merah sudah didaftarkan disini.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                    <h3 class="font-bold text-white mb-4 flex items-center gap-2">
+                        <i data-lucide="plus-circle" class="w-5 h-5 text-red-500"></i> Tambah Libur
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-xs text-slate-500 uppercase font-bold">Tanggal</label>
+                            <input type="date" id="inputTglLibur" class="w-full bg-slate-800 text-white p-3 rounded-lg border border-slate-700 mt-1 cursor-pointer">
+                        </div>
+                        <div>
+                            <label class="text-xs text-slate-500 uppercase font-bold">Keterangan</label>
+                            <input type="text" id="inputKetLibur" class="w-full bg-slate-800 text-white p-3 rounded-lg border border-slate-700 mt-1" placeholder="Contoh: HUT RI / Cuti Bersama">
+                        </div>
+                        <button onclick="simpanLibur()" id="btnSimpanLibur" class="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-lg transition">
+                            Simpan Tanggal
+                        </button>
+                    </div>
+                </div>
+
+                <div class="md:col-span-2 bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                    <h3 class="font-bold text-white mb-4">Daftar Libur Mendatang</h3>
+                    <div class="overflow-y-auto max-h-96">
+                        <table class="w-full text-left text-sm text-slate-400">
+                            <thead class="bg-slate-950 text-xs uppercase font-bold text-slate-500 sticky top-0">
+                                <tr><th class="p-3">Tanggal</th><th class="p-3">Keterangan</th><th class="p-3 text-right">Aksi</th></tr>
+                            </thead>
+                            <tbody id="tbody-libur" class="divide-y divide-slate-800">
+                                <tr><td colspan="3" class="p-4 text-center italic">Memuat data...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div id="view-data" class="hidden space-y-6 fade-in">
             <h2 class="text-3xl font-bold text-white">Import Database</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -311,6 +354,7 @@
         const firebaseConfig = {
             apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo",
             authDomain: "siganteng-absensi.firebaseapp.com",
+            databaseURL: "https://siganteng-absensi-default-rtdb.asia-southeast1.firebasedatabase.app",
             projectId: "siganteng-absensi",
             storageBucket: "siganteng-absensi.firebasestorage.app",
             messagingSenderId: "917873420012",
@@ -332,9 +376,84 @@
             await tarikDataSiswa();
             pantauRealtime();
             loadMenuManager(); 
+            loadHariLibur(); // <-- INI BARU DITAMBAHKAN
             if(role === 'SUPER') loadSettings();
             document.getElementById('loading').style.display = 'none';
         });
+
+        // --- FUNGSI HARI LIBUR (BARU) ---
+        function loadHariLibur() {
+            const q = query(collection(db, "hari_libur"), orderBy("tanggal", "asc"));
+            onSnapshot(q, (snapshot) => {
+                const tbody = document.getElementById('tbody-libur'); 
+                tbody.innerHTML = '';
+                if(snapshot.empty) { 
+                    tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center italic">Tidak ada jadwal libur.</td></tr>'; 
+                    return; 
+                }
+                
+                snapshot.forEach(doc => {
+                    const d = doc.data();
+                    const tglIndo = d.tanggal.split('-').reverse().join('-');
+                    const badge = new Date(d.tanggal) < new Date() ? '<span class="text-xs bg-slate-800 px-2 py-1 rounded text-slate-500">Lewat</span>' : '<span class="text-xs bg-blue-900 px-2 py-1 rounded text-blue-300">Aktif</span>';
+                    
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-slate-800 border-b border-slate-800">
+                            <td class="p-3 font-mono text-white">${tglIndo} ${badge}</td>
+                            <td class="p-3 text-slate-300 font-bold">${d.keterangan}</td>
+                            <td class="p-3 text-right">
+                                <button onclick="hapusLibur('${doc.id}')" class="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white p-2 rounded transition">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                lucide.createIcons();
+            });
+        }
+
+        window.simpanLibur = async () => {
+            const tgl = document.getElementById('inputTglLibur').value;
+            const ket = document.getElementById('inputKetLibur').value;
+            
+            if(!tgl || !ket) return Swal.fire('Gagal', 'Tanggal dan Keterangan wajib diisi!', 'warning');
+            
+            try {
+                // Cek apakah tanggal sudah ada (opsional, tapi bagus buat validasi)
+                // Langsung simpan aja biar cepat
+                await addDoc(collection(db, "hari_libur"), {
+                    tanggal: tgl,
+                    keterangan: ket,
+                    dibuat_pada: new Date().toISOString()
+                });
+                
+                Swal.fire('Sukses', 'Jadwal libur ditambahkan.', 'success');
+                document.getElementById('inputTglLibur').value = '';
+                document.getElementById('inputKetLibur').value = '';
+            } catch(e) {
+                console.error(e);
+                Swal.fire('Error', 'Gagal menyimpan data.', 'error');
+            }
+        }
+
+        window.hapusLibur = async (id) => {
+            Swal.fire({
+                title: 'Hapus Libur?',
+                text: "Data tidak bisa dikembalikan!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                confirmButtonText: 'Ya, Hapus',
+                background: '#1e293b', color: '#fff'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    await deleteDoc(doc(db, "hari_libur", id));
+                    Swal.fire({title:'Terhapus!', icon:'success', timer:1000, showConfirmButton:false, background: '#1e293b', color: '#fff'});
+                }
+            });
+        }
+        // --- END FUNGSI HARI LIBUR ---
 
         // --- FUNGSI SETTINGS (BARU & SINKRON) ---
         async function loadSettings() {
