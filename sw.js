@@ -1,36 +1,29 @@
 self.addEventListener('install', (e) => {
   console.log('[SiGanteng] Install Service Worker...');
   e.waitUntil(
-    // 1. GANTI NAMA CACHE JADI v2 (Biar browser download ulang)
-    caches.open('siganteng-store-v2').then((cache) => cache.addAll([
+    caches.open('siganteng-store-v3').then((cache) => cache.addAll([
       './',
       './index.html',
       './siswa.html',
       './guru.html',
-      './manifest.json', // Tambahin ini
-      './logo.png',      // Tambahin ini
-      './splash.png',    // WAJIB Tambahin ini biar splash screen kesimpen
+      './manifest.json',
+      './logo_baru.png',    // <-- NAMA BARU
+      './splash_baru.png',  // <-- NAMA BARU
     ]))
   );
 });
 
-self.addEventListener('fetch', (e) => {
-  console.log('[SiGanteng] Fetching url: ' + e.request.url);
-  e.respondWith(
-    caches.match(e.request).then((response) => response || fetch(e.request))
-  );
-});
-
-// TAMBAHAN: Hapus Cache Lama (v1) biar memori HP gak penuh
+// ... kode bawahnya biarin aja sama kayak sebelumnya
+// Cuma pastiin di bagian "activate" (hapus cache) kodenya ngapus selain 'siganteng-store-v3'
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((keyList) => {
       return Promise.all(keyList.map((key) => {
-        if (key !== 'siganteng-store-v2') {
-          console.log('[SiGanteng] Hapus cache lama', key);
-          return caches.delete(key);
+        if (key !== 'siganteng-store-v3') {
+           return caches.delete(key);
         }
       }));
     })
   );
 });
+// ... sisa kode fetch biarin aja
