@@ -6,10 +6,8 @@
     <title>Login - Si Ganteng SMAN 1 Pejagoan</title>
 
     <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/png" href="logo.png">
     <link rel="apple-touch-icon" href="logo.png">
-    
-    <meta name="theme-color" content="#0f172a">
+    <meta name="theme-color" content="#0d6efd">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
@@ -21,7 +19,6 @@
         body {
             margin: 0; font-family: 'Outfit', sans-serif;
             background-color: #0f172a;
-            /* Background Gelap Keren */
             background-image: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
             height: 100vh; display: flex; align-items: center; justify-content: center;
             color: white; overflow: hidden;
@@ -59,43 +56,29 @@
             display: inline-block; margin-top: 20px; color: #94a3b8; text-decoration: none;
             font-size: 0.9em; transition: 0.3s; border-bottom: 1px dashed rgba(148, 163, 184, 0.5); padding-bottom: 2px;
         }
+        .link-help:hover { color: #38bdf8; border-color: #38bdf8; }
         .footer { position: absolute; bottom: 20px; width: 100%; text-align: center; color: #475569; font-size: 0.75em; }
         @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
-
-        /* Loader Kecil (Pas ngecek password) */
+        
+        /* Loader Biasa (Spinning Circle) */
         #loader {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(15, 23, 42, 0.9); z-index: 50;
             display: none; justify-content: center; align-items: center; flex-direction: column;
         }
-
-        /* --- INI LAYAR SPLASH SCREEN (MUNCUL SETELAH LOGIN) --- */
-        #layar-splash {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            z-index: 9999; background-color: #0f172a; 
-            display: none; /* Default Hilang */
-            justify-content: center; align-items: center; flex-direction: column;
-        }
-        @keyframes denyut {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.05); opacity: 0.9; }
-            100% { transform: scale(1); opacity: 1; }
-        }
     </style>
 </head>
 <body>
 
-    <div id="layar-splash">
-        <img src="splash.png" style="width: 150px; margin-bottom: 20px; animation: denyut 2s infinite;" alt="Loading...">
-        <p style="color: #94a3b8;">Menyiapkan Dashboard...</p>
+    <div id="layar-sambut" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; background-color: #000000; display: flex; justify-content: center; align-items: center; transition: opacity 0.5s ease;">
+        <img src="splash.png" style="width: 100%; height: 100%; object-fit: cover;" alt="Loading SiGanteng...">
     </div>
-
     <div id="loader">
         <i class='bx bx-loader-alt bx-spin' style="font-size: 50px; color: #38bdf8;"></i>
-        <p style="margin-top: 15px;">Verifikasi Akun...</p>
+        <p style="margin-top: 15px; color: white;">Memproses Masuk...</p>
     </div>
 
-    <div class="login-card" id="kotakLogin">
+    <div class="login-card">
         <div class="brand-logo"><i class='bx bxs-graduation'></i></div>
         <h2>SI GANTENG</h2>
         <p>SMAN 1 PEJAGOAN</p>
@@ -103,7 +86,7 @@
         <form id="formLogin">
             <div class="input-group">
                 <label>Username / NISN</label>
-                <input type="text" id="username" class="input-field" placeholder="Ketik Username..." required autocomplete="off">
+                <input type="text" id="username" class="input-field" placeholder="Ketik Admin / NISN / NIP..." required autocomplete="off">
             </div>
 
             <div class="input-group">
@@ -111,10 +94,12 @@
                 <input type="password" id="password" class="input-field" placeholder="Masukan Password..." required>
             </div>
 
-            <button type="submit" class="btn-login">MASUK SEKARANG <i class='bx bx-right-arrow-alt'></i></button>
+            <button type="submit" class="btn-login" id="btnLogin">MASUK SEKARANG <i class='bx bx-right-arrow-alt'></i></button>
         </form>
 
-        <a href="cari.html" class="link-help"><i class='bx bx-search'></i> Lupa NISN? Cari Disini</a>
+        <a href="cari.html" class="link-help">
+            <i class='bx bx-search'></i> Lupa NISN? Cari Disini
+        </a>
     </div>
 
     <div class="footer">&copy; 2025 IT Team SMAN 1 Pejagoan</div>
@@ -123,6 +108,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+        // KONFIGURASI FIREBASE KAMU
         const firebaseConfig = {
             apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo",
             authDomain: "siganteng-absensi.firebaseapp.com",
@@ -136,90 +122,125 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // LOGIKA SAAT TOMBOL LOGIN DITEKAN
         document.getElementById('formLogin').addEventListener('submit', async function(e) {
             e.preventDefault();
+            
             const u = document.getElementById('username').value.trim();
             const p = document.getElementById('password').value.trim();
             const loader = document.getElementById('loader');
 
             if(!u || !p) return;
-            loader.style.display = 'flex'; // Loader kecil muncul
 
-            // --- ADMIN DARURAT ---
+            loader.style.display = 'flex';
+
+            // --- ⚠️ KUNCI DARURAT ADMIN ---
             if (u === 'admin' && p === '123') {
-                eksekusiSukses({nama:"Super Admin", role:"admin"}, "admin.html");
-                return;
+                localStorage.setItem('admin_token', 'RAHASIA_NEGARA_SMAN1');
+                sessionStorage.setItem('user_siganteng', JSON.stringify({nama: "Super Admin", role: "admin"}));
+                localStorage.setItem('admin_role', 'SUPER'); 
+                setTimeout(() => { window.location.href = 'admin.html'; }, 1000);
+                return; 
             }
+            // -----------------------------
 
             try {
+                // 1. CARI USER DI DATABASE
                 const q = query(collection(db, "users"), where("username", "==", u));
                 const snap = await getDocs(q);
 
-                if (snap.empty) throw new Error("Username tidak ditemukan!");
-                
+                if (snap.empty) {
+                    throw new Error("Username tidak ditemukan! Pastikan NISN/NIP benar.");
+                }
+
                 let userData = null;
                 snap.forEach(d => userData = d.data());
 
+                // === LOGIKA SMART LOGIN (SISWA VS ORTU) ===
+                
                 const passSiswa = String(userData.password);
                 const passOrtu = userData.password_ortu ? String(userData.password_ortu) : "ortu" + String(userData.username); 
 
-                // LOGIN SUKSES
+                // SKENARIO A: LOGIN SEBAGAI PEMILIK AKUN (SISWA/GURU/ADMIN)
                 if (String(p) === passSiswa) {
+                    
                     sessionStorage.setItem('user_siganteng', JSON.stringify(userData));
-                    if (!userData.role || userData.role === 'siswa') localStorage.setItem('userSiswa', JSON.stringify(userData));
+                    
+                    if (!userData.role || userData.role === 'siswa') {
+                        localStorage.setItem('userSiswa', JSON.stringify(userData));
+                    }
 
-                    // Tentukan mau dilempar kemana
-                    let tujuan = 'siswa.html';
-                    if (userData.role === 'admin') tujuan = 'admin.html';
-                    if (userData.role === 'guru') tujuan = 'guru.html';
+                    Swal.fire({
+                        icon: 'success', title: 'Login Berhasil', 
+                        text: `Selamat Datang, ${userData.nama}`,
+                        timer: 1500, showConfirmButton: false, background: '#1e293b', color: '#fff'
+                    }).then(() => {
+                        const role = userData.role ? userData.role.toLowerCase() : 'siswa';
 
-                    eksekusiSukses(userData, tujuan);
+                        if (role === 'admin') {
+                            localStorage.setItem('admin_token', 'TOKEN_RESMI');
+                            localStorage.setItem('admin_role', 'SUPER');
+                            window.location.href = 'admin.html';
+                        } 
+                        else if (role === 'guru') {
+                            window.location.href = 'guru.html'; 
+                        } 
+                        else {
+                            window.location.href = 'siswa.html';
+                        }
+                    });
+
                 } 
+                // SKENARIO B: LOGIN SEBAGAI ORANG TUA
                 else if (String(p) === passOrtu) {
                     localStorage.setItem('userSiswa', JSON.stringify(userData));
-                    eksekusiSukses(userData, "orangtua.html");
-                } 
+
+                    Swal.fire({
+                        icon: 'success', title: 'Akses Wali Murid', 
+                        text: `Monitoring Siswa: ${userData.nama}`,
+                        timer: 1500, showConfirmButton: false, background: '#1e293b', color: '#fff'
+                    }).then(() => {
+                        window.location.href = 'orangtua.html';
+                    });
+
+                }
+                // SKENARIO C: PASSWORD SALAH TOTAL
                 else {
                     throw new Error("Password Salah!");
                 }
 
             } catch (error) {
-                Swal.fire({icon: 'error', title: 'Gagal', text: error.message, background: '#1e293b', color: '#fff'});
+                Swal.fire({
+                    icon: 'error', title: 'Gagal Masuk', text: error.message,
+                    confirmButtonColor: '#3b82f6', background: '#1e293b', color: '#fff'
+                });
                 loader.style.display = 'none';
             }
         });
-
-        // --- FUNGSI TRANSISI SPLASH SCREEN ---
-        function eksekusiSukses(userData, urlTujuan) {
-            const kotakLogin = document.getElementById('kotakLogin');
-            const loader = document.getElementById('loader');
-            const splash = document.getElementById('layar-splash');
-
-            // 1. Sembunyikan Form Login & Loader Kecil
-            kotakLogin.style.display = 'none';
-            loader.style.display = 'none';
-
-            // 2. Munculkan SPLASH Full Layar
-            splash.style.display = 'flex';
-
-            // 3. Simpan Sesi (Opsional Admin Token)
-            if(userData.role === 'admin') {
-                localStorage.setItem('admin_token', 'TOKEN_RESMI');
-            }
-
-            // 4. Tunggu 3 Detik baru pindah
-            setTimeout(() => {
-                window.location.href = urlTujuan;
-            }, 3000); 
-        }
     </script>
 
     <script>
+        // 1. Script PWA Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js');
+                navigator.serviceWorker.register('./sw.js')
+                    .then((reg) => console.log('Aplikasi Siap: SW Terdaftar', reg.scope))
+                    .catch((err) => console.log('Gagal Daftar SW:', err));
             });
         }
+
+        // 2. Script Menghilangkan Splash Screen setelah 3 detik
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const splash = document.getElementById('layar-sambut');
+                if(splash) {
+                    splash.style.opacity = '0'; // Efek memudar
+                    setTimeout(() => {
+                        splash.style.display = 'none'; // Hilang total
+                    }, 500); 
+                }
+            }, 3000); // 3000ms = 3 detik
+        });
     </script>
 
 </body>
