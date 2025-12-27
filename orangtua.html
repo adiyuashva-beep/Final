@@ -21,6 +21,8 @@
             border: 2px solid #e2e8f0; transition: transform 0.2s; cursor: pointer; background: #fff;
         }
         .avatar-absen:hover { transform: scale(2.5); border-color: #3b82f6; z-index: 50; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .fade-in { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="text-slate-800 min-h-screen flex flex-col pb-10">
@@ -61,6 +63,16 @@
             </div>
         </div>
 
+        <div class="bg-white p-5 rounded-[2rem] shadow-lg border border-slate-100">
+            <div class="flex items-center gap-2 mb-4 border-b border-slate-50 pb-2">
+                <i data-lucide="book-open" class="w-4 h-4 text-emerald-500"></i>
+                <h3 class="font-black text-slate-700 text-xs uppercase tracking-widest">Pembelajaran Hari Ini</h3>
+            </div>
+            <div id="container-kbm" class="space-y-3">
+                <div class="text-center text-slate-400 text-xs italic py-4">Memuat data KBM...</div>
+            </div>
+        </div>
+
         <div class="flex gap-2">
             <select id="filter-bulan" onchange="loadLaporanBulanan()" class="flex-1 bg-white border border-slate-200 text-xs font-bold text-slate-700 rounded-xl px-3 py-3 outline-none shadow-sm"></select>
             <select id="filter-tahun" onchange="loadLaporanBulanan()" class="w-24 bg-white border border-slate-200 text-xs font-bold text-slate-700 rounded-xl px-3 py-3 outline-none shadow-sm"></select>
@@ -69,7 +81,7 @@
         <div class="bg-white rounded-[1.5rem] shadow-lg border border-slate-100 overflow-hidden">
             <div class="p-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
                 <h3 class="font-black text-slate-700 text-xs uppercase tracking-widest flex items-center gap-2">
-                    <i data-lucide="file-text" class="w-4 h-4 text-blue-500"></i> Jurnal Bulanan
+                    <i data-lucide="file-text" class="w-4 h-4 text-blue-500"></i> Rekap Absensi
                 </h3>
             </div>
             <div class="overflow-x-auto">
@@ -90,7 +102,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getFirestore, doc, onSnapshot, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getFirestore, doc, onSnapshot, collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo",
@@ -105,8 +117,9 @@
         const db = getFirestore(app);
 
         let userAnak = null;
+        let cacheHariLibur = {}; // Cache Libur Nasional
 
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
             setupFilterTanggal();
             const dataLokal = localStorage.getItem('userSiswa'); 
@@ -114,7 +127,9 @@
                 userAnak = JSON.parse(dataLokal);
                 initHeader();
                 pantauHariIni();
+                await loadHariLibur(); // Load Libur dulu
                 loadLaporanBulanan(); 
+                loadKBMHariIni(); // <-- NEW: Load KBM
             } else { window.location.href = 'index.html'; }
         });
 
@@ -122,18 +137,10 @@
             const selBulan = document.getElementById('filter-bulan');
             const namabulan = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
             const currentMonth = new Date().getMonth();
-            namabulan.forEach((nm, i) => {
-                let opt = new Option(nm, i + 1); 
-                if(i === currentMonth) opt.selected = true;
-                selBulan.add(opt);
-            });
+            namabulan.forEach((nm, i) => { let opt = new Option(nm, i + 1); if(i === currentMonth) opt.selected = true; selBulan.add(opt); });
             const selTahun = document.getElementById('filter-tahun');
             const currentYear = new Date().getFullYear();
-            for(let y = currentYear - 1; y <= currentYear + 1; y++) {
-                let opt = new Option(y, y);
-                if(y === currentYear) opt.selected = true;
-                selTahun.add(opt);
-            }
+            for(let y = currentYear - 1; y <= currentYear + 1; y++) { let opt = new Option(y, y); if(y === currentYear) opt.selected = true; selTahun.add(opt); }
         }
 
         function initHeader() {
@@ -147,7 +154,47 @@
             });
         }
 
-        // --- PANTAU HARI INI (REALTIME) ---
+        // --- HARI LIBUR ---
+        async function loadHariLibur() {
+            try {
+                const q = query(collection(db, "hari_libur"));
+                const snap = await getDocs(q);
+                cacheHariLibur = {};
+                snap.forEach(doc => { cacheHariLibur[doc.data().tanggal] = doc.data().keterangan; });
+            } catch(e) { console.log("Gagal load libur:", e); }
+        }
+
+        // --- KBM HARI INI (NEW) ---
+        function loadKBMHariIni() {
+            const todayStr = new Date().toLocaleDateString('fr-CA');
+            const container = document.getElementById('container-kbm');
+            const q = query(collection(db, "jurnal_guru"), where("kelas", "==", userAnak.kelas), where("tanggal", "==", todayStr), orderBy("waktu", "desc"));
+            
+            onSnapshot(q, (snap) => {
+                container.innerHTML = '';
+                if(snap.empty) { container.innerHTML = '<div class="text-center text-slate-400 text-xs italic py-4">Belum ada KBM masuk hari ini.</div>'; return; }
+                
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    const jam = d.waktu ? new Date(d.waktu.toDate()).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : '-';
+                    // Foto Bukti KBM (Kecil saja)
+                    const img = d.foto_bukti ? `<img src="${d.foto_bukti}" class="w-10 h-10 rounded-lg object-cover ml-auto border border-slate-100 cursor-pointer" onclick="lihatFoto('${d.foto_bukti}', 'Bukti KBM - ${d.mapel}')">` : '';
+                    
+                    container.innerHTML += `
+                        <div class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 fade-in">
+                            <div class="bg-indigo-100 text-indigo-600 text-[10px] font-bold px-2 py-1 rounded mt-1">${jam}</div>
+                            <div class="flex-1">
+                                <h4 class="font-bold text-slate-700 text-xs leading-tight">${d.mapel}</h4>
+                                <div class="text-[10px] text-slate-500 font-bold mb-1">${d.nama_guru}</div>
+                                <p class="text-[10px] text-slate-400 leading-snug">"${d.materi}"</p>
+                            </div>
+                            ${img}
+                        </div>`;
+                });
+            });
+        }
+
+        // --- PANTAU ABSEN REALTIME ---
         function pantauHariIni() {
             const todayStr = new Date().toLocaleDateString('fr-CA');
             const nisn = String(userAnak.username || userAnak.nisn);
@@ -172,16 +219,24 @@
                         iconEl.innerHTML = `<i data-lucide="alert-circle" class="w-6 h-6"></i>`;
                     }
                 } else {
-                    statusEl.innerText = "BELUM ABSEN";
-                    statusEl.className = "text-xl font-black text-slate-400";
-                    iconEl.className = "w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center text-slate-400";
-                    iconEl.innerHTML = `<i data-lucide="clock" class="w-6 h-6"></i>`;
+                    // Cek Libur
+                    if(cacheHariLibur[todayStr]) {
+                        statusEl.innerText = "LIBUR: " + cacheHariLibur[todayStr].toUpperCase();
+                        statusEl.className = "text-xl font-black text-purple-600";
+                        iconEl.className = "w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center text-purple-600";
+                        iconEl.innerHTML = `<i data-lucide="calendar-off" class="w-6 h-6"></i>`;
+                    } else {
+                        statusEl.innerText = "BELUM ABSEN";
+                        statusEl.className = "text-xl font-black text-slate-400";
+                        iconEl.className = "w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center text-slate-400";
+                        iconEl.innerHTML = `<i data-lucide="clock" class="w-6 h-6"></i>`;
+                    }
                 }
                 lucide.createIcons();
             });
         }
 
-        // --- JURNAL BULANAN (FIX LOADING) ---
+        // --- LAPORAN BULANAN (UPGRADED LOGIC) ---
         window.loadLaporanBulanan = async () => {
             const tbody = document.getElementById('tbody-laporan');
             tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-400"><i data-lucide="loader-2" class="animate-spin w-6 h-6 inline"></i> Memuat data...</td></tr>';
@@ -190,25 +245,18 @@
             const bln = parseInt(document.getElementById('filter-bulan').value);
             const thn = parseInt(document.getElementById('filter-tahun').value);
             const nisn = String(userAnak.username || userAnak.nisn);
-
             const daysInMonth = new Date(thn, bln, 0).getDate(); 
             const strBln = bln < 10 ? '0' + bln : bln;
             const start = `${thn}-${strBln}-01`;
             const end = `${thn}-${strBln}-${daysInMonth}`;
             
             try {
-                // JURUS ANTI ERROR: CUMA QUERY NISN (FILTER TANGGAL DI JS AJA)
                 const q = query(collection(db, "absensi"), where("nisn", "==", nisn));
                 const snap = await getDocs(q);
-                
                 let dataMap = {};
                 snap.forEach(doc => {
                     const d = doc.data();
-                    // Filter tanggal di sini (Manual JS) biar gak minta index
-                    if (d.tanggal >= start && d.tanggal <= end) {
-                        const tglKey = parseInt(d.tanggal.split('-')[2]);
-                        dataMap[tglKey] = d;
-                    }
+                    if (d.tanggal >= start && d.tanggal <= end) dataMap[parseInt(d.tanggal.split('-')[2])] = d;
                 });
 
                 tbody.innerHTML = '';
@@ -217,6 +265,9 @@
                 for(let i = 1; i <= daysInMonth; i++) {
                     const currentDate = new Date(thn, bln - 1, i);
                     const isWeekend = (currentDate.getDay() === 0 || currentDate.getDay() === 6);
+                    const tglStr = `${thn}-${strBln}-${i < 10 ? '0'+i : i}`;
+                    const liburNasional = cacheHariLibur[tglStr]; // Cek Cache Libur
+
                     const data = dataMap[i]; 
                     
                     let rowClass = "border-b border-slate-50";
@@ -225,7 +276,11 @@
                     let jamHtml = `<span class="text-slate-300">-</span>`;
                     let ketHtml = `<span class="text-slate-300">-</span>`;
 
-                    if (isWeekend) {
+                    if (liburNasional) {
+                        rowClass = "bg-purple-50 border-b border-purple-100";
+                        tglHtml = `<span class="block font-bold text-lg leading-none text-purple-600">${i}</span>`;
+                        ketHtml = `<span class="text-[9px] font-bold text-purple-500 bg-purple-100 px-2 py-0.5 rounded uppercase">${liburNasional}</span>`;
+                    } else if (isWeekend) {
                         rowClass = "row-libur border-b border-slate-100";
                         ketHtml = `<span class="text-[9px] font-bold text-slate-400 bg-slate-200 px-2 py-0.5 rounded">LIBUR</span>`;
                     }
@@ -235,20 +290,14 @@
                         const jMasuk = data.jam_masuk ? formatTime(data.jam_masuk.toDate()) : '-';
                         const jPulang = data.jam_pulang ? formatTime(data.jam_pulang.toDate()) : '-';
                         
-                        // FOTO: Kalau Sakit/Izin pakai Bukti, kalau Hadir pakai Selfie
                         let urlFoto = data.foto_masuk;
                         if(st.includes("Sakit") || st.includes("Izin")) urlFoto = data.foto_bukti;
                         
                         if(urlFoto) {
-                            // Cek jika foto UI Avatar (default), jangan di-zoom
-                            if(urlFoto.includes("ui-avatars")) {
-                                fotoHtml = `<img src="${urlFoto}" class="w-8 h-8 rounded-full mx-auto opacity-50">`;
-                            } else {
-                                fotoHtml = `<img src="${urlFoto}" class="avatar-absen shadow-sm" onclick="lihatFoto('${urlFoto}','${data.tanggal} - ${st}')">`;
-                            }
+                            if(urlFoto.includes("ui-avatars")) fotoHtml = `<img src="${urlFoto}" class="w-8 h-8 rounded-full mx-auto opacity-50">`;
+                            else fotoHtml = `<img src="${urlFoto}" class="avatar-absen shadow-sm" onclick="lihatFoto('${urlFoto}','${data.tanggal} - ${st}')">`;
                         }
 
-                        // JAM & STATUS
                         if(st.includes("Hadir") || st.includes("Masuk") || st.includes("Pulang") || st.includes("Kembali")) {
                             jamHtml = `<div class="flex flex-col"><span class="text-emerald-600 font-bold">${jMasuk}</span><span class="text-blue-600 font-bold text-[10px]">${jPulang}</span></div>`;
                             ketHtml = `<span class="text-emerald-500 font-bold text-xs">HADIR</span>`;
@@ -259,19 +308,14 @@
                             jamHtml = `<span class="bg-orange-100 text-orange-700 px-2 py-1 rounded font-bold text-[10px]">IZIN</span>`;
                             ketHtml = `<span class="text-orange-500 font-bold text-[10px]">SURAT</span>`;
                         }
-
-                        // DETEKSI IZIN KELUAR
                         if(data.riwayat_kegiatan) {
                             data.riwayat_kegiatan.forEach(log => {
                                 if(log.includes("Izin Keluar")) {
-                                    const jamIzin = log.split(' - ')[0];
-                                    ketHtml += `<div class="text-[9px] text-red-500 font-bold bg-red-50 px-2 py-1 rounded leading-tight mt-1">Keluar: ${jamIzin}</div>`;
+                                    ketHtml += `<div class="text-[9px] text-red-500 font-bold bg-red-50 px-2 py-1 rounded leading-tight mt-1">Keluar: ${log.split(' - ')[0]}</div>`;
                                 }
                             });
                         }
-
-                    } else if (!isWeekend && currentDate < todayZero) {
-                        // ALPHA
+                    } else if (!isWeekend && !liburNasional && currentDate < todayZero) {
                         rowClass = "row-alpha border-b border-red-100";
                         tglHtml = `<span class="block font-bold text-lg leading-none text-red-500">${i}</span>`;
                         jamHtml = `<span class="text-red-300 font-bold">-</span>`;
@@ -280,10 +324,7 @@
 
                     tbody.innerHTML += `<tr class="${rowClass}"><td class="p-3 text-center align-middle">${tglHtml}</td><td class="p-3 text-center align-middle">${fotoHtml}</td><td class="p-3 align-middle">${jamHtml}</td><td class="p-3 align-middle">${ketHtml}</td></tr>`;
                 }
-            } catch (err) {
-                console.error(err);
-                tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500 text-xs">Gagal: ${err.message}</td></tr>`;
-            }
+            } catch (err) { tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500 text-xs">Gagal: ${err.message}</td></tr>`; }
         };
 
         function formatTime(date) { return date.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}).replace('.', ':'); }
