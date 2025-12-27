@@ -31,7 +31,6 @@
             background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); 
             padding: 3px; border-radius: 50%;
         }
-        /* Animasi Mading */
         @keyframes munculPop {
             from { transform: scale(0.8); opacity: 0; }
             to { transform: scale(1); opacity: 1; }
@@ -192,7 +191,7 @@
                  </div>
 
                  <div>
-                     <label class="block text-sm font-bold text-slate-600 mb-2">Bukti Foto (Surat/Selfie)</label>
+                     <label class="block text-sm font-bold text-slate-600 mb-2">Bukti Foto <span id="labelWajibFoto" class="text-red-500 hidden">(Wajib)</span></label>
                      <div class="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center">
                          <img id="previewBukti" src="" class="hidden w-full h-48 object-cover rounded-xl mb-4">
                          <button id="btnAmbilBukti" onclick="bukaCam('BuktiSakit')" class="bg-blue-50 text-blue-600 px-6 py-3 rounded-full font-bold text-sm flex items-center gap-2 mx-auto">
@@ -217,6 +216,20 @@
                 <h3 class="font-black text-xl text-slate-800" id="profil-page-nama">...</h3>
                 <p class="text-slate-400 text-sm font-mono" id="profil-page-nisn">...</p>
              </div>
+             
+             <div class="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 space-y-4 mb-6">
+                <h4 class="font-bold text-slate-700 text-sm flex items-center gap-2">
+                    <i data-lucide="lock" class="w-4 h-4 text-rose-600"></i> Keamanan Akun
+                </h4>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Password Baru</label>
+                    <input type="password" id="inputPassBaru" class="w-full p-4 rounded-2xl border border-slate-200 font-bold text-slate-700 outline-none transition focus:border-rose-500" placeholder="Minimal 6 karakter...">
+                </div>
+                <button onclick="gantiPassword()" class="w-full bg-rose-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-rose-500/20 active:scale-95 transition">
+                    Ganti Password
+                </button>
+             </div>
+
              <div class="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 space-y-4 mb-6">
                 <h4 class="font-bold text-slate-700 text-sm flex items-center gap-2"><i data-lucide="smartphone" class="w-4 h-4 text-green-600"></i> Database WhatsApp</h4>
                 <div>
@@ -272,7 +285,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, arrayUnion, serverTimestamp, collection, query, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, arrayUnion, serverTimestamp, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
         const firebaseConfig = {
@@ -288,43 +301,38 @@
         const db = getFirestore(app);
         const storage = getStorage(app);
 
-        // --- SCRIPT MADING DIGITAL ---
+        // --- MADING ---
         window.tutupMading = function() {
             const modal = document.getElementById('modal-mading');
             modal.style.transition = 'opacity 0.3s';
             modal.style.opacity = '0';
             setTimeout(() => { modal.style.display = 'none'; }, 300);
         }
-
         async function cekMading() {
             try {
                 const docRef = doc(db, "pengaturan", "mading");
                 const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    if (data.aktif === true) {
-                        document.getElementById('mading-judul').innerText = data.judul || "INFO TERBARU";
-                        document.getElementById('mading-img').src = data.url_gambar;
-                        document.getElementById('modal-mading').style.display = 'flex';
-                    }
+                if (docSnap.exists() && docSnap.data().aktif === true) {
+                    document.getElementById('mading-judul').innerText = docSnap.data().judul || "INFO TERBARU";
+                    document.getElementById('mading-img').src = docSnap.data().url_gambar;
+                    document.getElementById('modal-mading').style.display = 'flex';
                 }
-            } catch (error) {
-                console.log("Mading info:", error);
-            }
+            } catch (error) { console.log("Mading:", error); }
         }
         cekMading();
-        // ------------------------------------
 
-        // CONFIG
+        // --- CONFIG & GLOBAL VARS ---
         let SEKOLAH_LAT = -7.6739830; 
         let SEKOLAH_LNG = 109.6319560;
         let userSiswa = null; let lokasiUser = null; let map = null; let markerSiswa = null;
         let streamKamera = null; let tipeAbsenAktif = ""; let tempFotoBukti = null;
         let configSekolah = { validasi_gps_aktif: true, radius_meter: 50 };
-        let jenisIzinAktif = ""; // Variabel penting untuk halaman Sakit
+        let jenisIzinAktif = "";
 
         const getTodayID = () => new Date().toLocaleDateString('fr-CA'); 
 
+        // --- ANTI BACK BUTTON EXIT ---
+        // Ini trik biar kalau di Back di HP gak langsung logout
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
             const dataLokal = localStorage.getItem('userSiswa'); 
@@ -340,6 +348,20 @@
                 syncAdminSettings();
                 loadFotoProfil();
                 renderMenu(); mulaiJam(); pantauDataRealtime(); cekGPS(); loadMenuDinamis(); loadDataKontak();
+
+                // MANIPULASI HISTORY BROWSER (ANTI LOGOUT)
+                history.pushState(null, null, location.href);
+                window.onpopstate = function () {
+                    // Kalau sedang buka halaman sub-menu (bukan dashboard)
+                    if(!document.getElementById('page-dashboard').classList.contains('hidden-page')) {
+                        history.pushState(null, null, location.href); // Tahan di dashboard
+                        // (Opsional) Bisa tambah confirm("Mau keluar?") disini
+                    } else {
+                        kembali(); // Balik ke dashboard
+                        history.pushState(null, null, location.href);
+                    }
+                };
+
             } else { window.location.href = 'index.html'; }
         });
 
@@ -393,6 +415,37 @@
                 Swal.fire('Tersimpan', 'Nomor WhatsApp aman!', 'success');
             } catch (e) { Swal.fire('Gagal', e.message, 'error'); } finally { document.getElementById('loadingOverlay').classList.add('hidden'); }
         }
+
+        // --- GANTI PASSWORD ---
+        window.gantiPassword = async () => {
+            const passBaru = document.getElementById('inputPassBaru').value;
+            if (!passBaru) return Swal.fire('Kosong?', 'Masukkan password baru dulu.', 'warning');
+            if (passBaru.length < 6) return Swal.fire('Terlalu Pendek', 'Password minimal 6 karakter biar aman.', 'warning');
+            if (passBaru === userSiswa.username) return Swal.fire('Gak Kreatif!', 'Jangan pakai NISN lagi dong.', 'error');
+
+            const tanya = await Swal.fire({
+                title: 'Yakin ganti password?', text: "Ingat baik-baik password barumu ya!", icon: 'question',
+                showCancelButton: true, confirmButtonText: 'Ya, Ganti', confirmButtonColor: '#e11d48'
+            });
+
+            if (tanya.isConfirmed) {
+                document.getElementById('loadingOverlay').classList.remove('hidden');
+                try {
+                    const q = query(collection(db, "users"), where("username", "==", userSiswa.username));
+                    const querySnapshot = await getDocs(q);
+                    
+                    if (!querySnapshot.empty) {
+                        let docIdUser = null;
+                        querySnapshot.forEach((doc) => { docIdUser = doc.id; });
+                        await updateDoc(doc(db, "users", docIdUser), { password: passBaru });
+                        Swal.fire({ title: 'Sukses!', text: 'Password diganti. Silakan Login ulang.', icon: 'success' }).then(() => {
+                            localStorage.clear(); window.location.href = 'index.html';
+                        });
+                    } else { throw new Error("Akun tidak ditemukan di database users."); }
+                } catch (e) { Swal.fire('Gagal', e.message, 'error'); } finally { document.getElementById('loadingOverlay').classList.add('hidden'); }
+            }
+        }
+        // ---------------------
 
         async function prosesUpdateProfil(fotoData) {
             document.getElementById('loadingOverlay').classList.remove('hidden');
@@ -543,8 +596,6 @@
                         grpSekolah.classList.remove('hidden'); 
                         btnIzinKeluar.classList.remove('hidden');
                         btnKembali.classList.add('hidden'); 
-
-                        // LOGIC FLEKSIBEL: TOMBOL SELALU AKTIF
                         btnPulang.disabled = false;
                         btnPulang.classList.remove('opacity-50', 'cursor-not-allowed');
 
@@ -626,8 +677,29 @@
             document.getElementById('btnOptSakit').className = jenis==='Sakit'?"p-4 rounded-2xl border-2 border-blue-500 bg-blue-50 text-blue-600 font-bold flex flex-col items-center gap-2 transition active:scale-95":"p-4 rounded-2xl border-2 border-slate-100 font-bold text-slate-400 flex flex-col items-center gap-2 transition active:scale-95";
             document.getElementById('btnOptIzin').className = jenis==='Izin'?"p-4 rounded-2xl border-2 border-orange-500 bg-orange-50 text-orange-600 font-bold flex flex-col items-center gap-2 transition active:scale-95":"p-4 rounded-2xl border-2 border-slate-100 font-bold text-slate-400 flex flex-col items-center gap-2 transition active:scale-95";
             document.getElementById('areaUploadFoto').classList.remove('hidden');
+
+            // LOGIKA WAJIB FOTO
+            const labelWajib = document.getElementById('labelWajibFoto');
+            if(jenis === 'Sakit') {
+                labelWajib.classList.remove('hidden');
+            } else {
+                labelWajib.classList.add('hidden');
+            }
         }
-        window.kirimLaporanIzin = () => { if(!jenisIzinAktif || !document.getElementById('ketIzin').value) return Swal.fire('Lengkapi Data','','warning'); kirimData(jenisIzinAktif, document.getElementById('ketIzin').value, tempFotoBukti||"-"); bukaHalaman('page-dashboard'); }
+
+        window.kirimLaporanIzin = () => { 
+            if(!jenisIzinAktif || !document.getElementById('ketIzin').value) {
+                return Swal.fire('Lengkapi Data','Pilih jenis izin dan isi keterangannya.','warning');
+            }
+
+            // CEK KHUSUS SAKIT: WAJIB FOTO
+            if(jenisIzinAktif === 'Sakit' && !tempFotoBukti) {
+                return Swal.fire('Belum Ada Foto','Untuk SAKIT, wajib sertakan foto surat dokter/obat.','warning');
+            }
+
+            kirimData(jenisIzinAktif, document.getElementById('ketIzin').value, tempFotoBukti||"-"); 
+            bukaHalaman('page-dashboard'); 
+        }
         // ---------------------------------
 
         window.mulaiJam = () => { setInterval(()=>{ document.getElementById('jamDigital').innerText=new Date().toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}); document.getElementById('tanggalDigital').innerText=new Date().toLocaleDateString('id-ID',{weekday: 'long', day:'numeric', month:'long', year:'numeric'}); },1000); }
@@ -644,6 +716,7 @@
         window.bukaHalaman = bukaHalaman; window.kembali = kembali; window.klikMasuk = klikMasuk; window.klikPulang = klikPulang;
         window.bukaCam = bukaCam; window.tutupKamera = tutupKamera; window.jepretFoto = jepretFoto; window.logout = logout; window.simpanDataWA = simpanDataWA;
         window.bukaKartu = bukaKartu; window.tutupKartu = tutupKartu; window.pilihJenisIzin = pilihJenisIzin; window.kirimLaporanIzin = kirimLaporanIzin;
+        window.gantiPassword = gantiPassword; // Tambahin ini biar tombolnya jalan
     </script>
     
     <script>
