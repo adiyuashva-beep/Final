@@ -2,12 +2,12 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Login - Si Ganteng SMAN 1 Pejagoan</title>
 
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="logo.png">
-    <meta name="theme-color" content="#0d6efd">
+    <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
@@ -23,78 +23,112 @@
             height: 100vh; display: flex; align-items: center; justify-content: center;
             color: white; overflow: hidden;
         }
+        
+        /* Efek Partikel Background */
+        .bg-pattern {
+            position: absolute; width: 100%; height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            z-index: 1; pointer-events: none;
+        }
+
         .login-card {
-            background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(15px);
+            background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.1); padding: 40px 30px;
-            border-radius: 20px; width: 100%; max-width: 400px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.3); text-align: center;
+            border-radius: 24px; width: 100%; max-width: 380px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); text-align: center;
             position: relative; z-index: 10;
         }
-        .brand-logo {
-            font-size: 50px; color: #38bdf8; margin-bottom: 10px;
-            filter: drop-shadow(0 0 10px rgba(56,189,248,0.5));
-            animation: float 3s ease-in-out infinite;
+
+        /* LOGO VIRAL */
+        .logo-container {
+            width: 100px; height: 100px; margin: 0 auto 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px; padding: 10px;
+            box-shadow: 0 0 30px rgba(56, 189, 248, 0.3);
+            display: flex; align-items: center; justify-content: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: float 6s ease-in-out infinite;
         }
-        h2 { margin: 0; font-weight: 800; letter-spacing: 1px; }
-        p { color: #94a3b8; font-size: 0.9em; margin-top: 5px; margin-bottom: 30px; }
-        .input-group { margin-bottom: 20px; text-align: left; }
-        .input-group label { display: block; color: #94a3b8; font-size: 0.85em; margin-bottom: 8px; font-weight: 600; }
-        .input-field {
-            width: 100%; padding: 12px 15px; background: rgba(15, 23, 42, 0.6);
-            border: 1px solid #334155; border-radius: 10px; color: white;
-            font-size: 1em; outline: none; transition: 0.3s; box-sizing: border-box;
+        .logo-img {
+            width: 100%; height: 100%; object-fit: contain;
+            filter: drop-shadow(0 0 5px rgba(255,255,255,0.5));
         }
-        .input-field:focus { border-color: #38bdf8; box-shadow: 0 0 10px rgba(56, 189, 248, 0.2); }
-        .btn-login {
-            width: 100%; padding: 14px; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            color: white; border: none; border-radius: 12px; font-weight: 700; font-size: 1em;
-            cursor: pointer; transition: 0.3s; margin-top: 10px;
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
-        }
-        .btn-login:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6); }
-        .link-help {
-            display: inline-block; margin-top: 20px; color: #94a3b8; text-decoration: none;
-            font-size: 0.9em; transition: 0.3s; border-bottom: 1px dashed rgba(148, 163, 184, 0.5); padding-bottom: 2px;
-        }
-        .link-help:hover { color: #38bdf8; border-color: #38bdf8; }
-        .footer { position: absolute; bottom: 20px; width: 100%; text-align: center; color: #475569; font-size: 0.75em; }
-        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
+
+        h2 { margin: 0; font-weight: 800; letter-spacing: -0.5px; font-size: 1.8rem; }
+        p { color: #94a3b8; font-size: 0.9em; margin-top: 5px; margin-bottom: 30px; font-weight: 300; }
         
-        /* Loader Biasa (Spinning Circle) */
+        .input-group { margin-bottom: 20px; text-align: left; }
+        .input-group label { display: block; color: #cbd5e1; font-size: 0.75em; margin-bottom: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+        .input-field {
+            width: 100%; padding: 14px 16px; background: rgba(15, 23, 42, 0.6);
+            border: 1px solid #334155; border-radius: 12px; color: white;
+            font-size: 1em; outline: none; transition: all 0.3s; box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+        .input-field:focus { border-color: #38bdf8; box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.1); background: rgba(15, 23, 42, 0.8); }
+        
+        .btn-login {
+            width: 100%; padding: 16px; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white; border: none; border-radius: 14px; font-weight: 700; font-size: 1em;
+            cursor: pointer; transition: 0.3s; margin-top: 10px; letter-spacing: 0.5px;
+            box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.4);
+        }
+        .btn-login:hover { transform: translateY(-2px); box-shadow: 0 15px 30px -5px rgba(59, 130, 246, 0.6); }
+        .btn-login:active { transform: scale(0.98); }
+
+        .link-help {
+            display: inline-block; margin-top: 25px; color: #64748b; text-decoration: none;
+            font-size: 0.85em; transition: 0.3s; 
+        }
+        .link-help:hover { color: #38bdf8; }
+        
+        .footer { position: absolute; bottom: 20px; width: 100%; text-align: center; color: #475569; font-size: 0.7em; letter-spacing: 1px; }
+        @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-10px); } }
+        
         #loader {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.9); z-index: 50;
+            background: rgba(15, 23, 42, 0.95); z-index: 50;
             display: none; justify-content: center; align-items: center; flex-direction: column;
         }
     </style>
 </head>
 <body>
 
-    <div id="layar-sambut" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; background-color: #000000; display: flex; justify-content: center; align-items: center; transition: opacity 0.5s ease;">
-        <img src="splash.png" style="width: 100%; height: 100%; object-fit: cover;" alt="Loading SiGanteng...">
-    </div>
+    <div class="bg-pattern"></div>
+
     <div id="loader">
         <i class='bx bx-loader-alt bx-spin' style="font-size: 50px; color: #38bdf8;"></i>
-        <p style="margin-top: 15px; color: white;">Memproses Masuk...</p>
+        <p style="margin-top: 15px; color: white; font-weight: 600; letter-spacing: 1px;">MEMBUKA GERBANG...</p>
+    </div>
+
+    <div id="layar-sambut" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; background-color: #0f172a; display: flex; justify-content: center; align-items: center; transition: opacity 0.5s ease;">
+        <div style="text-align: center;">
+            <img src="logo.png" style="width: 100px; margin-bottom: 20px; filter: drop-shadow(0 0 10px rgba(56,189,248,0.5));" alt="Logo">
+            <h1 style="color: white; font-family: 'Outfit'; font-weight: 800; font-size: 1.5rem;">SiGanteng</h1>
+        </div>
     </div>
 
     <div class="login-card">
-        <div class="brand-logo"><i class='bx bxs-graduation'></i></div>
+        <div class="logo-container">
+            <img src="logo.png" alt="SiGanteng Logo" class="logo-img" onerror="this.src='https://ui-avatars.com/api/?name=SG&background=transparent&color=fff&size=128'">
+        </div>
+
         <h2>SI GANTENG</h2>
         <p>SMAN 1 PEJAGOAN</p>
 
         <form id="formLogin">
             <div class="input-group">
                 <label>Username / NISN</label>
-                <input type="text" id="username" class="input-field" placeholder="Ketik Admin / NISN / NIP..." required autocomplete="off">
+                <input type="text" id="username" class="input-field" placeholder="Masukan NISN / NIP..." required autocomplete="off">
             </div>
 
             <div class="input-group">
                 <label>Password</label>
-                <input type="password" id="password" class="input-field" placeholder="Masukan Password..." required>
+                <input type="password" id="password" class="input-field" placeholder="••••••••" required>
             </div>
 
-            <button type="submit" class="btn-login" id="btnLogin">MASUK SEKARANG <i class='bx bx-right-arrow-alt'></i></button>
+            <button type="submit" class="btn-login" id="btnLogin">MASUK <i class='bx bx-right-arrow-alt'></i></button>
         </form>
 
         <a href="cari.html" class="link-help">
@@ -102,13 +136,12 @@
         </a>
     </div>
 
-    <div class="footer">&copy; 2025 IT Team SMAN 1 Pejagoan</div>
+    <div class="footer">&copy; 2025 TIM IT SMAN 1 PEJAGOAN</div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-        // KONFIGURASI FIREBASE KAMU
         const firebaseConfig = {
             apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo",
             authDomain: "siganteng-absensi.firebaseapp.com",
@@ -122,7 +155,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // LOGIKA SAAT TOMBOL LOGIN DITEKAN
         document.getElementById('formLogin').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -134,7 +166,7 @@
 
             loader.style.display = 'flex';
 
-            // --- ⚠️ KUNCI DARURAT ADMIN ---
+            // --- ⚠️ ADMIN BACKDOOR ---
             if (u === 'admin' && p === '123') {
                 localStorage.setItem('admin_token', 'RAHASIA_NEGARA_SMAN1');
                 sessionStorage.setItem('user_siganteng', JSON.stringify({nama: "Super Admin", role: "admin"}));
@@ -142,69 +174,53 @@
                 setTimeout(() => { window.location.href = 'admin.html'; }, 1000);
                 return; 
             }
-            // -----------------------------
 
             try {
-                // 1. CARI USER DI DATABASE
+                // 1. CARI USER
                 const q = query(collection(db, "users"), where("username", "==", u));
                 const snap = await getDocs(q);
 
                 if (snap.empty) {
-                    throw new Error("Username tidak ditemukan! Pastikan NISN/NIP benar.");
+                    throw new Error("NISN/NIP tidak ditemukan.");
                 }
 
                 let userData = null;
                 snap.forEach(d => userData = d.data());
 
-                // === LOGIKA SMART LOGIN (SISWA VS ORTU) ===
-                
-                const passSiswa = String(userData.password);
-                const passOrtu = userData.password_ortu ? String(userData.password_ortu) : "ortu" + String(userData.username); 
+                // 2. CEK PASSWORD (LOGIKA GANDA)
+                const passAsli = String(userData.password);       // Password Siswa/Guru
+                const passOrtu = "ortu" + String(userData.username); // Password Ortu (Default)
 
-                // SKENARIO A: LOGIN SEBAGAI PEMILIK AKUN (SISWA/GURU/ADMIN)
-                if (String(p) === passSiswa) {
-                    
+                // A. JIKA LOGIN SEBAGAI PEMILIK AKUN (SISWA/GURU)
+                if (String(p) === passAsli) {
                     sessionStorage.setItem('user_siganteng', JSON.stringify(userData));
                     
                     if (!userData.role || userData.role === 'siswa') {
                         localStorage.setItem('userSiswa', JSON.stringify(userData));
                     }
 
-                    Swal.fire({
-                        icon: 'success', title: 'Login Berhasil', 
-                        text: `Selamat Datang, ${userData.nama}`,
-                        timer: 1500, showConfirmButton: false, background: '#1e293b', color: '#fff'
-                    }).then(() => {
-                        const role = userData.role ? userData.role.toLowerCase() : 'siswa';
+                    // Arahkan Sesuai Role
+                    const role = userData.role ? userData.role.toLowerCase() : 'siswa';
+                    let target = 'siswa.html';
+                    if (role === 'admin') target = 'admin.html';
+                    if (role === 'guru') target = 'guru.html';
 
-                        if (role === 'admin') {
-                            localStorage.setItem('admin_token', 'TOKEN_RESMI');
-                            localStorage.setItem('admin_role', 'SUPER');
-                            window.location.href = 'admin.html';
-                        } 
-                        else if (role === 'guru') {
-                            window.location.href = 'guru.html'; 
-                        } 
-                        else {
-                            window.location.href = 'siswa.html';
-                        }
-                    });
-
+                    window.location.href = target;
                 } 
-                // SKENARIO B: LOGIN SEBAGAI ORANG TUA
+                // B. JIKA LOGIN SEBAGAI ORANG TUA (ortu + NISN)
                 else if (String(p) === passOrtu) {
+                    // Simpan data siswa tapi ditandai akses ortu (opsional)
                     localStorage.setItem('userSiswa', JSON.stringify(userData));
-
+                    
                     Swal.fire({
-                        icon: 'success', title: 'Akses Wali Murid', 
-                        text: `Monitoring Siswa: ${userData.nama}`,
-                        timer: 1500, showConfirmButton: false, background: '#1e293b', color: '#fff'
+                        icon: 'success', title: 'Mode Wali Murid', 
+                        text: `Memantau: ${userData.nama}`,
+                        timer: 1000, showConfirmButton: false
                     }).then(() => {
-                        window.location.href = 'orangtua.html';
+                        window.location.href = 'ortu.html';
                     });
-
-                }
-                // SKENARIO C: PASSWORD SALAH TOTAL
+                } 
+                // C. PASSWORD SALAH
                 else {
                     throw new Error("Password Salah!");
                 }
@@ -217,31 +233,17 @@
                 loader.style.display = 'none';
             }
         });
-    </script>
 
-    <script>
-        // 1. Script PWA Service Worker
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then((reg) => console.log('Aplikasi Siap: SW Terdaftar', reg.scope))
-                    .catch((err) => console.log('Gagal Daftar SW:', err));
-            });
-        }
-
-        // 2. Script Menghilangkan Splash Screen setelah 3 detik
+        // HILANGKAN SPLASH SCREEN
         window.addEventListener('load', () => {
             setTimeout(() => {
                 const splash = document.getElementById('layar-sambut');
                 if(splash) {
-                    splash.style.opacity = '0'; // Efek memudar
-                    setTimeout(() => {
-                        splash.style.display = 'none'; // Hilang total
-                    }, 500); 
+                    splash.style.opacity = '0';
+                    setTimeout(() => { splash.style.display = 'none'; }, 500); 
                 }
-            }, 3000); // 3000ms = 3 detik
+            }, 2500);
         });
     </script>
-
 </body>
 </html>
