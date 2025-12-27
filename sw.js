@@ -7,7 +7,7 @@ self.addEventListener('install', (e) => {
       './siswa.html',
       './guru.html',
       './manifest.json',
-      './logo_baru.png',    // <-- NAMA BARU
+      './logo.png',    // <-- NAMA BARU
       './splash_baru.png',  // <-- NAMA BARU
     ]))
   );
