@@ -4,135 +4,211 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Monitor Live - SiGanteng</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 
     <style>
-        /* --- SETUP VISUAL (DARK MODE) --- */
-        :root { --bg-dark: #0f172a; --card-bg: #1e293b; --neon-blue: #3b82f6; --neon-green: #10b981; --neon-red: #ef4444; --neon-gold: #f59e0b; }
-        body { margin: 0; font-family: 'Outfit', sans-serif; background: var(--bg-dark); color: white; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+        /* --- SETUP VISUAL (DARK MODE NASA STYLE) --- */
+        :root { 
+            --bg-dark: #0b1120; 
+            --card-bg: #151e32; 
+            --neon-blue: #0ea5e9; 
+            --neon-green: #10b981; 
+            --neon-red: #ef4444; 
+            --neon-gold: #f59e0b; 
+        }
         
-        /* HEADER */
+        body { 
+            margin: 0; font-family: 'Outfit', sans-serif; 
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+            color: white; overflow: hidden; height: 100vh; display: flex; flex-direction: column; 
+        }
+
+        /* BACKGROUND GRID EFFECT */
+        body::before {
+            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(rgba(14, 165, 233, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(14, 165, 233, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: -1; pointer-events: none;
+        }
+        
+        /* HEADER REVISI: LOGO TERPISAH */
         .header { 
-            height: 12vh; background: rgba(30, 41, 59, 0.95); 
+            height: 12vh; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px);
             display: flex; justify-content: space-between; align-items: center; 
-            padding: 0 30px; border-bottom: 2px solid rgba(255,255,255,0.1); 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 20;
+            padding: 0 30px; border-bottom: 1px solid rgba(14, 165, 233, 0.3); 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5); z-index: 20; position: relative;
         }
-        .brand-container { display: flex; flex-direction: column; justify-content: center; }
-        .brand-row { display: flex; align-items: center; gap: 15px; }
-        .brand-row h1 { margin: 0; font-size: 1.8em; font-weight: 900; background: linear-gradient(to right, #fff, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1; }
-        .badge-siganteng { 
-            background: rgba(59, 130, 246, 0.2); border: 1px solid var(--neon-blue); 
-            color: var(--neon-blue); padding: 5px 15px; border-radius: 6px; 
-            font-weight: 800; letter-spacing: 1px; font-size: 0.9em;
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
+        .header::after {
+            content: ''; position: absolute; bottom: -1px; left: 0; width: 30%; height: 2px;
+            background: var(--neon-blue); box-shadow: 0 0 15px var(--neon-blue);
+            animation: scanningLine 5s linear infinite;
         }
-        .jam-digital { text-align: right; }
-        .waktu { font-size: 2.5em; font-weight: 700; line-height: 1; color: white; }
-        .tanggal { font-size: 0.9em; color: var(--neon-blue); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+        @keyframes scanningLine { 0% { left: 0; width: 0; opacity: 0; } 50% { width: 50%; opacity: 1; } 100% { left: 100%; width: 0; opacity: 0; } }
+
+        /* KIRI: BRAND SEKOLAH */
+        .brand-left { display: flex; align-items: center; gap: 20px; }
+        .logo-sekolah { height: 65px; width: auto; filter: drop-shadow(0 0 10px rgba(255,255,255,0.3)); }
+        .text-sekolah h1 { margin: 0; font-size: 1.6em; font-weight: 900; color: white; line-height: 1; letter-spacing: 1px; }
+        .badge-system { 
+            color: #94a3b8; font-weight: 600; letter-spacing: 3px; font-size: 0.8em; display: block; margin-top: 5px;
+        }
+
+        /* KANAN: LOGO SIGANTENG + JAM */
+        .header-right { display: flex; align-items: center; gap: 25px; }
+        .logo-siganteng { height: 55px; width: auto; filter: drop-shadow(0 0 8px var(--neon-blue)); animation: floatLogo 4s ease-in-out infinite; }
+        @keyframes floatLogo { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+
+        .jam-digital { text-align: right; border-left: 2px solid rgba(255,255,255,0.1); padding-left: 25px; }
+        .waktu { font-family: 'Share Tech Mono', monospace; font-size: 2.5em; font-weight: 700; line-height: 1; color: var(--neon-blue); text-shadow: 0 0 15px rgba(14, 165, 233, 0.6); }
+        .tanggal { font-size: 0.85em; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; }
         
         /* LAYOUT UTAMA */
-        .main-content { flex: 1; display: flex; padding: 15px; gap: 15px; height: 83vh; overflow: hidden; }
-        .card-box { background: var(--card-bg); border-radius: 15px; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; overflow: hidden; }
-        .card-header { padding: 12px; font-weight: 800; font-size: 1em; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .main-content { flex: 1; display: flex; padding: 20px; gap: 20px; height: 83vh; overflow: hidden; }
+        .card-box { 
+            background: var(--card-bg); border-radius: 16px; 
+            border: 1px solid rgba(255,255,255,0.05); 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            display: flex; flex-direction: column; overflow: hidden; position: relative;
+        }
+        /* Corner Accents */
+        .card-box::before { content: ''; position: absolute; top: 0; left: 0; width: 15px; height: 15px; border-top: 2px solid var(--neon-blue); border-left: 2px solid var(--neon-blue); border-radius: 4px 0 0 0; }
+        .card-box::after { content: ''; position: absolute; bottom: 0; right: 0; width: 15px; height: 15px; border-bottom: 2px solid var(--neon-blue); border-right: 2px solid var(--neon-blue); border-radius: 0 0 4px 0; }
+
+        .card-header { padding: 15px; font-weight: 800; font-size: 0.9em; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px; text-transform: uppercase; letter-spacing: 1px; background: rgba(0,0,0,0.2); }
         
         /* KOLOM KIRI: GASIK (HIJAU) */
-        .col-gasik { flex: 1; border-top: 4px solid var(--neon-green); }
-        .gasik-header { background: rgba(16, 185, 129, 0.1); color: var(--neon-green); }
+        .col-gasik { flex: 1; border-top: 2px solid var(--neon-green); }
+        .gasik-header { color: var(--neon-green); }
         .list-container { flex: 1; overflow-y: auto; padding: 10px; }
-        .rank-item { display: flex; align-items: center; padding: 8px 12px; margin-bottom: 6px; background: rgba(255,255,255,0.03); border-radius: 8px; }
+        .rank-item { display: flex; align-items: center; padding: 10px; margin-bottom: 8px; background: linear-gradient(90deg, rgba(255,255,255,0.03), transparent); border-radius: 8px; border-left: 2px solid transparent; transition: 0.3s; }
+        .rank-item:hover { background: rgba(255,255,255,0.08); border-left-color: var(--neon-green); }
         
-        .rank-num { width: 24px; height: 24px; background: #334155; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: 800; margin-right: 10px; font-size: 0.9em; flex-shrink: 0; }
-        .rank-1 .rank-num { background: var(--neon-gold); color: black; box-shadow: 0 0 10px var(--neon-gold); }
+        .rank-num { width: 28px; height: 28px; background: #334155; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; margin-right: 12px; font-size: 0.9em; flex-shrink: 0; font-family: 'Share Tech Mono', monospace; }
+        .rank-1 .rank-num { background: var(--neon-gold); color: black; box-shadow: 0 0 15px var(--neon-gold); }
         .rank-2 .rank-num { background: #cbd5e1; color: black; }
         .rank-3 .rank-num { background: #b45309; color: white; }
         
-        .avatar-img { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,0.2); margin-right: 10px; flex-shrink: 0; background: #000; }
-        .rank-nama { font-weight: 600; flex: 1; font-size: 0.9em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .rank-jam { color: #4ade80; font-weight: 700; font-family: monospace; font-size: 1.1em; }
+        .avatar-img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,0.1); margin-right: 12px; flex-shrink: 0; background: #000; }
+        .rank-nama { font-weight: 600; flex: 1; font-size: 0.9em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #e2e8f0; }
+        .rank-jam { color: var(--neon-green); font-weight: 700; font-family: 'Share Tech Mono', monospace; font-size: 1.1em; text-shadow: 0 0 5px rgba(16, 185, 129, 0.5); }
 
-        /* KOLOM TENGAH: STATS & BELUM ABSEN */
-        .col-center { flex: 1.2; display: flex; flex-direction: column; gap: 15px; }
-        .stats-wrapper { flex: 1.5; background: var(--card-bg); border-radius: 15px; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.05); }
+        /* KOLOM TENGAH: DONAT NASA */
+        .col-center { flex: 1.3; display: flex; flex-direction: column; gap: 20px; }
+        .stats-wrapper { flex: 1.5; background: var(--card-bg); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.05); position: relative; }
         
-        .donut-chart { 
-            position: relative; width: 160px; height: 160px; border-radius: 50%; 
-            background: conic-gradient(var(--c) var(--p), #334155 0deg); 
-            display: flex; align-items: center; justify-content: center; margin-bottom: 15px; transition: 1s; 
+        .reactor-ring {
+            position: absolute; width: 210px; height: 210px; border-radius: 50%;
+            border: 2px dashed rgba(255, 255, 255, 0.1);
+            animation: spin 20s linear infinite; z-index: 0;
         }
-        .donut-inner { width: 85%; height: 85%; background: var(--card-bg); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .big-percent { font-size: 2.2em; font-weight: 900; color: white; line-height: 1; }
-        
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; width: 100%; gap: 8px; text-align: center; }
-        .stat-item { background: rgba(255,255,255,0.03); padding: 8px; border-radius: 10px; }
-        .stat-item h4 { margin: 0 0 5px 0; font-size: 0.7em; color: #94a3b8; font-weight: 800; }
-        .stat-item p { margin: 0; font-size: 1.3em; font-weight: 700; }
-        .c-hadir { color: var(--neon-green); } .c-izin { color: var(--neon-gold); } .c-alpha { color: var(--neon-red); }
+        .reactor-ring::before {
+            content: ''; position: absolute; top: -2px; left: 50%; width: 10px; height: 10px;
+            background: var(--neon-blue); border-radius: 50%; box-shadow: 0 0 15px var(--neon-blue);
+            transform: translateX(-50%);
+        }
 
-        /* BOX BELUM HADIR (DIBAWAH DONAT) */
-        .box-belum { flex: 1; background: var(--card-bg); border-radius: 15px; border-top: 4px solid #64748b; display: flex; flex-direction: column; overflow: hidden; }
-        .belum-header { background: rgba(100, 116, 139, 0.1); color: #94a3b8; padding: 10px 15px; font-weight: 700; font-size: 0.9em; display:flex; align-items:center; justify-content: space-between; }
+        .donut-chart { 
+            position: relative; width: 180px; height: 180px; border-radius: 50%; 
+            background: conic-gradient(var(--c) var(--p), #1e293b 0deg); 
+            display: flex; align-items: center; justify-content: center; margin-bottom: 20px; transition: 1s; 
+            box-shadow: 0 0 30px rgba(0,0,0,0.5); z-index: 1;
+        }
+        .donut-inner { 
+            width: 88%; height: 88%; background: var(--card-bg); border-radius: 50%; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            position: relative; overflow: hidden;
+        }
+        
+        .logo-center-donut {
+            position: absolute; width: 60%; height: 60%; opacity: 0.3;
+            animation: breathe 3s ease-in-out infinite; z-index: 0;
+            filter: grayscale(100%) drop-shadow(0 0 5px var(--neon-blue));
+        }
+
+        .big-percent { 
+            font-size: 2.8em; font-weight: 900; color: white; line-height: 1; 
+            position: relative; z-index: 2; text-shadow: 0 0 20px black; font-family: 'Share Tech Mono', monospace; 
+        }
+        
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes breathe { 0%, 100% { transform: scale(1); opacity: 0.3; } 50% { transform: scale(1.1); opacity: 0.5; } }
+        
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; width: 100%; gap: 10px; text-align: center; margin-top: 10px; }
+        .stat-item { background: rgba(255,255,255,0.03); padding: 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
+        .stat-item h4 { margin: 0 0 5px 0; font-size: 0.7em; color: #94a3b8; font-weight: 800; letter-spacing: 1px; }
+        .stat-item p { margin: 0; font-size: 1.4em; font-weight: 700; font-family: 'Share Tech Mono', monospace; }
+        .c-hadir { color: var(--neon-green); text-shadow: 0 0 10px rgba(16, 185, 129, 0.4); } 
+        .c-izin { color: var(--neon-gold); } .c-alpha { color: var(--neon-red); }
+
+        .box-belum { flex: 1; border-top: 2px solid #64748b; }
+        .belum-header { color: #94a3b8; }
         .scroller-content { flex: 1; overflow: hidden; padding: 10px; position: relative; }
-        
-        .alpha-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-radius: 6px; background: rgba(255,255,255,0.02); margin-bottom: 5px; border-left: 3px solid #64748b; }
-        .alpha-nama { font-weight: 600; font-size: 0.9em; color: #e2e8f0; }
-        .alpha-kelas { font-size: 0.7em; color: #94a3b8; background: rgba(0,0,0,0.3); padding: 2px 5px; border-radius: 3px; }
+        .alpha-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-radius: 6px; background: rgba(255,255,255,0.02); margin-bottom: 5px; border-left: 2px solid #64748b; }
+        .alpha-nama { font-weight: 600; font-size: 0.9em; color: #cbd5e1; }
 
-        /* KOLOM KANAN: SPLIT 2 (TELAT & LIVE) */
-        .col-right-split { flex: 1.4; display: flex; flex-direction: column; gap: 15px; } /* LEBIH LEBAR */
+        /* KOLOM KANAN */
+        .col-right-split { flex: 1.5; display: flex; flex-direction: column; gap: 20px; }
         
-        /* 1. BOX TELAT (ATAS - MERAH) */
-        .box-telat { flex: 1; background: var(--card-bg); border-radius: 15px; border: 2px solid rgba(239, 68, 68, 0.5); display: flex; flex-direction: column; overflow: hidden; position: relative; }
-        .telat-header { background: rgba(239, 68, 68, 0.2); color: var(--neon-red); padding: 10px 15px; font-weight: 800; font-size: 0.9em; display:flex; align-items:center; justify-content: space-between; }
-        
-        /* ITEM TELAT */
+        .box-telat { flex: 1; border: 1px solid rgba(239, 68, 68, 0.3); border-top: 2px solid var(--neon-red); box-shadow: 0 0 20px rgba(239, 68, 68, 0.1) inset; }
+        .telat-header { color: var(--neon-red); }
         .telat-row { display: flex; align-items: center; padding: 8px; margin-bottom: 5px; background: rgba(239, 68, 68, 0.05); border-left: 3px solid var(--neon-red); border-radius: 6px; }
-        .telat-img { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--neon-red); margin-right: 10px; filter: grayscale(1); }
-        .telat-time { margin-left: auto; font-family: monospace; color: var(--neon-red); font-weight: 700; }
+        .telat-img { width: 35px; height: 35px; border-radius: 50%; border: 1px solid var(--neon-red); margin-right: 10px; filter: grayscale(1) contrast(1.2); }
+        .telat-time { margin-left: auto; font-family: 'Share Tech Mono', monospace; color: var(--neon-red); font-weight: 700; }
 
-        /* 2. BOX LIVE (BAWAH - BESAR) */
-        .box-live { flex: 2.5; background: var(--card-bg); border-radius: 15px; border-top: 4px solid var(--neon-blue); display: flex; flex-direction: column; overflow: hidden; }
-        .live-header-big { padding: 15px; font-size: 1.1em; font-weight: 800; color: var(--neon-blue); border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(59, 130, 246, 0.05); display: flex; align-items: center; gap: 10px; }
-        
-        /* ITEM LIVE */
-        .live-card-big { display: flex; align-items: center; padding: 12px; margin-bottom: 8px; background: rgba(255,255,255,0.03); border-radius: 12px; border-left: 4px solid var(--neon-green); transition: transform 0.3s; }
+        .box-live { flex: 2.2; border-top: 2px solid var(--neon-blue); }
+        .live-header-big { padding: 15px; font-size: 1.1em; font-weight: 800; color: var(--neon-blue); border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(14, 165, 233, 0.05); display: flex; align-items: center; gap: 10px; }
+        .live-card-big { display: flex; align-items: center; padding: 12px; margin-bottom: 8px; background: linear-gradient(90deg, rgba(255,255,255,0.05), transparent); border-radius: 12px; border-left: 4px solid var(--neon-green); transition: transform 0.3s; }
         .live-card-big.is-telat { border-left-color: var(--neon-red); background: rgba(239, 68, 68, 0.05); }
-        .live-img { width: 55px; height: 55px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,0.1); margin-right: 15px; flex-shrink: 0; background: black; }
-        .live-info { flex: 1; }
-        .live-name { font-weight: 700; font-size: 1em; color: white; margin-bottom: 2px; }
-        .live-class { font-size: 0.8em; color: #94a3b8; font-weight: 600; text-transform: uppercase; }
-        .live-time { font-family: monospace; font-size: 1.2em; font-weight: 800; color: var(--neon-green); }
-        .live-card-big.is-telat .live-time { color: var(--neon-red); }
+        .live-img { width: 60px; height: 60px; border-radius: 10px; object-fit: cover; border: 1px solid rgba(255,255,255,0.2); margin-right: 15px; flex-shrink: 0; background: black; }
+        .live-name { font-weight: 700; font-size: 1.1em; color: white; margin-bottom: 2px; text-shadow: 0 2px 4px black; }
+        .live-class { font-size: 0.85em; color: var(--neon-blue); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+        .live-time { font-family: 'Share Tech Mono', monospace; font-size: 1.4em; font-weight: 800; color: var(--neon-green); text-shadow: 0 0 10px rgba(16, 185, 129, 0.5); }
+        .live-card-big.is-telat .live-time { color: var(--neon-red); text-shadow: 0 0 10px rgba(239, 68, 68, 0.5); }
 
-        /* ANIMASI SCROLL */
         .marquee-vertical { animation: scrollUp linear infinite; }
         @keyframes scrollUp { 0% { transform: translateY(0); } 100% { transform: translateY(-100%); } }
 
-        .footer-marquee { height: 5vh; background: #0f172a; display: flex; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); z-index: 10; }
-        marquee { font-size: 1.1em; font-weight: 600; color: #cbd5e1; letter-spacing: 1px; }
+        /* FOOTER REVISI: TAJAM & JELAS */
+        .footer-marquee { 
+            height: 5vh; background: #020617; display: flex; align-items: center; 
+            border-top: 1px solid var(--neon-blue); z-index: 10; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); 
+        }
+        marquee { 
+            font-size: 1.2em; font-weight: 500; color: #f1f5f9; letter-spacing: 1px; 
+            font-family: 'Share Tech Mono', monospace; 
+            /* REVISI: Hilangkan blur shadow, ganti jadi solid agar tajam */
+            text-shadow: none; 
+        }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div class="brand-container">
-            <div class="brand-row">
+        <div class="brand-left">
+            <img src="logo_sekolah.png" class="logo-sekolah" alt="SMAN 1" onerror="this.style.display='none'">
+            <div class="text-sekolah">
                 <h1>SMAN 1 PEJAGOAN</h1>
-                <span class="badge-siganteng">SI GANTENG</span>
+                <span class="badge-system">MONITORING KEDISIPLINAN</span>
             </div>
-            <p id="typing-text" style="min-height: 1.2em; color:#94a3b8; font-weight:600; margin: 5px 0 0 0; font-size: 0.85em;">PUSAT MONITORING KEDISIPLINAN</p>
         </div>
-        <div class="jam-digital">
-            <div class="waktu" id="jam-real">00:00</div>
-            <div class="tanggal" id="tgl-real">...</div>
+        
+        <div class="header-right">
+            <img src="logo.png" class="logo-siganteng" alt="SiGanteng" onerror="this.src='https://ui-avatars.com/api/?name=SG&background=transparent&color=fff&size=128'">
+            
+            <div class="jam-digital">
+                <div class="waktu" id="jam-real">00:00</div>
+                <div class="tanggal" id="tgl-real">...</div>
+            </div>
         </div>
     </div>
 
     <div class="main-content">
         
         <div class="card-box col-gasik">
-            <div class="card-header gasik-header"><i class='bx bxs-trophy'></i> 10 SISWA TER-GASIK</div>
+            <div class="card-header gasik-header"><i class='bx bxs-trophy'></i> TOP 10 GASIK</div>
             <div class="list-container" id="gasik-list">
                 <p style="text-align:center; padding:20px; opacity:0.5;">Menunggu data...</p>
             </div>
@@ -140,16 +216,18 @@
 
         <div class="col-center">
             <div class="stats-wrapper">
+                <div class="reactor-ring"></div>
                 <div class="donut-chart" id="chart-absen" style="--p: 0deg; --c: var(--neon-red);">
                     <div class="donut-inner">
+                        <img src="logo.png" class="logo-center-donut" alt="Logo">
                         <span class="big-percent" id="persen-text">0%</span>
-                        <small style="color:#94a3b8; font-size:0.7em;">KEHADIRAN</small>
+                        <small style="color:#94a3b8; font-size:0.7em; z-index:2; font-weight:700; letter-spacing:1px;">KEHADIRAN</small>
                     </div>
                 </div>
                 
                 <div style="margin-bottom: 10px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; width: 100%;">
-                    <span style="font-size: 0.8em; color: #94a3b8; font-weight: 600;">TOTAL SISWA</span>
-                    <div style="font-size: 1.5em; font-weight: 800; color: white;" id="total-populasi">...</div>
+                    <span style="font-size: 0.8em; color: #94a3b8; font-weight: 600; letter-spacing:1px;">TOTAL POPULASI</span>
+                    <div style="font-size: 1.8em; font-weight: 800; color: white; font-family: 'Share Tech Mono', monospace;" id="total-populasi">...</div>
                 </div>
                 
                 <div class="stat-grid">
@@ -162,47 +240,48 @@
             <div class="box-belum">
                 <div class="belum-header">
                     <span><i class='bx bx-user-x'></i> BELUM HADIR</span>
-                    <span style="background:rgba(255,255,255,0.1); padding:2px 8px; border-radius:4px;" id="badge-belum">0</span>
+                    <span style="background:rgba(255,255,255,0.1); padding:2px 8px; border-radius:4px; font-family:'Share Tech Mono';" id="badge-belum">0</span>
                 </div>
                 <div class="scroller-content"><div class="marquee-vertical" id="list-belum"></div></div>
             </div>
         </div>
 
         <div class="col-right-split">
-            
             <div class="box-telat">
                 <div class="telat-header">
                     <span><i class='bx bxs-alarm-exclamation'></i> TERLAMBAT</span>
-                    <span style="background:rgba(255,0,0,0.2); padding:2px 8px; border-radius:4px;" id="badge-telat">0</span>
+                    <span style="background:rgba(255,0,0,0.2); padding:2px 8px; border-radius:4px; font-family:'Share Tech Mono';" id="badge-telat">0</span>
                 </div>
                 <div class="scroller-content">
-                    <div class="marquee-vertical" id="list-telat">
-                        </div>
+                    <div class="marquee-vertical" id="list-telat"></div>
                 </div>
             </div>
 
             <div class="box-live">
                 <div class="live-header-big">
                     <span><i class='bx bxs-camera-movie'></i> LIVE PRESENSI</span>
-                    <span style="font-size:0.7em; font-weight:400; color:#94a3b8;">Realtime Update</span>
+                    <span style="font-size:0.7em; font-weight:400; color:#94a3b8; margin-left:auto;"><i class='bx bxs-circle' style="color:red; animation: breathe 1s infinite;"></i> REC</span>
                 </div>
                 <div class="scroller-content">
-                    <div class="marquee-vertical" id="live-feed-list">
-                        </div>
+                    <div class="marquee-vertical" id="live-feed-list"></div>
                 </div>
             </div>
-
         </div>
     </div>
 
     <div class="footer-marquee">
-        <marquee scrollamount="8">📢 INFO: SISTEM MONITORING ABSENSI REALTIME (SI GANTENG) SEDANG BERJALAN 🚀 TINGKATKAN KEDISIPLINAN UNTUK MASA DEPAN YANG CERAH! 🔥</marquee>
+        <marquee scrollamount="8">
+            🚀 <strong>SELAMAT DATANG DI PUSAT MONITORING KEDISIPLINAN SMAN 1 PEJAGOAN</strong> &nbsp;&nbsp; ••• &nbsp;&nbsp; 
+            <span style="color: var(--neon-blue);">SiGANTENG</span> ADALAH: <strong>SISTEM INFORMASI GATEWAY ADMINISTRASI NOTIFIKASI TERINTEGRASI ELEKTRONIK NETWORK GLOBAL</strong> &nbsp;&nbsp; ••• &nbsp;&nbsp;
+            DATA ABSENSI DIPERBAHARUI SECARA <span style="color: var(--neon-green);">REALTIME (LIVE)</span> &nbsp;&nbsp; ••• &nbsp;&nbsp; 
+            MARI WUJUDKAN GENERASI YANG DISIPLIN, BERKARAKTER, DAN BERPRESTASI 🔥
+        </marquee>
     </div>
+
 <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getFirestore, collection, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-        // --- ⚠️ CONFIG FIREBASE (SESUAIKAN DENGAN PUNYA NDAN) ---
         const firebaseConfig = {
             apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo",
             authDomain: "siganteng-absensi.firebaseapp.com",
@@ -216,16 +295,14 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // --- KONFIGURASI ---
         const JAM_BATAS_TERLAMBAT = "07:00:00"; 
         const DEFAULT_IMG = "https://cdn-icons-png.flaticon.com/512/847/847969.png";
-        const today = new Date().toLocaleDateString('fr-CA'); // OTOMATIS HARI INI
+        const today = new Date().toLocaleDateString('fr-CA');
 
         let allSiswa = [];       
         let dataAbsenHariIni = []; 
-        let validStudentNISNs = new Set(); // Tambahan untuk validasi cepat
+        let validStudentNISNs = new Set();
 
-        // JAM DIGITAL
         setInterval(() => {
             const now = new Date();
             document.getElementById('jam-real').innerText = now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
@@ -243,7 +320,6 @@
 
         function cleanID(id) { return String(id).trim().replace(/[^a-zA-Z0-9]/g, ''); }
 
-        // --- LOAD MASTER SISWA (DIPERBAIKI: FILTER HANYA SISWA) ---
         async function loadMasterSiswa() {
             try {
                 const q = query(collection(db, "users"));
@@ -254,19 +330,14 @@
 
                 querySnapshot.forEach(doc => {
                     const d = doc.data();
-                    
-                    // --- 🛡️ FILTER PENTING: CEK ROLE ---
-                    // Kalau role-nya BUKAN siswa (misal: guru, admin, karyawan), JANGAN DIMASUKKAN
-                    const role = d.role ? d.role.toLowerCase() : 'siswa'; // Default siswa jika kosong
+                    const role = d.role ? d.role.toLowerCase() : 'siswa';
                     if(role !== 'siswa') return; 
 
                     if (d.username) {
                         const nisnClean = cleanID(d.username);
                         if(!nisnSet.has(nisnClean) && nisnClean.length > 0) {
                             nisnSet.add(nisnClean);
-                            // Simpan NISN Siswa ke Set Validasi
                             validStudentNISNs.add(nisnClean);
-                            
                             allSiswa.push({ username: nisnClean, name: d.name || d.nama || "Siswa", kelas: d.kelas || "-" });
                         }
                     }
@@ -276,7 +347,6 @@
             } catch (error) { console.error(error); }
         }
 
-        // --- MONITORING (DIPERBAIKI: CEK VALIDASI SISWA) ---
         function startMonitorAbsen() {
             const q = query(collection(db, "absensi"), where("tanggal", "==", today));
 
@@ -288,10 +358,6 @@
                     
                     if(d.nisn) {
                         const nisnBersih = cleanID(d.nisn);
-                        
-                        // --- 🛡️ FILTER KE-2: CEK DATA MASUK ---
-                        // Cek apakah NISN yang absen ini ada di daftar Siswa?
-                        // Kalau Guru iseng absen, NISN-nya gak akan ketemu di sini, jadi gak akan tampil.
                         if(validStudentNISNs.has(nisnBersih)) {
                             tempAbsen.push({
                                 ...d,
@@ -310,7 +376,6 @@
             });
         }
 
-        // --- FUNGSI UPDATE TAMPILAN (SAMA SEPERTI SEBELUMNYA) ---
         function updateTampilanLayar() {
             const listHadir = dataAbsenHariIni.filter(d => d.status_terakhir !== 'Sakit' && d.status_terakhir !== 'Izin');
             const nisnHadir = dataAbsenHariIni.map(d => d.nisn_clean); 
@@ -332,11 +397,8 @@
 
             if (totalPopulasi > 0) {
                 rawPercent = (totalMasuk / totalPopulasi) * 100;
-                if (totalMasuk > 0 && rawPercent < 1) {
-                    derajat = 3.6; 
-                } else {
-                    derajat = rawPercent * 3.6;
-                }
+                if (totalMasuk > 0 && rawPercent < 1) derajat = 3.6; 
+                else derajat = rawPercent * 3.6;
             }
             if (rawPercent > 100) rawPercent = 100;
 
@@ -348,11 +410,12 @@
             if(elText) {
                 elText.innerText = rawPercent.toFixed(1) + "%";
                 elText.style.color = warnaDonat;
+                elText.style.textShadow = `0 0 10px ${warnaDonat}`;
             }
 
             const elChart = document.getElementById('chart-absen');
             if(elChart) {
-                elChart.style.background = `conic-gradient(${warnaDonat} ${derajat}deg, #334155 0deg)`;
+                elChart.style.background = `conic-gradient(${warnaDonat} ${derajat}deg, #0f172a 0deg)`;
             }
 
             listBelum.sort((a,b) => a.kelas.localeCompare(b.kelas));
@@ -371,7 +434,6 @@
             renderLiveFeed(listLive);
         }
         
-        // RENDER GASIK
         function renderGasik(data) {
             const el = document.getElementById('gasik-list');
             el.innerHTML = '';
@@ -388,7 +450,6 @@
             });
         }
 
-        // RENDER BELUM & TELAT (SMALL SCROLL)
         function renderScrollList(data, id, type) {
             const container = document.getElementById(id);
             container.innerHTML = ''; 
@@ -412,14 +473,13 @@
                 } else {
                     container.insertAdjacentHTML('beforeend', `
                         <div class="alpha-row">
-                            <div><div class="alpha-nama">${d.name}</div><div class="alpha-kelas">${d.kelas}</div></div>
+                            <div><div class="alpha-nama">${d.name}</div><div class="alpha-kelas" style="font-size:0.7em; color:#94a3b8;">${d.kelas}</div></div>
                         </div>`);
                 }
             });
             if(data.length > 5) container.innerHTML += container.innerHTML;
         }
 
-        // RENDER LIVE FEED BESAR
         function renderLiveFeed(data) {
             const container = document.getElementById('live-feed-list');
             container.innerHTML = '';
@@ -445,19 +505,7 @@
             if(data.length > 6) container.innerHTML += container.innerHTML;
         }
 
-        const texts = [ "PUSAT MONITORING KEDISIPLINAN SISWA", "SIGANTENG :", "​SISTEM INFORMASI GATEWAY ADMINISTRASI NOTIFIKASI TERINTEGRASI ELEKTRONIK NETWORK GLOBAL", "BERSAMA MEWUJUDKAN GENERASI SMAN 1 PEJAGOAN YANG DISIPLIN & BERKARAKTER"];
-        let count=0, index=0, currentText="", letter="", isDeleting=false;
-        function type() {
-            if(count === texts.length) count=0; currentText = texts[count];
-            if(isDeleting) letter = currentText.slice(0, --index); else letter = currentText.slice(0, ++index);
-            document.getElementById("typing-text").innerHTML = letter + '<span style="border-right: 3px solid var(--neon-blue); animation: blink 0.7s infinite;">&nbsp;</span>';
-            let typeSpeed = isDeleting ? 30 : 80;
-            if(!isDeleting && letter.length === currentText.length) { typeSpeed = 2000; isDeleting = true; }
-            else if(isDeleting && letter.length === 0) { isDeleting = false; count++; typeSpeed = 500; }
-            setTimeout(type, typeSpeed);
-        }
-        document.addEventListener("DOMContentLoaded", type);
-        loadMasterSiswa();
+        document.addEventListener("DOMContentLoaded", loadMasterSiswa);
     </script>
 </body>
 </html>
