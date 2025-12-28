@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Store Manager - SiGanteng</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body{font-family:'Outfit',sans-serif;background-color:#0f172a;color:#e2e8f0}
+        .toggle-checkbox:checked { right: 0; border-color: #10B981; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #10B981; }
+        /* Gaya Memo Khas Kertas Kuning */
+        .memo-pad { background: #fef3c7; color: #78350f; border-left: 6px solid #d97706; }
+        .memo-pad textarea { background: transparent; color: #78350f; }
+        .memo-pad textarea::placeholder { color: #b45309; opacity: 0.5; }
+    </style>
+</head>
+<body class="p-6 max-w-6xl mx-auto">
+    
+    <header class="flex justify-between items-center mb-8 border-b border-slate-800 pb-6">
+        <div>
+            <h1 class="text-3xl font-black text-white">App Manager</h1>
+            <p class="text-slate-400">Pusat Kendali Menu & Fitur Tambahan</p>
+        </div>
+        <div class="bg-indigo-600/20 text-indigo-400 p-3 rounded-xl border border-indigo-600/50">
+            <i data-lucide="cpu" class="w-8 h-8"></i>
+        </div>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <div class="space-y-6">
+            
+            <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                <h3 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="plus-square" class="w-5 h-5 text-emerald-500"></i> Buat Tombol Baru</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-xs text-slate-500 uppercase font-bold">Target Pengguna</label>
+                        <select id="menuTarget" class="w-full bg-slate-800 text-white p-3 rounded-lg border border-slate-700 mt-1 outline-none focus:border-indigo-500">
+                            <option value="siswa">Siswa</option>
+                            <option value="guru">Guru</option>
+                            <option value="ortu">Orang Tua</option>
+                            <option value="kurikulum">Kurikulum (Admin KBM)</option>
+                            <option value="umum">Semua (Umum)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs text-slate-500 uppercase font-bold">Judul Fitur</label>
+                        <input type="text" id="menuJudul" class="w-full bg-slate-800 text-white p-3 rounded-lg border border-slate-700 mt-1" placeholder="Contoh: Izin Sakit">
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-xs text-slate-500 uppercase font-bold">Ikon (Emoji/Kode)</label>
+                            <a href="https://lucide.dev/icons" target="_blank" class="text-[10px] text-indigo-400 hover:text-white font-bold underline flex items-center gap-1">
+                                <i data-lucide="search" class="w-3 h-3"></i> Cari Ikon Disini
+                            </a>
+                        </div>
+                        <input type="text" id="menuIcon" class="w-full bg-slate-800 text-white p-3 rounded-lg border border-slate-700" placeholder="Contoh: 🚑 atau file-text">
+                        <p class="text-[10px] text-slate-600 mt-1">*Bisa pakai Emoji HP atau kode Lucide</p>
+                    </div>
+                    <div>
+                        <label class="text-xs text-slate-500 uppercase font-bold">Nama File / Link</label>
+                        <input type="text" id="menuLink" class="w-full bg-slate-800 text-white p-3 rounded-lg border border-slate-700 mt-1" placeholder="Contoh: ijin_ortu.html">
+                    </div>
+                    <div class="flex items-center gap-2 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+                        <input type="checkbox" id="menuWarna" class="w-4 h-4 cursor-pointer accent-indigo-600"> 
+                        <label for="menuWarna" class="text-sm text-slate-300 cursor-pointer select-none">Highlight (Warna Beda)</label>
+                    </div>
+                    <button onclick="simpanMenuBaru()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-lg shadow-lg transition active:scale-95">Terbitkan Tombol</button>
+                </div>
+            </div>
+
+            <div class="memo-pad p-5 rounded-2xl shadow-lg transform rotate-1 hover:rotate-0 transition duration-300">
+                <div class="flex justify-between items-center mb-2 border-b border-yellow-600/20 pb-2">
+                    <h3 class="font-bold flex items-center gap-2"><i data-lucide="sticky-note"></i> Catatan Ide</h3>
+                    <span class="text-[10px] font-mono opacity-60 bg-yellow-500/20 px-2 py-1 rounded">Auto-Save</span>
+                </div>
+                <textarea id="catatanDev" class="w-full h-40 outline-none text-sm font-medium resize-none" placeholder="Tulis ide liar di sini, Ndan...
+Contoh:
+- Bikin fitur voting Ketua OSIS
+- Bikin tombol Lapor Bullying"></textarea>
+            </div>
+
+        </div>
+
+        <div class="lg:col-span-2 bg-slate-900 p-6 rounded-2xl border border-slate-800 h-fit">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-white">Daftar Fitur Aplikasi</h3>
+                <span class="text-xs bg-slate-800 px-2 py-1 rounded text-slate-400">Realtime Database</span>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-400">
+                    <thead class="bg-slate-950 text-xs uppercase font-bold text-slate-500">
+                        <tr>
+                            <th class="p-3">Status</th>
+                            <th class="p-3">Target</th>
+                            <th class="p-3 text-center">Icon</th>
+                            <th class="p-3">Judul Fitur</th>
+                            <th class="p-3 text-right">Hapus</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-menu-list" class="divide-y divide-slate-800">
+                        <tr><td colspan="5" class="p-10 text-center italic text-slate-600">Sedang memuat data aplikasi...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, collection, query, orderBy, onSnapshot, addDoc, deleteDoc, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        const firebaseConfig = { apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo", authDomain: "siganteng-absensi.firebaseapp.com", databaseURL: "https://siganteng-absensi-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "siganteng-absensi", storageBucket: "siganteng-absensi.firebasestorage.app", messagingSenderId: "917873420012", appId: "1:917873420012:web:0fe1a9eddc5f94959ba7c9" };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            loadMenuManager();
+            loadCatatan(); // Load Memo
+        });
+
+        // 🔥 LOGIC MEMO / CATATAN 🔥
+        const memoInput = document.getElementById('catatanDev');
+        // Load saat dibuka
+        function loadCatatan() {
+            const saved = localStorage.getItem('siganteng_memo');
+            if(saved) memoInput.value = saved;
+        }
+        // Simpan setiap ngetik
+        memoInput.addEventListener('input', () => {
+            localStorage.setItem('siganteng_memo', memoInput.value);
+        });
+
+        // 1. TAMBAH MENU
+        window.simpanMenuBaru = async () => { 
+            const t = document.getElementById('menuTarget').value; 
+            const j = document.getElementById('menuJudul').value; 
+            const i = document.getElementById('menuIcon').value; 
+            const l = document.getElementById('menuLink').value; 
+            
+            if(j && l) { 
+                Swal.fire({title:'Menyimpan...', didOpen:()=>Swal.showLoading()});
+                await addDoc(collection(db, "menu_dinamis"), {
+                    target: t, judul: j, icon: i, link: l, 
+                    highlight: document.getElementById('menuWarna').checked, 
+                    aktif: true,
+                    created_at: new Date().toISOString()
+                }); 
+                Swal.close();
+                Swal.fire('Sukses','Fitur baru ditambahkan.','success'); 
+                document.getElementById('menuJudul').value='';
+                document.getElementById('menuLink').value='';
+            } else { Swal.fire('Gagal','Judul dan Link wajib diisi','warning'); }
+        }
+
+        // 2. LOAD MENU
+        function loadMenuManager() { 
+            onSnapshot(query(collection(db, "menu_dinamis"), orderBy("created_at", "asc")), (snap) => { 
+                const tb = document.getElementById('tbody-menu-list'); tb.innerHTML = ''; 
+                if(snap.empty) { tb.innerHTML = '<tr><td colspan="5" class="p-10 text-center italic">Belum ada fitur tambahan.</td></tr>'; return; }
+                
+                snap.forEach(d => { 
+                    const data = d.data(); 
+                    const id = d.id;
+                    let badgeColor = "text-slate-400 bg-slate-800";
+                    if(data.target === 'ortu') badgeColor = "text-orange-400 bg-orange-900/20 border-orange-500/30";
+                    if(data.target === 'guru') badgeColor = "text-blue-400 bg-blue-900/20 border-blue-500/30";
+                    if(data.target === 'kurikulum') badgeColor = "text-emerald-400 bg-emerald-900/20 border-emerald-500/30";
+
+                    const isChecked = data.aktif ? 'checked' : '';
+                    const statusText = data.aktif ? '<span class="text-emerald-400 font-bold">ON</span>' : '<span class="text-slate-600 font-bold">OFF</span>';
+                    const rowOpacity = data.aktif ? 'opacity-100' : 'opacity-50 grayscale'; 
+
+                    tb.innerHTML += `
+                        <tr class="hover:bg-slate-800/50 transition border-b border-slate-800/50 last:border-0 ${rowOpacity}">
+                            <td class="p-3"><div class="flex items-center gap-2 cursor-pointer" onclick="toggleStatus('${id}', ${data.aktif})"><div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in"><input type="checkbox" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer ${data.aktif ? 'right-0 border-emerald-400' : 'left-0 border-slate-400'}" ${isChecked}/><label class="toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${data.aktif ? 'bg-emerald-400' : 'bg-slate-600'}"></label></div><div class="text-xs">${statusText}</div></div></td>
+                            <td class="p-3"><span class="px-2 py-1 rounded text-[10px] border uppercase font-bold tracking-wider ${badgeColor}">${data.target}</span></td>
+                            <td class="p-3 text-center text-xl">${data.icon}</td>
+                            <td class="p-3"><div class="text-white font-bold text-sm">${data.judul}</div><div class="text-xs font-mono text-slate-500 truncate max-w-[150px]">${data.link}</div></td>
+                            <td class="p-3 text-right"><button onclick="hapusMenu('${id}')" class="text-slate-600 hover:text-red-500 p-2 rounded-lg transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
+                        </tr>`; 
+                }); 
+                lucide.createIcons(); 
+            }); 
+        }
+
+        window.toggleStatus = async (id, current) => { await updateDoc(doc(db, "menu_dinamis", id), { aktif: !current }); const Toast = Swal.mixin({toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, timerProgressBar: true}); Toast.fire({icon: !current ? 'success' : 'warning', title: !current ? 'Fitur Diaktifkan' : 'Fitur Dimatikan'}); }
+        window.hapusMenu = async(id) => { if(confirm("Hapus tombol ini?")) await deleteDoc(doc(db,"menu_dinamis",id)); }
+    </script>
+</body>
+</html>
