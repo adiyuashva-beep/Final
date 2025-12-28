@@ -310,7 +310,34 @@
         // ... SISA KODINGAN LAMA (TIDAK BERUBAH) ...
         // (Antena, Kamera, GPS, Wali Kelas, dll - Saya ringkas biar muat)
         
-        function loadMenuDinamis() { const q = query(collection(db, "menu_dinamis"), orderBy("created_at", "asc")); onSnapshot(q, (snap) => { const c = document.getElementById('grid-menu-dinamis'); const sec = document.getElementById('section-menu-dinamis'); c.innerHTML = ''; let adaData = false; snap.forEach(d => { const data = d.data(); if (data.target === 'guru' || data.target === 'umum') { adaData = true; const style = data.highlight ? "bg-indigo-50 border-indigo-200 text-indigo-700" : "bg-white border-slate-100 text-slate-700"; c.innerHTML += `<a href="${data.link}" class="p-4 ${style} border rounded-2xl text-center flex flex-col items-center gap-2 active:scale-95 transition shadow-sm"><div class="text-2xl">${data.icon}</div><span class="text-[10px] font-bold uppercase tracking-tighter">${data.judul}</span></a>`; } }); if(adaData) { sec.classList.remove('hidden'); } else { sec.classList.add('hidden'); } }); }
+// 🔥 UPDATE GURU: SAKLAR ON/OFF 🔥
+        function loadAntenaGuru() {
+            const container = document.getElementById('antenna-container'); // Biasanya di Header atas
+            
+            onSnapshot(query(collection(db, "menu_dinamis"), orderBy("created_at", "asc")), (snap) => {
+                container.innerHTML = '';
+                
+                snap.forEach(d => {
+                    const dt = d.data();
+
+                    // 🛑 FILTER SAKTI ADMIN 🛑
+                    if (dt.aktif === false) return; // Kalau OFF, Lewati!
+
+                    if (dt.target === 'guru' || dt.target === 'umum') {
+                        // Style Tombol Guru (Biasanya kecil memanjang di header)
+                        let styleClass = dt.highlight 
+                            ? "bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20" 
+                            : "bg-slate-700 hover:bg-slate-600 text-slate-200 border border-slate-600";
+
+                        container.innerHTML += `
+                            <a href="${dt.link}" target="_blank" class="${styleClass} px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition mb-2 lg:mb-0">
+                                <span>${dt.icon}</span> 
+                                ${dt.judul}
+                            </a>`;
+                    }
+                });
+            });
+        }
         function initDashboard() { document.getElementById('nama-guru').innerText = userGuru.nama; document.getElementById('nip-guru').innerText = "NIP: " + userGuru.username; document.getElementById('foto-guru').src = `https://ui-avatars.com/api/?name=${userGuru.nama}&background=10b981&color=fff&bold=true&size=128`; }
         function loadFotoProfilReal() { onSnapshot(doc(db, "guru", userGuru.username), (docSnap) => { if(docSnap.exists() && docSnap.data().foto_profil) { document.getElementById('foto-guru').src = docSnap.data().foto_profil; } }); }
         window.bukaKameraProfil = () => { tipeAbsenAktif = "ProfilGuru"; document.getElementById('judul-kamera').innerText = "SELFIE PROFIL"; document.getElementById('modalKamera').classList.remove('hidden'); navigator.mediaDevices.getUserMedia({video: {facingMode: 'user', aspectRatio: 1}}).then(s => { streamKamera = s; document.getElementById('videoStream').srcObject = s; }); }
