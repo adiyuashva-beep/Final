@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pengajuan Izin - Ortu</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>body{font-family:'Outfit',sans-serif;background-color:#f8fafc}</style>
+</head>
+<body class="p-6 flex flex-col min-h-screen max-w-md mx-auto bg-white shadow-xl min-h-screen">
+    
+    <div class="mb-8">
+        <h1 class="text-2xl font-black text-slate-800">Form Izin <span class="text-blue-600">Orang Tua</span></h1>
+        <p class="text-sm text-slate-500">Ajukan izin/sakit untuk anak Anda.</p>
+    </div>
+
+    <div class="space-y-5 flex-1">
+        <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nama Siswa</label>
+            <input type="text" id="namaSiswa" class="w-full bg-slate-100 border-none rounded-xl p-3 font-bold text-slate-700" readonly>
+        </div>
+
+        <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tanggal Izin</label>
+            <input type="date" id="tglIzin" class="w-full bg-white border border-slate-300 rounded-xl p-3 font-bold text-slate-700 outline-none focus:border-blue-500">
+        </div>
+
+        <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Jenis Izin</label>
+            <select id="jenisIzin" class="w-full bg-white border border-slate-300 rounded-xl p-3 font-bold text-slate-700 outline-none focus:border-blue-500">
+                <option value="Sakit">Sakit (Ada Surat Dokter/Opname)</option>
+                <option value="Izin">Izin (Kepentingan Keluarga/Lainnya)</option>
+            </select>
+        </div>
+
+        <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Keterangan / Alasan</label>
+            <textarea id="ketIzin" rows="3" class="w-full bg-white border border-slate-300 rounded-xl p-3 font-bold text-slate-700 outline-none focus:border-blue-500" placeholder="Jelaskan alasan izin..."></textarea>
+        </div>
+
+        <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Foto Bukti (Surat/Kondisi)</label>
+            <div onclick="document.getElementById('fileBukti').click()" class="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center cursor-pointer hover:bg-slate-50 transition" id="boxFoto">
+                <i data-lucide="camera" class="w-8 h-8 text-slate-400 mx-auto mb-2"></i>
+                <p class="text-xs text-slate-400" id="labelFoto">Klik untuk ambil foto / upload</p>
+            </div>
+            <input type="file" id="fileBukti" class="hidden" accept="image/*" onchange="previewImage()">
+        </div>
+    </div>
+
+    <button onclick="kirimIzin()" class="mt-8 w-full bg-blue-600 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-blue-500/30 active:scale-95 transition">KIRIM PERMOHONAN</button>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+
+        const firebaseConfig = { apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo", authDomain: "siganteng-absensi.firebaseapp.com", databaseURL: "https://siganteng-absensi-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "siganteng-absensi", storageBucket: "siganteng-absensi.firebasestorage.app", messagingSenderId: "917873420012", appId: "1:917873420012:web:0fe1a9eddc5f94959ba7c9" };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        let userAnak = null;
+        let fileFoto = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            // Ambil data dari login Ortu sebelumnya
+            const dataLokal = localStorage.getItem('userSiswa');
+            if(dataLokal) {
+                userAnak = JSON.parse(dataLokal);
+                document.getElementById('namaSiswa').value = userAnak.nama;
+                document.getElementById('tglIzin').value = new Date().toLocaleDateString('fr-CA');
+            } else {
+                Swal.fire('Error','Sesi habis. Silakan login ulang di halaman Ortu.','error').then(()=>window.close());
+            }
+        });
+
+        window.previewImage = () => {
+            const input = document.getElementById('fileBukti');
+            if (input.files && input.files[0]) {
+                fileFoto = input.files[0];
+                document.getElementById('labelFoto').innerText = "Foto Terpilih: " + fileFoto.name;
+                document.getElementById('boxFoto').classList.add('border-blue-500', 'bg-blue-50');
+            }
+        }
+
+        window.kirimIzin = async () => {
+            const tgl = document.getElementById('tglIzin').value;
+            const jenis = document.getElementById('jenisIzin').value;
+            const ket = document.getElementById('ketIzin').value;
+
+            if(!tgl || !jenis || !ket || !fileFoto) return Swal.fire('Lengkapi Data','Semua kolom termasuk foto wajib diisi.','warning');
+
+            Swal.fire({title:'Mengirim Izin...', didOpen:()=>Swal.showLoading()});
+
+            try {
+                // 1. Upload Foto
+                const storageRef = ref(storage, `izin_ortu/${tgl}/${userAnak.username}_${Date.now()}.jpg`);
+                await uploadBytes(storageRef, fileFoto);
+                const url = await getDownloadURL(storageRef);
+
+                // 2. Simpan ke Absensi (Override status Alpha/Hadir)
+                const idDoc = `${tgl}_${userAnak.username}`; // Format ID Absen: YYYY-MM-DD_NISN
+                await setDoc(doc(db, "absensi", idDoc), {
+                    nisn: userAnak.username,
+                    nama: userAnak.nama,
+                    kelas: userAnak.kelas,
+                    role: 'siswa',
+                    tanggal: tgl,
+                    status_terakhir: `${jenis} (Ortu)`, // Sakit (Ortu)
+                    jam_masuk: serverTimestamp(), // Dianggap lapor jam segini
+                    foto_bukti: url, // Foto bukti masuk sini
+                    riwayat_kegiatan: [`${jenis} diajukan Wali Murid: "${ket}"`]
+                }, { merge: true });
+
+                Swal.fire('Terkirim', 'Izin berhasil diajukan. Status siswa otomatis terupdate.', 'success').then(() => {
+                    window.close(); // Tutup tab
+                });
+
+            } catch(e) {
+                console.error(e);
+                Swal.fire('Gagal', e.message, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
