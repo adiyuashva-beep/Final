@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Kurikulum - Monitoring KBM</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="logo.png">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <style>
+        body { font-family: 'Outfit', sans-serif; background-color: #0f172a; color: #e2e8f0; }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        
+        .status-aman { border-left: 4px solid #10b981; background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(30, 41, 59, 1) 100%); }
+        .status-kosong { border-left: 4px solid #64748b; background: #1e293b; opacity: 0.7; }
+        
+        .fade-in { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+    <header class="h-20 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-6 z-20 shadow-lg">
+        <div class="flex items-center gap-4">
+            <div class="bg-emerald-500/10 p-2 rounded-xl border border-emerald-500/50">
+                <i data-lucide="book-open-check" class="w-8 h-8 text-emerald-400"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-black text-white tracking-tight">PANEL KURIKULUM</h1>
+                <p class="text-[10px] text-slate-400 font-mono tracking-widest uppercase">Quality Control KBM</p>
+            </div>
+        </div>
+
+        <div id="antenna-container" class="hidden flex gap-2"></div>
+
+        <div class="flex items-center gap-2">
+            <div class="flex items-center bg-slate-800 rounded-lg p-1 border border-slate-700 mr-2">
+                <button onclick="geserHari(-1)" class="p-2 hover:bg-slate-700 rounded-md text-slate-400"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+                <input type="date" id="filter-tanggal" class="bg-transparent text-white text-sm font-bold px-2 outline-none cursor-pointer" onchange="loadDataKBM()">
+                <button onclick="geserHari(1)" class="p-2 hover:bg-slate-700 rounded-md text-slate-400"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+            </div>
+            
+            <button onclick="downloadExcelKBM('harian')" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2.5 rounded-lg text-xs font-bold flex items-center gap-2 transition border border-slate-600" title="Download Tanggal Ini Saja">
+                <i data-lucide="file-sheet" class="w-4 h-4"></i> Harian
+            </button>
+
+            <button onclick="downloadExcelKBM('bulanan')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-lg text-xs font-bold flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition" title="Download Bulan Ini Full">
+                <i data-lucide="files" class="w-4 h-4"></i> Rekap Bulanan
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 flex overflow-hidden">
+        
+        <aside class="w-72 bg-slate-950 border-r border-slate-800 flex flex-col p-6 overflow-y-auto hide-scroll">
+            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Statistik Harian</h3>
+            <div class="space-y-4">
+                <div class="glass-panel p-5 rounded-2xl">
+                    <p class="text-slate-400 text-xs mb-1">Total Jurnal Masuk</p>
+                    <h2 class="text-4xl font-black text-white" id="stat-total-jurnal">0</h2>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="glass-panel p-4 rounded-2xl border-l-4 border-emerald-500">
+                        <p class="text-slate-400 text-[10px] uppercase">Kelas Aktif</p>
+                        <h2 class="text-2xl font-bold text-emerald-400" id="stat-kelas-aktif">0</h2>
+                    </div>
+                    <div class="glass-panel p-4 rounded-2xl border-l-4 border-slate-600">
+                        <p class="text-slate-400 text-[10px] uppercase">Belum Lapor</p>
+                        <h2 class="text-2xl font-bold text-slate-400" id="stat-kelas-kosong">0</h2>
+                    </div>
+                </div>
+            </div>
+            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mt-8 mb-4">Timeline Terbaru</h3>
+            <div id="sidebar-timeline" class="space-y-3">
+                <div class="text-center text-slate-600 text-xs italic">Menunggu data...</div>
+            </div>
+        </aside>
+
+        <div class="flex-1 bg-slate-900/50 p-6 overflow-y-auto relative">
+            <div class="mb-6 max-w-md mx-auto">
+                <div class="relative">
+                    <i data-lucide="search" class="absolute left-3 top-3 w-5 h-5 text-slate-500"></i>
+                    <input type="text" id="cari-kelas" onkeyup="filterGrid()" placeholder="Cari Kelas (Contoh: X-1)..." class="w-full bg-slate-800 border border-slate-700 text-white pl-10 pr-4 py-2.5 rounded-xl outline-none focus:border-emerald-500 transition">
+                </div>
+            </div>
+            <div id="grid-container" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-20">
+                <div class="col-span-full text-center py-20">
+                    <div class="animate-spin w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+                    <p class="text-slate-400 font-mono animate-pulse">Menghubungkan ke Satelit KBM...</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="modal-detail" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm opacity-0 invisible transition-all duration-300">
+        <div class="bg-slate-900 w-full max-w-2xl rounded-3xl border border-slate-700 shadow-2xl flex flex-col max-h-[85vh] transform scale-95 transition-all duration-300" id="modal-content">
+            <div class="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900 rounded-t-3xl">
+                <div>
+                    <h2 class="text-2xl font-black text-white" id="modal-judul">...</h2>
+                    <p class="text-xs text-slate-400 font-mono" id="modal-tanggal">...</p>
+                </div>
+                <button onclick="tutupModal()" class="p-2 bg-slate-800 text-slate-400 rounded-full hover:bg-red-500 hover:text-white transition"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-950/30" id="modal-list"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, collection, query, where, getDocs, onSnapshot, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo",
+            authDomain: "siganteng-absensi.firebaseapp.com",
+            databaseURL: "https://siganteng-absensi-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "siganteng-absensi",
+            storageBucket: "siganteng-absensi.firebasestorage.app",
+            messagingSenderId: "917873420012",
+            appId: "1:917873420012:web:0fe1a9eddc5f94959ba7c9"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // STATE
+        let allJurnalHarian = [];
+        let allClasses = new Set();
+        let mapJurnalByKelas = {};
+
+        // INIT
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            document.getElementById('filter-tanggal').value = new Date().toLocaleDateString('fr-CA');
+            loadDaftarKelasReal();
+            loadAntenaKurikulum();
+        });
+
+        // 1. CARI DAFTAR KELAS (JARING GANDA)
+        async function loadDaftarKelasReal() {
+            allClasses.clear();
+            const grid = document.getElementById('grid-container');
+            grid.innerHTML = `<div class="col-span-full text-center py-20"><div class="animate-spin w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full mx-auto mb-4"></div><p class="text-slate-400 font-mono animate-pulse">Memindai Database...</p></div>`;
+
+            try {
+                // A. DARI DATA USER
+                const qSiswa = query(collection(db, "users"), where("kelas", "!=", "-"));
+                const snapSiswa = await getDocs(qSiswa);
+                snapSiswa.forEach(doc => {
+                    const d = doc.data();
+                    if (d.role !== 'guru' && d.kelas && d.kelas.length > 1) {
+                        allClasses.add(d.kelas.toUpperCase().trim());
+                    }
+                });
+                
+                // B. LANJUT MONITORING
+                pantauJurnalRealtime();
+            } catch (e) {
+                console.error(e);
+                pantauJurnalRealtime(); // Tetap paksa lanjut
+            }
+        }
+
+        // 2. MONITORING JURNAL HARIAN (ANTI TILANG)
+        function pantauJurnalRealtime() {
+            const tgl = document.getElementById('filter-tanggal').value;
+            // Query tanpa OrderBy biar database gak ngambek
+            const q = query(collection(db, "jurnal_guru"), where("tanggal", "==", tgl));
+
+            onSnapshot(q, (snap) => {
+                allJurnalHarian = [];
+                mapJurnalByKelas = {};
+                
+                // Siapkan wadah kelas
+                allClasses.forEach(k => mapJurnalByKelas[k] = []);
+
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    d.id = doc.id;
+                    allJurnalHarian.push(d);
+                    
+                    const k = d.kelas ? d.kelas.toUpperCase().trim() : "LAINNYA";
+                    // Kalau kelas baru (misal belum ada siswa tapi guru dah ngisi)
+                    if (!allClasses.has(k)) {
+                        allClasses.add(k);
+                        mapJurnalByKelas[k] = [];
+                    }
+                    mapJurnalByKelas[k].push(d);
+                });
+
+                // Sorting Manual (Terbaru di Atas)
+                const sortDesc = (a, b) => (b.waktu?.toMillis() || 0) - (a.waktu?.toMillis() || 0);
+                allJurnalHarian.sort(sortDesc);
+                Object.keys(mapJurnalByKelas).forEach(key => mapJurnalByKelas[key].sort(sortDesc));
+
+                renderStatistik();
+                renderGrid();
+                renderTimelineSidebar();
+                lucide.createIcons();
+            });
+        }
+
+        // 3. RENDER GRID
+        function renderGrid() {
+            const container = document.getElementById('grid-container');
+            container.innerHTML = '';
+            
+            if (allClasses.size === 0) {
+                container.innerHTML = `<div class="col-span-full text-center py-20 text-slate-500 bg-slate-900/50 rounded-3xl border border-slate-800"><i data-lucide="folder-open" class="w-16 h-16 mx-auto mb-4 opacity-30"></i><h3 class="text-lg font-bold text-slate-400">Data Kosong</h3></div>`;
+                lucide.createIcons(); return;
+            }
+
+            // Urutkan X, XI, XII
+            const sortedClasses = Array.from(allClasses).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+
+            sortedClasses.forEach(kls => {
+                const jurnals = mapJurnalByKelas[kls] || [];
+                const count = jurnals.length;
+                let statusClass = count > 0 ? "status-aman" : "status-kosong";
+                let text = count > 0 ? `<span class="text-emerald-400 font-bold">${count} Mapel Masuk</span>` : "Belum Ada KBM";
+                
+                container.innerHTML += `
+                    <div onclick="bukaDetail('${kls}')" class="glass-panel rounded-xl p-4 cursor-pointer hover:bg-slate-800 transition group relative overflow-hidden ${statusClass}">
+                        <div class="flex justify-between items-start mb-2"><h3 class="text-xl font-black text-white group-hover:text-emerald-400 transition">${kls}</h3><i data-lucide="${count>0?'check-circle':'minus'}" class="w-5 h-5 text-white/50"></i></div>
+                        <p class="text-sm font-bold text-slate-400 mb-4">${text}</p>
+                    </div>`;
+            });
+            filterGrid();
+        }
+
+        // 4. MODAL DETAIL + KOMENTAR SISWA
+        window.bukaDetail = async function(kls) {
+            const list = document.getElementById('modal-list');
+            const tgl = document.getElementById('filter-tanggal').value;
+            document.getElementById('modal-judul').innerText = `Jurnal Kelas ${kls}`;
+            document.getElementById('modal-tanggal').innerText = tgl;
+            list.innerHTML = '<div class="text-center text-slate-400 italic py-10"><i class="animate-spin" data-lucide="loader-2"></i> Mengambil data...</div>';
+            document.getElementById('modal-detail').classList.remove('invisible', 'opacity-0');
+            document.getElementById('modal-detail').classList.add('visible', 'opacity-100');
+            document.getElementById('modal-content').classList.replace('scale-95', 'scale-100');
+            lucide.createIcons();
+
+            const dataJurnal = mapJurnalByKelas[kls] || [];
+            if (dataJurnal.length === 0) { list.innerHTML = `<div class="text-center py-10 text-slate-500 italic">Belum ada guru yang mengisi jurnal.</div>`; return; }
+
+            // Query Refleksi
+            const qRefleksi = query(collection(db, "refleksi_siswa"), where("kelas", "==", kls), where("tanggal", "==", tgl));
+            const snapRef = await getDocs(qRefleksi);
+            
+            let statsMap = {}; 
+            let commentsMap = {};
+            
+            snapRef.forEach(doc => {
+                const r = doc.data();
+                if(!statsMap[r.id_jurnal]) { statsMap[r.id_jurnal] = {p:0,b:0,s:0}; commentsMap[r.id_jurnal] = []; }
+                
+                let labelEmot = "😐"; let warnaKomen = "text-slate-400";
+                if(r.rating==3) { statsMap[r.id_jurnal].p++; labelEmot="🤩"; warnaKomen="text-emerald-400"; }
+                else if(r.rating==2) { statsMap[r.id_jurnal].b++; labelEmot="🤔"; warnaKomen="text-yellow-400"; }
+                else { statsMap[r.id_jurnal].s++; labelEmot="🤯"; warnaKomen="text-red-400"; }
+
+                commentsMap[r.id_jurnal].push({ nama: r.nama, pesan: r.pesan, emot: labelEmot, warna: warnaKomen });
+            });
+
+            list.innerHTML = '';
+            dataJurnal.forEach(d => {
+                const jam = d.waktu ? new Date(d.waktu.toDate()).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : '-';
+                const st = statsMap[d.id] || {p:0,b:0,s:0};
+                const total = st.p + st.b + st.s;
+                const komenList = commentsMap[d.id] || [];
+                const img = d.foto_bukti ? `<img src="${d.foto_bukti}" class="w-full h-48 object-cover rounded-xl mt-3 border border-slate-700 cursor-pointer" onclick="Swal.fire({imageUrl:'${d.foto_bukti}', showConfirmButton:false, background:'transparent'})">` : '';
+
+                let htmlKomentar = '';
+                if(komenList.length > 0) {
+                    htmlKomentar = `<div class="mt-3 bg-slate-950/30 rounded-xl p-3 max-h-40 overflow-y-auto border border-slate-800 space-y-2"><p class="text-[10px] uppercase font-bold text-slate-500 mb-2 sticky top-0 bg-slate-900/90 p-1">💬 Komentar Siswa (${komenList.length})</p>`;
+                    komenList.forEach(k => { htmlKomentar += `<div class="flex gap-2 text-xs border-b border-slate-800 pb-1 mb-1 last:border-0"><span>${k.emot}</span><div><span class="font-bold text-slate-300">${k.nama}:</span> <span class="${k.warna} italic">"${k.pesan}"</span></div></div>`; });
+                    htmlKomentar += `</div>`;
+                } else { htmlKomentar = `<div class="mt-3 text-center text-[10px] text-slate-600 italic">Belum ada komentar siswa.</div>`; }
+
+                list.innerHTML += `
+                    <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg">
+                        <div class="flex justify-between items-start mb-3"><div><h4 class="text-lg font-bold text-white">${d.mapel}</h4><p class="text-xs text-emerald-400 font-bold">${d.nama_guru}</p></div><span class="bg-slate-800 text-slate-300 text-xs px-3 py-1 rounded-lg font-mono border border-slate-700">${jam}</span></div>
+                        <p class="text-sm text-slate-300 bg-slate-950/50 p-3 rounded-lg border border-slate-800 mb-3">"${d.materi}"</p>
+                        <div class="bg-slate-800 p-3 rounded-xl border border-slate-700 flex justify-around text-center"><div><span class="text-lg">🤩</span><div class="text-xs font-bold text-emerald-400">${st.p}</div></div><div><span class="text-lg">🤔</span><div class="text-xs font-bold text-yellow-400">${st.b}</div></div><div><span class="text-lg">🤯</span><div class="text-xs font-bold text-red-400">${st.s}</div></div><div class="border-l border-slate-600 pl-4 flex flex-col justify-center"><span class="text-[10px] text-slate-400">Total</span><span class="font-bold text-white">${total}</span></div></div>
+                        ${htmlKomentar}
+                        ${img}
+                    </div>`;
+            });
+        }
+
+        window.tutupModal = () => { document.getElementById('modal-detail').classList.add('invisible', 'opacity-0'); document.getElementById('modal-content').classList.replace('scale-100', 'scale-95'); }
+        function renderStatistik() { document.getElementById('stat-total-jurnal').innerText = allJurnalHarian.length; document.getElementById('stat-kelas-aktif').innerText = Object.values(mapJurnalByKelas).filter(a=>a.length>0).length; document.getElementById('stat-kelas-kosong').innerText = allClasses.size - Object.values(mapJurnalByKelas).filter(a=>a.length>0).length; }
+        function renderTimelineSidebar() { const c = document.getElementById('sidebar-timeline'); c.innerHTML=''; if(allJurnalHarian.length===0){c.innerHTML='<div class="text-center text-slate-600 text-xs italic">Belum ada data.</div>';return;} allJurnalHarian.slice(0,10).forEach(d=>{ const jam=d.waktu?new Date(d.waktu.toDate()).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}):'-'; c.innerHTML+=`<div class="flex gap-3 items-start border-l-2 border-slate-800 pl-3 pb-2 fade-in"><div class="flex-1"><div class="flex justify-between"><span class="text-[10px] font-bold text-emerald-500">${d.kelas}</span><span class="text-[9px] text-slate-500 font-mono">${jam}</span></div><p class="text-xs text-slate-300 font-bold truncate">${d.nama_guru}</p></div></div>`; }); }
+        
+        async function loadAntenaKurikulum() { const c = document.getElementById('antenna-container'); onSnapshot(query(collection(db, "menu_dinamis"), orderBy("created_at", "asc")), (snap) => { c.innerHTML = ''; let has=false; snap.forEach(d => { const dt = d.data(); if (dt.target === 'kurikulum' || dt.target === 'umum' || dt.target === 'admin') { has=true; c.innerHTML += `<a href="${dt.link}" target="_blank" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition shadow-lg"><span>${dt.icon}</span> ${dt.judul}</a>`; } }); if(has) c.classList.remove('hidden'); else c.classList.add('hidden'); }); }
+        
+        window.geserHari = (d) => { const i=document.getElementById('filter-tanggal'); const dt=new Date(i.value); dt.setDate(dt.getDate()+d); i.value=dt.toISOString().split('T')[0]; window.loadDataKBM(); }
+        window.filterGrid = () => { const k=document.getElementById('cari-kelas').value.toUpperCase(); for(let c of document.getElementById('grid-container').children) { c.style.display = c.querySelector('h3').innerText.includes(k) ? "block" : "none"; } }
+
+        // 🔥 5. DOWNLOAD EXCEL ULTIMATE (HARIAN & BULANAN) 🔥
+        window.downloadExcelKBM = async (mode = 'harian') => {
+            const tglInput = document.getElementById('filter-tanggal').value;
+            const titleLoading = mode === 'harian' ? 'Rekap Harian...' : 'Rekap Bulanan...';
+            
+            Swal.fire({ title: titleLoading, text: 'Menggabungkan jurnal & curhatan siswa...', didOpen: () => Swal.showLoading() });
+
+            try {
+                let qJurnal, qRefleksi;
+
+                if (mode === 'harian') {
+                    // Query Harian
+                    qJurnal = query(collection(db, "jurnal_guru"), where("tanggal", "==", tglInput));
+                    qRefleksi = query(collection(db, "refleksi_siswa"), where("tanggal", "==", tglInput));
+                } else {
+                    // Query Bulanan
+                    const [yyyy, mm] = tglInput.split('-');
+                    const start = `${yyyy}-${mm}-01`;
+                    const end = `${yyyy}-${mm}-31`; // Trik aman (string compare)
+                    
+                    qJurnal = query(collection(db, "jurnal_guru"), where("tanggal", ">=", start), where("tanggal", "<=", end));
+                    qRefleksi = query(collection(db, "refleksi_siswa"), where("tanggal", ">=", start), where("tanggal", "<=", end));
+                }
+
+                // EKSEKUSI DATA
+                const [snapJurnal, snapRef] = await Promise.all([getDocs(qJurnal), getDocs(qRefleksi)]);
+
+                if (snapJurnal.empty) { Swal.fire('Kosong', 'Tidak ada data jurnal pada periode ini.', 'info'); return; }
+
+                // Mapping Refleksi
+                let mapRefleksi = {};
+                snapRef.forEach(doc => {
+                    const r = doc.data();
+                    if(!mapRefleksi[r.id_jurnal]) mapRefleksi[r.id_jurnal] = [];
+                    let emot = r.rating == 3 ? "🤩" : (r.rating == 2 ? "🤔" : "🤯");
+                    mapRefleksi[r.id_jurnal].push(`${r.nama} (${emot}): ${r.pesan}`);
+                });
+
+                // Mapping Jurnal
+                let rawData = [];
+                snapJurnal.forEach(doc => {
+                    const d = doc.data();
+                    d.id = doc.id; // Penting buat gabungin curhatan
+                    rawData.push(d);
+                });
+
+                // Sort: Tanggal dulu, baru Jam
+                rawData.sort((a, b) => {
+                    if (a.tanggal !== b.tanggal) return b.tanggal.localeCompare(a.tanggal);
+                    return (b.waktu?.toMillis() || 0) - (a.waktu?.toMillis() || 0);
+                });
+
+                // Format Excel
+                const dataExport = rawData.map(d => ({
+                    Tanggal: d.tanggal,
+                    Jam: d.waktu ? new Date(d.waktu.toDate()).toLocaleTimeString('id-ID') : '-',
+                    Kelas: d.kelas,
+                    Guru: d.nama_guru,
+                    Mapel: d.mapel,
+                    Materi: d.materi,
+                    Respon_Siswa: mapRefleksi[d.id] ? mapRefleksi[d.id].join(" | ") : "-",
+                    Bukti_Foto: d.foto_bukti
+                }));
+
+                const ws = XLSX.utils.json_to_sheet(dataExport);
+                
+                // Link Cantik (Kolom H / Index 7)
+                const range = XLSX.utils.decode_range(ws['!ref']);
+                for (let R = range.s.r + 1; R <= range.e.r; ++R) {
+                    const c = ws[XLSX.utils.encode_cell({r: R, c: 7})];
+                    if (c && c.v && c.v.startsWith('http')) { c.l = { Target: c.v }; c.v = "📸 LIHAT"; }
+                }
+
+                const wb = XLSX.utils.book_new();
+                const sheetName = mode === 'harian' ? "Harian" : "Bulanan";
+                XLSX.utils.book_append_sheet(wb, ws, sheetName);
+                
+                const namaFile = mode === 'harian' ? `REKAP_HARIAN_${tglInput}.xlsx` : `REKAP_BULANAN_${tglInput.substring(0,7)}.xlsx`;
+                XLSX.writeFile(wb, namaFile);
+
+                Swal.close();
+                Swal.fire('Selesai', `Rekap ${sheetName} berhasil didownload.`, 'success');
+
+            } catch (e) {
+                console.error(e);
+                Swal.fire('Gagal', e.message, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
