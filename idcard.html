@@ -19,7 +19,6 @@
             background-color: #0a0a0a;
             position: relative;
             overflow: hidden;
-            /* Pastikan border radius tercapture */
             border-radius: 2rem; 
         }
 
@@ -32,16 +31,14 @@
             -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,0) 70%, rgba(0,0,0,1) 100%);
         }
 
-        /* TEXT GOLD (Disederhanakan biar ga melorot di html2canvas) */
         .text-gold {
-            color: #fbbf24; /* Fallback solid */
+            color: #fbbf24;
             background: linear-gradient(to bottom, #fbbf24, #d97706);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             font-weight: 800;
-            /* Kunci Line Height biar ga loncat */
             line-height: 1.2; 
-            padding-bottom: 5px; /* Kompensasi potong bawah */
+            padding-bottom: 5px;
         }
 
         .logo-glow { filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.9)); }
@@ -64,7 +61,7 @@
 
         <div class="relative z-10 h-full flex flex-col justify-between p-6">
             
-            <div class="flex justify-between items-center mt-2">
+            <div class="flex justify-between items-center mt-2 w-full">
                 <div class="relative">
                     <img id="logo-sekolah-img" src="" class="logo-glow w-16 h-16 object-contain" crossorigin="anonymous">
                 </div>
@@ -88,17 +85,17 @@
                     </div>
                 </div>
 
-                <div class="w-full flex justify-center items-center px-1">
-                    <h1 id="card-nama" class="text-2xl font-black text-gold uppercase tracking-wide text-center break-words w-full">...</h1>
+                <div class="w-full flex justify-center items-center text-center px-1">
+                    <h1 id="card-nama" class="text-2xl font-black text-gold uppercase tracking-wide text-center w-full break-words leading-tight">...</h1>
                 </div>
                 
-                <div class="flex justify-center mt-2 w-full">
-                    <div class="bg-white/10 backdrop-blur-md text-white px-6 py-2 rounded-full border border-white/10 shadow-lg flex items-center justify-center">
-                        <span id="card-kelas" class="text-xs font-bold tracking-widest leading-none">...</span>
+                <div class="w-full flex justify-center items-center mt-3 text-center">
+                    <div class="bg-white/10 backdrop-blur-md text-white px-8 py-2 rounded-full border border-white/10 shadow-lg inline-flex items-center justify-center min-w-[100px]">
+                        <span id="card-kelas" class="text-xs font-bold tracking-[0.2em] leading-none text-center w-full">...</span>
                     </div>
                 </div>
 
-                <div class="mt-6 w-full grid grid-cols-2 gap-4 border-t border-white/10 pt-4 px-2">
+                <div class="mt-8 w-full grid grid-cols-2 gap-4 border-t border-white/10 pt-4 px-2">
                     <div class="text-left">
                         <p class="text-[9px] text-amber-500 uppercase tracking-widest font-bold mb-1">NISN / ID</p>
                         <p id="card-nisn" class="text-lg font-mono font-bold text-white tracking-wider leading-none">...</p>
@@ -136,23 +133,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // 🔥 FUNGSI SAKTI: CONVERT URL GAMBAR KE BASE64 (BIAR GA HILANG PAS DOWNLOAD)
-        async function convertImageToBase64(url) {
-            try {
-                // Pancing lewat proxy cors-anywhere kalau perlu, atau fetch langsung mode cors
-                const response = await fetch(url, { mode: 'cors' });
-                const blob = await response.blob();
-                return new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result);
-                    reader.readAsDataURL(blob);
-                });
-            } catch (error) {
-                console.warn("Gagal convert Base64, pakai original url", error);
-                return url; // Fallback
-            }
-        }
-
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
             
@@ -161,14 +141,14 @@
             const user = JSON.parse(userLokal);
             const nisn = String(user.username || user.nisn);
 
-            // 1. SET LOGO & DEFAULT
-            // Konversi logo lokal ke base64 biar aman juga (opsional tapi bagus)
+            // Set Logo Lokal
             document.getElementById('logo-sekolah-img').src = "logo_sekolah.png";
             document.getElementById('logo-siganteng-img').src = "logo.png";
             
+            // Set Default Data
             updateUI(user.nama, user.kelas, nisn, `https://ui-avatars.com/api/?name=${user.nama}&background=1e293b&color=fbbf24&bold=true`);
 
-            // 2. GENERATE QR
+            // Generate QR
             const qrContainer = document.getElementById("qrcode");
             qrContainer.innerHTML = ""; 
             new QRCode(qrContainer, {
@@ -177,17 +157,20 @@
                 correctLevel : QRCode.CorrectLevel.H
             });
 
-            // 3. LOAD FOTO PROFIL & CONVERT KE BASE64
+            // LOAD FOTO DARI FIREBASE DENGAN PROXY WSRV.NL
             try {
                 const docRef = doc(db, "siswa", nisn);
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     if(data.foto_profil) {
-                        // 🔥 INI FIX UTAMANYA 🔥
-                        // Ubah URL Firebase jadi Data URL (Base64)
-                        const base64Img = await convertImageToBase64(data.foto_profil);
-                        document.getElementById('card-foto').src = base64Img;
+                        const originalUrl = data.foto_profil;
+                        
+                        // 🔥 JURUS PROXY: Titip gambar ke wsrv.nl biar dapet izin CORS
+                        // output=png biar formatnya aman buat canvas
+                        const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(originalUrl)}&output=png`;
+                        
+                        document.getElementById('card-foto').src = proxyUrl;
                     }
                 }
             } catch(e) { console.log(e); }
@@ -205,28 +188,26 @@
             const btn = document.querySelector('button');
             const namaSiswa = document.getElementById('card-nama');
             
-            // 🔥 TRIK CSS SEBELUM RENDER: MATIKAN GRADIENT TEKS
-            // html2canvas benci gradient text, jadi kita bikin solid dulu
+            // Matikan gradient teks sementara biar ga melorot
             const originalColor = namaSiswa.style.background;
             const originalWebkit = namaSiswa.style.webkitTextFillColor;
             
             namaSiswa.style.background = 'none';
-            namaSiswa.style.webkitTextFillColor = '#fbbf24'; // Warna Emas Solid
+            namaSiswa.style.webkitTextFillColor = '#fbbf24'; 
             namaSiswa.style.color = '#fbbf24';
             
             btn.innerText = "Memproses...";
             btn.disabled = true;
 
-            // Tunggu sebentar biar CSS apply
             setTimeout(() => {
                 html2canvas(kartu, {
                     scale: 3, 
-                    useCORS: true, // WAJIB
-                    allowTaint: true, // WAJIB
+                    useCORS: true, // Wajib ON
+                    allowTaint: true,
                     backgroundColor: null,
                     logging: false
                 }).then(canvas => {
-                    // BALIKIN LAGI CSS GRADIENT NYA
+                    // Balikin gradient
                     namaSiswa.style.background = originalColor;
                     namaSiswa.style.webkitTextFillColor = originalWebkit;
 
@@ -243,10 +224,9 @@
                         btn.classList.replace('bg-emerald-600', 'bg-amber-600');
                         btn.disabled = false;
                         lucide.createIcons();
-                        Swal.fire({ title: 'Berhasil!', text: 'Kartu tersimpan di Galeri.', icon: 'success', background: '#1e293b', color: '#fff' });
                     }, 2000);
                 });
-            }, 100);
+            }, 200);
         };
     </script>
 </body>
