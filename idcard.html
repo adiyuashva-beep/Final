@@ -27,7 +27,6 @@
             background-image: url("https://www.transparenttextures.com/patterns/batik.png"); 
             background-size: 150px; background-repeat: repeat;
             opacity: 0.15; mix-blend-mode: overlay;
-            /* Masking Gradient biar tengahnya bersih */
             mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0) 65%, rgba(0,0,0,1) 100%);
             -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0) 65%, rgba(0,0,0,1) 100%);
         }
@@ -43,6 +42,19 @@
         }
 
         .logo-glow { filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.9)); }
+        
+        /* 🔥 JURUS LAS: TABLE DISPLAY 🔥 */
+        .table-center {
+            display: table;
+            margin: 0 auto;
+            height: 34px; /* Tinggi Dikunci Mati */
+        }
+        .cell-center {
+            display: table-cell;
+            vertical-align: middle; /* Kuncian Mati Tengah */
+            text-align: center;
+            padding-top: 2px; /* Kompensasi visual font Outfit */
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4 bg-slate-950">
@@ -57,7 +69,6 @@
         
         <div class="absolute inset-0 bg-gradient-to-br from-amber-900/20 via-black to-blue-900/20 z-0"></div>
         <div class="batik-overlay z-0"></div>
-        
         <div class="absolute -top-10 -right-10 w-40 h-40 bg-amber-500/30 rounded-full blur-[50px] z-0 animate-pulse"></div>
         <div class="absolute -bottom-10 -left-10 w-40 h-40 bg-blue-600/30 rounded-full blur-[50px] z-0 animate-pulse"></div>
 
@@ -78,11 +89,9 @@
                 
                 <div class="relative w-40 h-40 mb-4">
                     <div class="absolute inset-0 rounded-full border-2 border-dashed border-amber-500/50 animate-[spin_10s_linear_infinite]"></div>
-                    
                     <div class="absolute inset-2 rounded-full p-1 bg-gradient-to-tr from-amber-500 to-amber-800 shadow-2xl overflow-hidden">
                         <img id="card-foto" src="" class="w-full h-full rounded-full object-cover bg-slate-900" crossorigin="anonymous">
                     </div>
-                    
                     <div class="absolute bottom-0 right-0 bg-slate-900 border border-amber-500 rounded-full p-1.5 shadow-lg z-20">
                         <img id="logo-siganteng-img" src="" class="w-6 h-6 object-contain" crossorigin="anonymous">
                     </div>
@@ -92,9 +101,11 @@
                     <h1 id="card-nama" class="text-2xl font-black text-gold uppercase tracking-wide text-center w-full break-words leading-tight">...</h1>
                 </div>
                 
-                <div class="w-full flex justify-center mt-3">
-                    <div class="bg-white/10 backdrop-blur-md border border-white/10 shadow-lg rounded-full h-9 min-w-[140px] grid place-content-center">
-                        <span id="card-kelas" class="text-white text-xs font-bold tracking-[0.2em] leading-none pt-[2px]">...</span>
+                <div class="w-full mt-3">
+                    <div class="bg-white/10 backdrop-blur-md border border-white/10 shadow-lg rounded-full min-w-[140px] inline-block table-center">
+                        <div class="cell-center px-6">
+                            <span id="card-kelas" class="text-white text-xs font-bold tracking-[0.2em] leading-none block">...</span>
+                        </div>
                     </div>
                 </div>
 
