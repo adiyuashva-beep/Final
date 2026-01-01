@@ -74,7 +74,7 @@
         <div class="bg-white p-5 rounded-[2rem] shadow-lg border border-slate-100">
             <div class="flex items-center gap-2 mb-4 border-b border-slate-50 pb-2">
                 <i data-lucide="book-open" class="w-4 h-4 text-emerald-500"></i>
-                <h3 class="font-black text-slate-700 text-xs uppercase tracking-widest">Pembelajaran Hari Ini</h3>
+                <h3 class="font-black text-slate-700 text-xs uppercase tracking-widest">Pembelajaran & Refleksi Anak</h3>
             </div>
             <div id="container-kbm" class="space-y-3">
                 <div class="text-center text-slate-400 text-xs italic py-4">Memuat data KBM...</div>
@@ -138,24 +138,114 @@
                 loadMenuDinamis();
                 await loadHariLibur();
                 loadLaporanBulanan();
-                loadKBMHariIni();
+                loadKBMHariIni(); // <-- FUNGSI UTAMA YANG DIUPDATE
             } else { window.location.href = 'index.html'; }
         });
 
-        // 1. HEADER & PROFIL (Pakai Cache getDoc biar hemat, bukan onSnapshot)
+        // --- UPDATE: KBM + REFLEKSI ---
+        function loadKBMHariIni() {
+            const todayStr = new Date().toLocaleDateString('fr-CA');
+            const container = document.getElementById('container-kbm');
+            const nisn = String(userAnak.username || userAnak.nisn);
+
+            // 1. Ambil Refleksi Anak Hari Ini (Snapshot)
+            const qRefleksi = query(collection(db, "refleksi_siswa"), 
+                where("nisn", "==", nisn), 
+                where("tanggal", "==", todayStr)
+            );
+
+            onSnapshot(qRefleksi, (snapRef) => {
+                let petaRefleksi = {};
+                snapRef.forEach(d => {
+                    const data = d.data();
+                    petaRefleksi[data.mapel] = data; // Simpan refleksi berdasarkan nama Mapel
+                });
+
+                // 2. Ambil Jurnal Guru Hari Ini
+                const qJurnal = query(collection(db, "jurnal_guru"), 
+                    where("kelas", "==", userAnak.kelas), 
+                    where("tanggal", "==", todayStr), 
+                    orderBy("waktu", "desc")
+                );
+
+                onSnapshot(qJurnal, (snapJurnal) => {
+                    container.innerHTML = '';
+                    if(snapJurnal.empty) {
+                        container.innerHTML = '<div class="text-center text-slate-400 text-xs italic py-4">Belum ada KBM masuk hari ini.</div>';
+                        return;
+                    }
+
+                    snapJurnal.forEach(doc => {
+                        const d = doc.data();
+                        const jam = d.waktu ? new Date(d.waktu.toDate()).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : '-';
+                        const img = d.foto_bukti ? `<img src="${d.foto_bukti}" class="w-10 h-10 rounded-lg object-cover ml-auto border border-slate-100 cursor-pointer" onclick="lihatFoto('${d.foto_bukti}', 'Bukti KBM - ${d.mapel}')">` : '';
+                        
+                        // Cek Refleksi
+                        const refleksi = petaRefleksi[d.mapel];
+                        let refleksiHtml = '';
+                        
+                        if (refleksi) {
+                            // Jika anak sudah mengisi
+                            let emosiIcon = '😐';
+                            let bgEmosi = 'bg-slate-100 text-slate-600';
+                            
+                            if(refleksi.emosi === 'senang' || refleksi.emosi === 'paham') { emosiIcon = '😊'; bgEmosi = 'bg-emerald-100 text-emerald-700'; }
+                            else if(refleksi.emosi === 'sedih' || refleksi.emosi === 'bingung') { emosiIcon = '🤔'; bgEmosi = 'bg-orange-100 text-orange-700'; }
+                            else if(refleksi.emosi === 'mengantuk') { emosiIcon = '😴'; bgEmosi = 'bg-blue-100 text-blue-700'; }
+
+                            refleksiHtml = `
+                                <div class="mt-3 pt-2 border-t border-slate-100">
+                                    <div class="flex gap-2 items-start">
+                                        <div class="shrink-0 text-xl">${emosiIcon}</div>
+                                        <div class="bg-slate-50 p-2 rounded-lg rounded-tl-none w-full border border-slate-100">
+                                            <p class="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Catatan Anak:</p>
+                                            <p class="text-[11px] font-bold text-slate-700 italic">"${refleksi.pesan || '-'}"</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        } else {
+                            // Jika belum mengisi
+                            refleksiHtml = `
+                                <div class="mt-2 pt-2 border-t border-slate-50 text-[10px] text-slate-400 italic text-center">
+                                    Belum ada catatan refleksi dari anak.
+                                </div>
+                            `;
+                        }
+
+                        container.innerHTML += `
+                            <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm fade-in">
+                                <div class="flex items-start gap-3 mb-2">
+                                    <div class="bg-indigo-50 text-indigo-600 text-[10px] font-bold px-2 py-1 rounded mt-1 shadow-sm">${jam}</div>
+                                    <div class="flex-1">
+                                        <h4 class="font-bold text-slate-800 text-sm leading-tight">${d.mapel}</h4>
+                                        <div class="text-[10px] text-slate-500 font-bold mb-1">${d.nama_guru}</div>
+                                    </div>
+                                    ${img}
+                                </div>
+                                <div class="bg-slate-50 p-2 rounded-lg border border-slate-100 mb-1">
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Materi:</p>
+                                    <p class="text-xs text-slate-600 leading-snug font-medium">"${d.materi}"</p>
+                                </div>
+                                ${refleksiHtml}
+                            </div>
+                        `;
+                    });
+                });
+            });
+        }
+
+        // FUNGSI LAIN (SAMA SEPERTI SEBELUMNYA)
         function initHeader() {
             document.getElementById('nama-anak').innerText = userAnak.nama;
             document.getElementById('kelas-anak').innerText = userAnak.kelas;
             document.getElementById('nisn-anak').innerText = userAnak.nisn || userAnak.username;
             const nisn = String(userAnak.username || userAnak.nisn);
-            
-            // Cek Cache Lokal Dulu untuk Foto Anak
             const cachedFoto = localStorage.getItem(`foto_anak_${nisn}`);
             if(cachedFoto) {
                 document.getElementById('foto-anak').src = cachedFoto;
             } else {
                 document.getElementById('foto-anak').src = `https://ui-avatars.com/api/?name=${userAnak.nama}&background=3b82f6&color=fff&bold=true`;
-                // Ambil dari server sekali
                 getDoc(doc(db, "siswa", nisn)).then(snap => {
                     if(snap.exists() && snap.data().foto_profil) {
                         localStorage.setItem(`foto_anak_${nisn}`, snap.data().foto_profil);
@@ -165,57 +255,31 @@
             }
         }
 
-        // 2. LAPORAN BULANAN (FILTER SERVER SIDE)
         window.loadLaporanBulanan = async () => {
             const tbody = document.getElementById('tbody-laporan');
             tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-400"><i data-lucide="loader-2" class="animate-spin w-6 h-6 inline"></i> Memuat data...</td></tr>';
             lucide.createIcons();
-
             const bln = parseInt(document.getElementById('filter-bulan').value);
             const thn = parseInt(document.getElementById('filter-tahun').value);
             const nisn = String(userAnak.username || userAnak.nisn);
             const daysInMonth = new Date(thn, bln, 0).getDate();
             const strBln = bln < 10 ? '0' + bln : bln;
-            
-            // Range Tanggal
             const start = `${thn}-${strBln}-01`;
             const end = `${thn}-${strBln}-${daysInMonth}`;
             
             try {
-                // 🔥 KUNCI HEMAT: Filter Tanggal di Server (bukan client)
-                const q = query(
-                    collection(db, "absensi"), 
-                    where("nisn", "==", nisn),
-                    where("tanggal", ">=", start),
-                    where("tanggal", "<=", end)
-                );
-                
+                const q = query(collection(db, "absensi"), where("nisn", "==", nisn), where("tanggal", ">=", start), where("tanggal", "<=", end));
                 const snap = await getDocs(q);
                 let dataMap = {};
-                snap.forEach(doc => {
-                    const d = doc.data();
-                    dataMap[parseInt(d.tanggal.split('-')[2])] = d;
-                });
-
+                snap.forEach(doc => { const d = doc.data(); dataMap[parseInt(d.tanggal.split('-')[2])] = d; });
                 renderTabel(dataMap, daysInMonth, thn, bln, strBln);
-                
             } catch (err) { 
-                console.error(err);
-                // Jika error index (biasanya karena range query), fallback ke client filter sementara
-                if(err.message.includes("index")) {
-                    console.log("Fallback: Client filter (Please create index in Firebase Console)");
-                    // Fallback query lama (sementara)
-                    const qOld = query(collection(db, "absensi"), where("nisn", "==", nisn));
-                    const snapOld = await getDocs(qOld);
-                    let dataMap = {};
-                    snapOld.forEach(doc => {
-                        const d = doc.data();
-                        if (d.tanggal >= start && d.tanggal <= end) dataMap[parseInt(d.tanggal.split('-')[2])] = d;
-                    });
-                    renderTabel(dataMap, daysInMonth, thn, bln, strBln);
-                } else {
-                    tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500 text-xs">Gagal: ${err.message}</td></tr>`;
-                }
+                // Fallback jika index belum dibuat
+                const qOld = query(collection(db, "absensi"), where("nisn", "==", nisn));
+                const snapOld = await getDocs(qOld);
+                let dataMap = {};
+                snapOld.forEach(doc => { const d = doc.data(); if (d.tanggal >= start && d.tanggal <= end) dataMap[parseInt(d.tanggal.split('-')[2])] = d; });
+                renderTabel(dataMap, daysInMonth, thn, bln, strBln);
             }
         };
 
@@ -223,20 +287,17 @@
             const tbody = document.getElementById('tbody-laporan');
             tbody.innerHTML = '';
             const todayZero = new Date(); todayZero.setHours(0,0,0,0);
-
             for(let i = 1; i <= daysInMonth; i++) {
                 const currentDate = new Date(thn, bln - 1, i);
                 const isWeekend = (currentDate.getDay() === 0 || currentDate.getDay() === 6);
                 const tglStr = `${thn}-${strBln}-${i < 10 ? '0'+i : i}`;
                 const liburNasional = cacheHariLibur[tglStr];
-
                 const data = dataMap[i];
                 let rowClass = "border-b border-slate-50";
                 let tglHtml = `<span class="block font-bold text-lg leading-none text-slate-700">${i}</span>`;
                 let fotoHtml = `<div class="w-8 h-8 rounded-full bg-slate-100 mx-auto"></div>`;
                 let jamHtml = `<span class="text-slate-300">-</span>`;
                 let ketHtml = `<span class="text-slate-300">-</span>`;
-
                 if (liburNasional) {
                     rowClass = "bg-purple-50 border-b border-purple-100";
                     tglHtml = `<span class="block font-bold text-lg leading-none text-purple-600">${i}</span>`;
@@ -245,21 +306,17 @@
                     rowClass = "row-libur border-b border-slate-100";
                     ketHtml = `<span class="text-[9px] font-bold text-slate-400 bg-slate-200 px-2 py-0.5 rounded">LIBUR</span>`;
                 }
-
                 if (data) {
                     const st = data.status_terakhir;
                     const jMasuk = data.jam_masuk ? formatTime(data.jam_masuk.toDate()) : '-';
                     const jPulang = data.jam_pulang ? formatTime(data.jam_pulang.toDate()) : '-';
-                    
                     let urlFoto = data.foto_masuk;
                     if(st.includes("Sakit") || st.includes("Izin")) urlFoto = data.foto_bukti;
-                    
                     if(urlFoto) {
                         if(urlFoto.includes("ui-avatars")) fotoHtml = `<img src="${urlFoto}" class="w-8 h-8 rounded-full mx-auto opacity-50">`;
                         else fotoHtml = `<img src="${urlFoto}" class="avatar-absen shadow-sm" onclick="lihatFoto('${urlFoto}','${data.tanggal} - ${st}')">`;
                     }
-
-                    if(st.includes("Hadir") || st.includes("Masuk") || st.includes("Pulang") || st.includes("Kembali")) {
+                    if(st.includes("Hadir") || st.includes("Masuk") || st.includes("Pulang")) {
                         jamHtml = `<div class="flex flex-col"><span class="text-emerald-600 font-bold">${jMasuk}</span><span class="text-blue-600 font-bold text-[10px]">${jPulang}</span></div>`;
                         ketHtml = `<span class="text-emerald-500 font-bold text-xs">HADIR</span>`;
                     } else if(st.includes("Sakit")) {
@@ -279,18 +336,15 @@
                 } else if (!isWeekend && !liburNasional && currentDate < todayZero) {
                     rowClass = "row-alpha border-b border-red-100";
                     tglHtml = `<span class="block font-bold text-lg leading-none text-red-500">${i}</span>`;
-                    jamHtml = `<span class="text-red-300 font-bold">-</span>`;
                     ketHtml = `<span class="text-red-500 font-bold text-[9px] bg-red-100 px-2 py-0.5 rounded">ALPHA</span>`;
                 }
                 tbody.innerHTML += `<tr class="${rowClass}"><td class="p-3 text-center align-middle">${tglHtml}</td><td class="p-3 text-center align-middle">${fotoHtml}</td><td class="p-3 align-middle">${jamHtml}</td><td class="p-3 align-middle">${ketHtml}</td></tr>`;
             }
         }
 
-        // FUNGSI LAIN (SAMA)
         function loadMenuDinamis() { const q = query(collection(db, "menu_dinamis"), orderBy("created_at", "asc")); onSnapshot(q, (snap) => { const c = document.getElementById('grid-menu-dinamis'); const sec = document.getElementById('section-menu-dinamis'); c.innerHTML = ''; let adaData = false; snap.forEach(d => { const data = d.data(); if (data.target === 'ortu' || data.target === 'umum') { adaData = true; const style = data.highlight ? "bg-indigo-50 border-indigo-200 text-indigo-700" : "bg-white border-slate-100 text-slate-700"; c.innerHTML += `<a href="${data.link}" class="p-4 ${style} border rounded-2xl text-center flex flex-col items-center gap-2 active:scale-95 transition shadow-sm"><div class="text-2xl">${data.icon}</div><span class="text-[10px] font-bold uppercase tracking-tighter">${data.judul}</span></a>`; } }); if(adaData) sec.classList.remove('hidden'); else sec.classList.add('hidden'); }); }
         function setupFilterTanggal() { const selBulan = document.getElementById('filter-bulan'); const namabulan = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"]; const currentMonth = new Date().getMonth(); namabulan.forEach((nm, i) => { let opt = new Option(nm, i + 1); if(i === currentMonth) opt.selected = true; selBulan.add(opt); }); const selTahun = document.getElementById('filter-tahun'); const currentYear = new Date().getFullYear(); for(let y = currentYear - 1; y <= currentYear + 1; y++) { let opt = new Option(y, y); if(y === currentYear) opt.selected = true; selTahun.add(opt); } }
         async function loadHariLibur() { try { const q = query(collection(db, "hari_libur")); const snap = await getDocs(q); cacheHariLibur = {}; snap.forEach(doc => { cacheHariLibur[doc.data().tanggal] = doc.data().keterangan; }); } catch(e) {} }
-        function loadKBMHariIni() { const todayStr = new Date().toLocaleDateString('fr-CA'); const container = document.getElementById('container-kbm'); const q = query(collection(db, "jurnal_guru"), where("kelas", "==", userAnak.kelas), where("tanggal", "==", todayStr), orderBy("waktu", "desc")); onSnapshot(q, (snap) => { container.innerHTML = ''; if(snap.empty) { container.innerHTML = '<div class="text-center text-slate-400 text-xs italic py-4">Belum ada KBM masuk hari ini.</div>'; return; } snap.forEach(doc => { const d = doc.data(); const jam = d.waktu ? new Date(d.waktu.toDate()).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : '-'; const img = d.foto_bukti ? `<img src="${d.foto_bukti}" class="w-10 h-10 rounded-lg object-cover ml-auto border border-slate-100 cursor-pointer" onclick="lihatFoto('${d.foto_bukti}', 'Bukti KBM - ${d.mapel}')">` : ''; container.innerHTML += `<div class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 fade-in"><div class="bg-indigo-100 text-indigo-600 text-[10px] font-bold px-2 py-1 rounded mt-1">${jam}</div><div class="flex-1"><h4 class="font-bold text-slate-700 text-xs leading-tight">${d.mapel}</h4><div class="text-[10px] text-slate-500 font-bold mb-1">${d.nama_guru}</div><p class="text-[10px] text-slate-400 leading-snug">"${d.materi}"</p></div>${img}</div>`; }); }); }
         function pantauHariIni() { const todayStr = new Date().toLocaleDateString('fr-CA'); const nisn = String(userAnak.username || userAnak.nisn); const statusEl = document.getElementById('status-hari-ini'); const iconEl = document.getElementById('icon-hari-ini'); onSnapshot(doc(db, "absensi", `${todayStr}_${nisn}`), (docSnap) => { if (docSnap.exists()) { const st = docSnap.data().status_terakhir; statusEl.innerText = st.toUpperCase(); if(st.includes("Masuk") || st.includes("Hadir") || st.includes("Kembali")) { statusEl.className = "text-xl font-black text-emerald-600"; iconEl.className = "w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600"; iconEl.innerHTML = `<i data-lucide="check-circle" class="w-6 h-6"></i>`; } else if(st.includes("Pulang")) { statusEl.className = "text-xl font-black text-blue-600"; iconEl.className = "w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600"; iconEl.innerHTML = `<i data-lucide="home" class="w-6 h-6"></i>`; } else { statusEl.className = "text-xl font-black text-orange-600"; iconEl.className = "w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center text-orange-600"; iconEl.innerHTML = `<i data-lucide="alert-circle" class="w-6 h-6"></i>`; } } else { if(cacheHariLibur[todayStr]) { statusEl.innerText = "LIBUR: " + cacheHariLibur[todayStr].toUpperCase(); statusEl.className = "text-xl font-black text-purple-600"; iconEl.className = "w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center text-purple-600"; iconEl.innerHTML = `<i data-lucide="calendar-off" class="w-6 h-6"></i>`; } else { statusEl.innerText = "BELUM ABSEN"; statusEl.className = "text-xl font-black text-slate-400"; iconEl.className = "w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center text-slate-400"; iconEl.innerHTML = `<i data-lucide="clock" class="w-6 h-6"></i>`; } } lucide.createIcons(); }); }
         function formatTime(date) { return date.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}).replace('.', ':'); }
         window.lihatFoto = (url, caption) => { Swal.fire({ imageUrl: url, imageAlt: 'Bukti', text: caption, showConfirmButton: false, width: 'auto', padding: '1em', background: '#fff', showCloseButton: true }); }
