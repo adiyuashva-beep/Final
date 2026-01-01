@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Guru - SiGanteng (Hemat Mode)</title>
+    <title>Guru - SiGanteng (Realtime Demo)</title>
     
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="logo.png">
@@ -166,16 +166,6 @@
         <div class="absolute bottom-10 z-30"><button onclick="jepret()" class="w-16 h-16 bg-white rounded-full border-4 border-slate-300 shadow-xl active:scale-95 transition"></button></div>
     </div>
 
-    <div id="modal-refleksi" class="modal fixed inset-0 z-50 flex items-center justify-center bg-slate-900/90 backdrop-blur-sm p-4">
-        <div class="modal-content bg-white w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[80vh]">
-            <div class="bg-purple-50 p-4 border-b border-purple-100 flex justify-between items-center">
-                <h3 class="font-bold text-purple-800">Evaluasi Siswa</h3>
-                <button onclick="document.getElementById('modal-refleksi').classList.remove('active')" class="p-2 bg-white rounded-full text-slate-400"><i data-lucide="x" class="w-4 h-4"></i></button>
-            </div>
-            <div class="overflow-y-auto p-4 space-y-3" id="list-refleksi"></div>
-        </div>
-    </div>
-
     <div id="loading" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center">
         <div class="animate-spin rounded-full h-10 w-10 border-4 border-white border-t-transparent"></div>
     </div>
@@ -185,7 +175,7 @@
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
-        // CONFIG FIREBASE (PASTIKAN SAMA)
+        // CONFIG FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo",
             authDomain: "siganteng-absensi.firebaseapp.com",
@@ -199,7 +189,7 @@
         const db = getFirestore(app);
         const storage = getStorage(app);
 
-        // GLOBAL
+        // GLOBAL VARIABLES
         let userGuru = null;
         let lokasiUser = null;
         let configSekolah = { validasi_gps_aktif: true, radius_meter: 50 };
@@ -221,7 +211,7 @@
                 syncAdmin();
                 cekGPS();
                 loadDaftarKelas();
-                loadDaftarMapel();
+                loadDaftarMapel(); // <-- Ini sekarang Realtime
                 loadRiwayatJurnal();
                 loadMenuDinamis();
                 
@@ -237,28 +227,25 @@
         function initDashboard() { 
             document.getElementById('nama-guru').innerText = userGuru.nama; 
             document.getElementById('nip-guru').innerText = "NIP: " + userGuru.username; 
-            // Cek Profil dari Server (Sekali saja)
             getDoc(doc(db, "guru", userGuru.username)).then(snap => {
                 if(snap.exists() && snap.data().foto_profil) document.getElementById('foto-guru').src = snap.data().foto_profil;
                 else document.getElementById('foto-guru').src = `https://ui-avatars.com/api/?name=${userGuru.nama}&background=10b981&color=fff`;
             });
         }
 
-        // 2. WALI KELAS (HEMAT MODE)
+        // 2. WALI KELAS
         async function initWaliKelas(kelasWali) {
             document.getElementById('panel-wali-kelas').classList.remove('hidden');
             document.getElementById('nama-kelas-wali').innerText = kelasWali;
             document.getElementById('badge-wali').classList.remove('hidden');
             document.getElementById('judul-modal-wali').innerText = kelasWali;
 
-            // 🔥 FIX UTAMA: HANYA AMBIL SISWA KELAS TERSEBUT (BUKAN SEMUA) 🔥
             const qSiswa = query(collection(db, "users"), where("kelas", "==", kelasWali), where("role", "==", "siswa"));
             const snap = await getDocs(qSiswa);
             
             dataSiswaWali = [];
-            snap.forEach(doc => dataSiswaWali.push(doc.data())); // Simpan di memori lokal
+            snap.forEach(doc => dataSiswaWali.push(doc.data()));
             
-            // Pantau Absen (Tetap Realtime tapi Filtered)
             pantauAbsenWali(kelasWali);
         }
 
@@ -278,12 +265,10 @@
                 });
                 document.getElementById('wali-hadir').innerText = h;
                 document.getElementById('wali-izin').innerText = i;
-                // Hitung Alpha (Total Siswa - (Hadir + Izin))
                 document.getElementById('wali-alpha').innerText = dataSiswaWali.length - (h + i);
             });
         }
 
-        // FUNGSI INI BARU JALAN KALAU DIKLIK (ON DEMAND)
         window.bukaModalWali = async () => {
             const container = document.getElementById('list-siswa-wali');
             container.innerHTML = '';
@@ -294,15 +279,10 @@
                 return;
             }
 
-            // Kita urutkan nama
             dataSiswaWali.sort((a,b) => a.nama.localeCompare(b.nama));
 
-            // 🔥 TRIK HEMAT: Kita tidak download profil "siswa" (koleksi detail) satu-satu.
-            // Kita pakai data dasar dari "users". Foto pakai UI Avatars dulu biar cepat.
-            // Kalau mau foto asli, nanti bisa di-fetch lazy load, tapi ini udah cukup ganteng.
-            
             dataSiswaWali.forEach(s => {
-                const absen = dataAbsenWali[s.username]; // Data realtime
+                const absen = dataAbsenWali[s.username];
                 let statusHtml = `<span class="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded">Alpha</span>`;
                 
                 if(absen) {
@@ -313,7 +293,6 @@
                     statusHtml = `<span class="text-[10px] font-bold ${warna} px-2 py-0.5 rounded">${st}</span>`;
                 }
 
-                // Foto Generik (Hemat Bandwidth & Reads)
                 const fotoSrc = `https://ui-avatars.com/api/?name=${s.nama}&background=random&color=fff`;
 
                 container.innerHTML += `
@@ -325,27 +304,21 @@
                                 <div class="mt-1">${statusHtml}</div>
                             </div>
                         </div>
-                        <div class="flex gap-1">
-                            </div>
                     </div>
                 `;
             });
             document.getElementById('modal-wali').classList.add('active');
         }
 
-        // 3. CACHE KELAS & MAPEL (HEMAT)
+        // 3. DAFTAR KELAS (CACHE OK)
         async function loadDaftarKelas() {
             const sel = document.getElementById('jurnal-kelas');
-            
-            // Cek Cache Lokal
             const cachedKelas = localStorage.getItem('cache_list_kelas');
             if(cachedKelas) {
                 renderOptions(sel, JSON.parse(cachedKelas));
-                return; // Stop, gausah baca server
+                return;
             }
-
             try {
-                // Baca Server Sekali Seumur Hidup (atau sampai cache dihapus)
                 const q = query(collection(db, "users"), where("role", "==", "siswa"));
                 const snap = await getDocs(q);
                 const kelasUnik = new Set();
@@ -353,31 +326,30 @@
                     const d = doc.data();
                     if(d.kelas && d.kelas !== "-") kelasUnik.add(d.kelas.toUpperCase().trim());
                 });
-                
                 const listArr = Array.from(kelasUnik).sort();
-                localStorage.setItem('cache_list_kelas', JSON.stringify(listArr)); // Simpan ke Cache
+                localStorage.setItem('cache_list_kelas', JSON.stringify(listArr));
                 renderOptions(sel, listArr);
             } catch (e) { console.error(e); }
         }
 
-        async function loadDaftarMapel() {
+        // 🔥 4. DAFTAR MAPEL (REALTIME - TANPA CACHE) 🔥
+        function loadDaftarMapel() {
             const sel = document.getElementById('jurnal-mapel');
-            // Cek Cache
-            const cachedMapel = localStorage.getItem('cache_list_mapel');
-            if(cachedMapel) {
-                renderOptions(sel, JSON.parse(cachedMapel));
-                return;
-            }
-
-            try {
-                const q = query(collection(db, "mata_pelajaran"), orderBy("nama", "asc"));
-                const snap = await getDocs(q);
-                const listArr = [];
-                snap.forEach(doc => listArr.push(doc.data().nama));
-                
-                localStorage.setItem('cache_list_mapel', JSON.stringify(listArr));
-                renderOptions(sel, listArr);
-            } catch (e) { console.error(e); }
+            
+            // Menggunakan onSnapshot agar update otomatis saat Admin menambah mapel
+            const q = query(collection(db, "mata_pelajaran"), orderBy("nama", "asc"));
+            
+            onSnapshot(q, (snap) => {
+                sel.innerHTML = '<option value="">- Pilih Mapel -</option>';
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    const opt = document.createElement('option');
+                    opt.value = data.nama;
+                    opt.text = data.nama;
+                    sel.appendChild(opt);
+                });
+                console.log("Mapel diperbarui otomatis: " + snap.size);
+            });
         }
 
         function renderOptions(selectEl, arrayData) {
@@ -385,12 +357,11 @@
             arrayData.forEach(item => selectEl.add(new Option(item, item)));
         }
 
-        // 4. MENU DINAMIS GURU
+        // 5. MENU DINAMIS
         function loadMenuDinamis() {
             const container = document.getElementById('grid-menu-dinamis');
             const sec = document.getElementById('section-menu-dinamis');
             
-            // Listener Menu (Ringan, data dikit)
             onSnapshot(query(collection(db, "menu_dinamis"), orderBy("created_at", "asc")), (snap) => {
                 container.innerHTML = '';
                 let ada = false;
@@ -411,15 +382,11 @@
             });
         }
 
-        // ... SISA FUNGSI LAMA (JURNAL, GPS, KAMERA, DLL) TETAP SAMA ...
-        // (Disalin dari kode sebelumnya karena logikanya sudah benar, cuma butuh integrasi)
-        
-        // --- HELPER GPS & JARAK ---
+        // --- GPS & KAMERA ---
         function cekGPS() { if(navigator.geolocation) { navigator.geolocation.watchPosition((p) => { lokasiUser = { lat: p.coords.latitude, lng: p.coords.longitude }; const d = hitungJarak(lokasiUser.lat, lokasiUser.lng, SEKOLAH_LAT, SEKOLAH_LNG); const box = document.getElementById('jarakBox'); const limit = configSekolah.radius_meter || 50; if(configSekolah.validasi_gps_aktif && d > limit) { box.innerHTML = `<span class="text-red-500 font-bold">Lokasi: ${Math.round(d)}m (Luar Area)</span>`; } else { box.innerHTML = `<span class="text-emerald-500 font-bold">Lokasi Valid: ${Math.round(d)}m</span>`; } }, null, { enableHighAccuracy: true }); } }
         function hitungJarak(lat1, lon1, lat2, lon2) { const R = 6371e3; const φ1 = lat1 * Math.PI/180; const φ2 = lat2 * Math.PI/180; const Δφ = (lat2-lat1) * Math.PI/180; const Δλ = (lon2-lon1) * Math.PI/180; const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) * Math.sin(Δλ/2); return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); }
         function syncAdmin() { onSnapshot(doc(db, "pengaturan", "sekolah"), (snap) => { if(snap.exists()) { configSekolah = snap.data(); if(configSekolah.lokasi_lat) SEKOLAH_LAT = configSekolah.lokasi_lat; if(configSekolah.lokasi_lng) SEKOLAH_LNG = configSekolah.lokasi_lng; } }); onSnapshot(doc(db, "pengaturan", "fitur"), (snap) => { if(snap.exists()) { configFitur = snap.data(); if(configFitur.refleksi_guru_aktif) { document.getElementById('badge-refleksi').classList.remove('hidden'); } else { document.getElementById('badge-refleksi').classList.add('hidden'); } } }); }
 
-        // --- HELPER KAMERA & ABSEN ---
         window.bukaKameraProfil = () => { tipeAbsenAktif = "ProfilGuru"; document.getElementById('judul-kamera').innerText = "SELFIE PROFIL"; document.getElementById('modalKamera').classList.remove('hidden'); navigator.mediaDevices.getUserMedia({video: {facingMode: 'user', aspectRatio: 1}}).then(s => { streamKamera = s; document.getElementById('videoStream').srcObject = s; }); }
         window.bukaKameraJurnal = () => { tipeAbsenAktif = "Jurnal"; document.getElementById('judul-kamera').innerText = "FOTO BUKTI KBM"; document.getElementById('modalKamera').classList.remove('hidden'); navigator.mediaDevices.getUserMedia({video: {facingMode: 'environment'}}).then(s => { streamKamera = s; document.getElementById('videoStream').srcObject = s; }); }
         window.tutupKamera = () => { document.getElementById('modalKamera').classList.add('hidden'); if(streamKamera) streamKamera.getTracks().forEach(t=>t.stop()); }
@@ -433,7 +400,7 @@
             try { tutupKamera(); Swal.fire({title:'Menyimpan...', didOpen:()=>Swal.showLoading()}); const snap = await uploadString(ref(storage, `absen_guru/${todayStr}/${userGuru.username}_${tipeAbsenAktif}.jpg`), foto, 'data_url'); const url = await getDownloadURL(snap.ref); let data = { nisn: userGuru.username, nama: userGuru.nama, kelas: 'GURU', role: 'guru', tanggal: todayStr, status_terakhir: tipeAbsenAktif + " (Guru)" }; if(tipeAbsenAktif === 'Masuk') { data.jam_masuk = serverTimestamp(); data.foto_masuk = url; } else { data.jam_pulang = serverTimestamp(); data.foto_pulang = url; } await setDoc(doc(db, "absensi", idDoc), data, {merge: true}); document.getElementById('status-absen').innerText = "Sudah " + tipeAbsenAktif; document.getElementById('status-absen').className = "text-[10px] font-bold bg-emerald-100 text-emerald-600 px-3 py-1 rounded-full"; Swal.fire('Berhasil', 'Presensi terekam.', 'success'); } catch(e) { Swal.fire('Error', e.message, 'error'); } 
         }
 
-        // --- JURNAL ---
+        // JURNAL
         window.kirimJurnal = async () => { const kls = document.getElementById('jurnal-kelas').value; const mapel = document.getElementById('jurnal-mapel').value; const materi = document.getElementById('jurnal-materi').value; if(!kls || !mapel || !materi) return Swal.fire('Lengkapi','Kelas, Mapel, dan Materi wajib diisi','warning'); if(!fotoBuktiJurnal) return Swal.fire('Wajib Foto','Lampirkan foto bukti KBM','warning'); document.getElementById('loading').classList.remove('hidden'); try { const todayStr = new Date().toLocaleDateString('fr-CA'); const snap = await uploadString(ref(storage, `jurnal_guru/${todayStr}/${userGuru.username}_${Date.now()}.jpg`), fotoBuktiJurnal, 'data_url'); const urlFoto = await getDownloadURL(snap.ref); await addDoc(collection(db, "jurnal_guru"), { nip: userGuru.username, nama_guru: userGuru.nama, kelas: kls, mapel: mapel, materi: materi, foto_bukti: urlFoto, waktu: serverTimestamp(), tanggal: todayStr }); Swal.fire('Tersimpan', 'Jurnal berhasil diupload.', 'success'); document.getElementById('jurnal-materi').value = ''; fotoBuktiJurnal = null; document.getElementById('preview-foto-jurnal').innerText = "Belum ada foto bukti."; document.getElementById('preview-foto-jurnal').className = "text-xs text-slate-400 italic"; } catch(e) { Swal.fire('Gagal', e.message, 'error'); } finally { document.getElementById('loading').classList.add('hidden'); } }
         function loadRiwayatJurnal() { const todayStr = new Date().toLocaleDateString('fr-CA'); const q = query(collection(db, "jurnal_guru"), where("nip", "==", userGuru.username), where("tanggal", "==", todayStr), orderBy("waktu", "desc")); onSnapshot(q, (snap) => { const container = document.getElementById('list-riwayat-jurnal'); container.innerHTML = ''; if(snap.empty) { container.innerHTML = '<div class="text-center text-slate-300 text-xs italic py-2">Belum ada jurnal hari ini.</div>'; return; } snap.forEach(doc => { const d = doc.data(); const jam = d.waktu ? new Date(d.waktu.toDate()).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : '-'; container.innerHTML += `<div class="cursor-pointer flex items-center gap-3 bg-slate-50 p-2 rounded-xl border border-slate-100 fade-in hover:bg-slate-100 transition"><img src="${d.foto_bukti}" class="w-10 h-10 rounded-lg object-cover bg-slate-200"><div class="flex-1"><div class="flex justify-between"><h5 class="text-xs font-bold text-slate-700">${d.kelas} - ${d.mapel}</h5><span class="text-[10px] font-mono text-slate-400">${jam}</span></div><p class="text-[10px] text-slate-500 truncate">${d.materi}</p></div></div>`; }); }); }
         
