@@ -147,15 +147,28 @@
 
         <div id="view-rekap" class="hidden space-y-6 fade-in h-full flex flex-col">
             <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                <h2 class="text-2xl font-bold text-white">Rekap Absensi (BK)</h2>
-                <div class="flex gap-2 bg-slate-900 p-2 rounded-xl border border-slate-800">
+                <h2 class="text-2xl font-bold text-white flex items-center gap-2">
+                    Rekap Absensi <span id="judul-rekap-tipe" class="text-blue-500">(SISWA)</span>
+                </h2>
+                
+                <div class="flex gap-2 bg-slate-900 p-2 rounded-xl border border-slate-800 flex-wrap justify-end">
+                    <div class="flex bg-slate-800 rounded-lg p-1 mr-2">
+                        <button onclick="gantiModeRekap('siswa')" id="btn-mode-siswa" class="px-3 py-1 text-xs font-bold rounded-md bg-blue-600 text-white transition">SISWA</button>
+                        <button onclick="gantiModeRekap('guru')" id="btn-mode-guru" class="px-3 py-1 text-xs font-bold rounded-md text-slate-400 hover:text-white transition">GURU/TENDIK</button>
+                    </div>
+
                     <select id="pilih-bulan" class="bg-slate-800 text-white text-xs rounded-lg px-3 py-2 outline-none border border-slate-700"></select>
                     <select id="pilih-tahun" class="bg-slate-800 text-white text-xs rounded-lg px-3 py-2 outline-none border border-slate-700"></select>
-                    <select id="pilih-kelas" class="bg-slate-800 text-white text-xs rounded-lg px-3 py-2 outline-none border border-slate-700"><option value="">- Pilih Kelas -</option></select>
+                    
+                    <select id="pilih-kelas" class="bg-slate-800 text-white text-xs rounded-lg px-3 py-2 outline-none border border-slate-700">
+                        <option value="">- Pilih Kelas -</option>
+                    </select>
+                    
                     <button onclick="loadRekap()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-bold">Tampilkan</button>
                     <button onclick="downloadExcel('tabel-rekap')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-bold" title="Download Excel"><i data-lucide="file-spreadsheet" class="w-4 h-4"></i></button>
                 </div>
             </div>
+            
             <div class="flex-1 bg-slate-900 rounded-2xl border border-slate-800 overflow-auto relative">
                 <table id="tabel-rekap" class="w-full text-center text-[10px] border-collapse table-sticky whitespace-nowrap">
                     <thead class="text-slate-300 font-bold" id="thead-rekap"></thead>
@@ -477,7 +490,149 @@
                 ['X', 'XI', 'XII'].forEach(t => hitungMBG(t));
             });
         }
+        // --- LOGIC BARU: REKAP GURU/TENDIK ---
+        let modeRekap = 'siswa'; // Default
 
+        window.gantiModeRekap = (mode) => {
+            modeRekap = mode;
+            document.getElementById('judul-rekap-tipe').innerText = mode === 'siswa' ? '(SISWA)' : '(GURU & TENDIK)';
+            
+            // Ubah tampilan tombol
+            if(mode === 'siswa') {
+                document.getElementById('btn-mode-siswa').className = "px-3 py-1 text-xs font-bold rounded-md bg-blue-600 text-white transition";
+                document.getElementById('btn-mode-guru').className = "px-3 py-1 text-xs font-bold rounded-md text-slate-400 hover:text-white transition";
+                document.getElementById('pilih-kelas').classList.remove('hidden');
+            } else {
+                document.getElementById('btn-mode-siswa').className = "px-3 py-1 text-xs font-bold rounded-md text-slate-400 hover:text-white transition";
+                document.getElementById('btn-mode-guru').className = "px-3 py-1 text-xs font-bold rounded-md bg-orange-600 text-white transition";
+                document.getElementById('pilih-kelas').classList.add('hidden');
+            }
+            // Kosongkan tabel biar ga bingung
+            document.getElementById('tbody-rekap').innerHTML = '<tr><td colspan="40" class="p-10 text-center text-slate-500 italic">Klik tombol Tampilkan untuk memuat data.</td></tr>';
+        }
+
+        // UPDATE FUNGSI loadRekap (Biar bisa handle Guru)
+        window.loadRekap = async () => {
+            const bln = parseInt(document.getElementById('pilih-bulan').value) + 1;
+            const thn = document.getElementById('pilih-tahun').value;
+            const kls = document.getElementById('pilih-kelas').value;
+            
+            // Validasi
+            if(modeRekap === 'siswa' && !kls) return Swal.fire('Pilih Kelas', 'Silakan pilih kelas siswa dulu.', 'warning');
+
+            const blnStr = bln < 10 ? '0' + bln : bln;
+            const daysInMonth = new Date(thn, bln, 0).getDate();
+            
+            // Bikin Header Tabel
+            let headerHTML = '<tr><th class="p-2 border border-slate-700 w-10">No</th><th class="p-2 border border-slate-700 min-w-[200px] text-left">Nama Lengkap</th><th class="p-2 border border-slate-700">ID/NIP</th>';
+            for(let d=1; d<=daysInMonth; d++) {
+                const cekTgl = `${thn}-${blnStr}-${d < 10 ? '0'+d : d}`;
+                const isMerah = cacheHariLibur[cekTgl];
+                const dayOfWeek = new Date(thn, bln-1, d).getDay();
+                let bgHead = (dayOfWeek === 0 || dayOfWeek === 6 || isMerah) ? 'bg-red-900/50 text-red-200' : 'bg-slate-900';
+                headerHTML += `<th class="p-2 border border-slate-700 ${bgHead} w-8 text-center" title="${isMerah || ''}">${d}</th>`;
+            }
+            headerHTML += '<th class="p-2 border border-slate-700 bg-emerald-900">H</th><th class="p-2 border border-slate-700 bg-blue-900">S</th><th class="p-2 border border-slate-700 bg-yellow-900">I</th><th class="p-2 border border-slate-700 bg-red-900">A</th></tr>';
+            document.getElementById('thead-rekap').innerHTML = headerHTML;
+
+            const tbody = document.getElementById('tbody-rekap');
+            tbody.innerHTML = '<tr><td colspan="40" class="p-4 text-center"><i class="animate-spin" data-lucide="loader"></i> Mengambil data...</td></tr>';
+            lucide.createIcons();
+
+            // --- AMBIL DATA USER ---
+            let targetUsers = [];
+            if(modeRekap === 'siswa') {
+                targetUsers = mapKelas[kls] || []; // Ambil dari cache kelas
+            } else {
+                // Ambil Guru dari server (users dengan role=guru)
+                const qGuru = query(collection(db, "users"), where("role", "==", "guru"));
+                const snapGuru = await getDocs(qGuru);
+                snapGuru.forEach(doc => {
+                    const d = doc.data();
+                    targetUsers.push({ nama: d.nama, nisn: d.username }); // Samakan format obj
+                });
+            }
+
+            if(targetUsers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="40" class="p-4 text-center">Data user tidak ditemukan.</td></tr>';
+                return;
+            }
+
+            // --- AMBIL DATA ABSENSI ---
+            const start = `${thn}-${blnStr}-01`;
+            const end = `${thn}-${blnStr}-${daysInMonth}`;
+            
+            // Query Absen: Filter tanggal dulu
+            const qAbsen = query(collection(db, "absensi"), where("tanggal", ">=", start), where("tanggal", "<=", end));
+            const snapAbsen = await getDocs(qAbsen);
+            
+            // Mapping Absen
+            let dataMap = {};
+            targetUsers.forEach(u => {
+                dataMap[u.nisn] = { nama: u.nama, att: {}, counts: {h:0, s:0, i:0, a:0} };
+            });
+
+            snapAbsen.forEach(doc => {
+                const d = doc.data();
+                // Filter manual: Cek apakah user ini ada di targetUsers kita
+                // (Karena query firebase gabisa "IN" array yang sangat banyak)
+                if(dataMap[d.nisn]) {
+                    const tgl = parseInt(d.tanggal.split('-')[2]);
+                    const st = d.status_terakhir;
+                    let code = 'A';
+                    if(st.includes("Masuk") || st.includes("Hadir") || st.includes("Pulang")) { code = 'H'; dataMap[d.nisn].counts.h++; }
+                    else if(st.includes("Sakit")) { code = 'S'; dataMap[d.nisn].counts.s++; }
+                    else if(st.includes("Izin")) { code = 'I'; dataMap[d.nisn].counts.i++; }
+                    
+                    dataMap[d.nisn].att[tgl] = code;
+                }
+            });
+
+            // RENDER TABEL
+            tbody.innerHTML = '';
+            targetUsers.sort((a,b) => a.nama.localeCompare(b.nama)).forEach((u, idx) => {
+                const r = dataMap[u.nisn];
+                const nisn = u.nisn; // Untuk guru ini adalah NIP/Username
+                
+                let rowHTML = `<tr class="hover:bg-slate-800 border-b border-slate-800">
+                    <td class="p-2 border border-slate-700 text-center">${idx+1}</td>
+                    <td class="p-2 border border-slate-700 text-left font-bold text-slate-300 sticky left-0 bg-slate-900">${r.nama}</td>
+                    <td class="p-2 border border-slate-700 text-center font-mono text-xs text-slate-500">${nisn}</td>`;
+                
+                let totalAlpha = 0;
+                for(let d=1; d<=daysInMonth; d++) {
+                    const dateStr = `${thn}-${blnStr}-${d < 10 ? '0'+d : d}`;
+                    const dayOfWeek = new Date(thn, bln-1, d).getDay();
+                    const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+                    const isLiburNasional = cacheHariLibur[dateStr];
+                    
+                    const status = r.att[d];
+                    let cellClass = ""; let cellText = "";
+
+                    if (status) {
+                        if (status === 'H') { cellClass = "bg-hadir"; cellText = "•"; }
+                        else if (status === 'S') { cellClass = "bg-sakit"; cellText = "S"; }
+                        else if (status === 'I') { cellClass = "bg-izin"; cellText = "I"; }
+                    } else {
+                        if (isLiburNasional) { cellClass = "bg-red-900/40 text-red-500 font-bold"; cellText = "L"; }
+                        else if (isWeekend) { cellClass = "bg-weekend"; cellText = ""; }
+                        else {
+                            const cellDate = new Date(thn, bln-1, d);
+                            if(cellDate < new Date()) { totalAlpha++; cellClass = "bg-alpha"; cellText = "A"; }
+                            else { cellText = "-"; }
+                        }
+                    }
+                    rowHTML += `<td class="p-2 border border-slate-700 text-center ${cellClass}">${cellText}</td>`;
+                }
+                
+                rowHTML += `<td class="p-2 border border-slate-700 font-bold text-emerald-400">${r.counts.h}</td>
+                            <td class="p-2 border border-slate-700 font-bold text-blue-400">${r.counts.s}</td>
+                            <td class="p-2 border border-slate-700 font-bold text-yellow-400">${r.counts.i}</td>
+                            <td class="p-2 border border-slate-700 font-bold text-red-400">${totalAlpha}</td></tr>`;
+                
+                tbody.innerHTML += rowHTML;
+            });
+        }
         // ... FUNGSI LAIN (SAMA SEPERTI SEBELUMNYA) ...
         window.loadRekap = async () => { const bln = parseInt(document.getElementById('pilih-bulan').value) + 1; const thn = document.getElementById('pilih-tahun').value; const kls = document.getElementById('pilih-kelas').value; if(!kls) return Swal.fire('Pilih Kelas', 'Silakan pilih kelas dulu.', 'warning'); const blnStr = bln < 10 ? '0' + bln : bln; const daysInMonth = new Date(thn, bln, 0).getDate(); let headerHTML = '<tr><th class="p-2 border border-slate-700 w-10">No</th><th class="p-2 border border-slate-700 min-w-[200px] text-left">Nama Siswa</th><th class="p-2 border border-slate-700">NISN</th>'; for(let d=1; d<=daysInMonth; d++) { const cekTgl = `${thn}-${blnStr}-${d < 10 ? '0'+d : d}`; const isMerah = cacheHariLibur[cekTgl]; const dayOfWeek = new Date(thn, bln-1, d).getDay(); let bgHead = (dayOfWeek === 0 || dayOfWeek === 6 || isMerah) ? 'bg-red-900/50 text-red-200' : 'bg-slate-900'; headerHTML += `<th class="p-2 border border-slate-700 ${bgHead} w-8 text-center" title="${isMerah || ''}">${d}</th>`; } headerHTML += '<th class="p-2 border border-slate-700 bg-emerald-900">H</th><th class="p-2 border border-slate-700 bg-blue-900">S</th><th class="p-2 border border-slate-700 bg-yellow-900">I</th><th class="p-2 border border-slate-700 bg-red-900">A</th></tr>'; document.getElementById('thead-rekap').innerHTML = headerHTML; const tbody = document.getElementById('tbody-rekap'); tbody.innerHTML = '<tr><td colspan="40" class="p-4 text-center">Mengambil data absensi...</td></tr>'; const start = `${thn}-${blnStr}-01`; const end = `${thn}-${blnStr}-${daysInMonth}`; const q = query(collection(db, "absensi"), where("tanggal", ">=", start), where("tanggal", "<=", end)); const snap = await getDocs(q); let dataMap = {}; if(mapKelas[kls]) { mapKelas[kls].forEach(s => { dataMap[s.nisn] = { nama: s.nama, att: {}, counts: {h:0, s:0, i:0, a:0} }; }); } snap.forEach(doc => { const d = doc.data(); const nisn = String(d.nisn).replace(/[^a-zA-Z0-9]/g, ''); if(dataMap[nisn]) { const tgl = parseInt(d.tanggal.split('-')[2]); const st = d.status_terakhir; let code = 'A'; if(st.includes("Masuk") || st.includes("Hadir") || st.includes("Pulang") || st.includes("Kembali")) { code = 'H'; dataMap[nisn].counts.h++; } else if(st.includes("Sakit")) { code = 'S'; dataMap[nisn].counts.s++; } else if(st.includes("Izin")) { code = 'I'; dataMap[nisn].counts.i++; } dataMap[nisn].att[tgl] = code; } }); tbody.innerHTML = ''; if(Object.keys(dataMap).length === 0) { tbody.innerHTML = '<tr><td colspan="40" class="p-4 text-center">Tidak ada siswa.</td></tr>'; return; } Object.keys(dataMap).sort((a,b) => dataMap[a].nama.localeCompare(dataMap[b].nama)).forEach((nisn, idx) => { const r = dataMap[nisn]; let rowHTML = `<tr class="hover:bg-slate-800 border-b border-slate-800"><td class="p-2 border border-slate-700 text-center">${idx+1}</td><td class="p-2 border border-slate-700 text-left font-bold text-slate-300">${r.nama}</td><td class="p-2 border border-slate-700 text-center font-mono text-xs">${nisn}</td>`; let totalAlpha = 0; for(let d=1; d<=daysInMonth; d++) { const dateStr = `${thn}-${blnStr}-${d < 10 ? '0'+d : d}`; const dayOfWeek = new Date(thn, bln-1, d).getDay(); const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6); const isLiburNasional = cacheHariLibur[dateStr]; const status = r.att[d]; let cellClass = ""; let cellText = ""; if (status) { if (status === 'H') { cellClass = "bg-hadir"; cellText = "•"; } else if (status === 'S') { cellClass = "bg-sakit"; cellText = "S"; } else if (status === 'I') { cellClass = "bg-izin"; cellText = "I"; } } else { if (isLiburNasional) { cellClass = "bg-red-900/40 text-red-500 font-bold"; cellText = "L"; } else if (isWeekend) { cellClass = "bg-weekend"; cellText = ""; } else { const cellDate = new Date(thn, bln-1, d); if(cellDate < new Date()) { totalAlpha++; cellClass = "bg-alpha"; cellText = "A"; } else { cellText = "-"; } } } rowHTML += `<td class="p-2 border border-slate-700 text-center ${cellClass}" title="${isLiburNasional || ''}">${cellText}</td>`; } rowHTML += `<td class="p-2 border border-slate-700 font-bold text-emerald-400">${r.counts.h}</td><td class="p-2 border border-slate-700 font-bold text-blue-400">${r.counts.s}</td><td class="p-2 border border-slate-700 font-bold text-yellow-400">${r.counts.i}</td><td class="p-2 border border-slate-700 font-bold text-red-400">${totalAlpha}</td></tr>`; tbody.innerHTML += rowHTML; }); }
         
