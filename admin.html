@@ -38,8 +38,8 @@
     <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col hidden md:flex">
         <div class="p-6">
             <h1 class="font-black text-2xl tracking-tighter text-blue-500">SiGanteng</h1>
-            <p class="text-xs text-slate-500 tracking-widest uppercase mt-1">Admin Panel v10.1 (Fixed)</p>
-            <div id="badge-role" class="mt-2 inline-block px-2 py-1 rounded bg-slate-800 text-xs font-bold text-slate-300">...</div>
+            <p class="text-xs text-slate-500 tracking-widest uppercase mt-1">Admin Panel v10.3 (Manual Input)</p>
+            <div id="badge-role" class="mt-2 inline-block px-2 py-1 rounded bg-slate-800 text-xs font-bold text-slate-300">OPERATOR</div>
         </div>
 
         <nav class="flex-1 space-y-1 px-3 mt-4 overflow-y-auto hide-scroll">
@@ -47,6 +47,7 @@
             <button onclick="pindahKeAbsen()" class="w-full mb-4 flex items-center gap-3 px-4 py-3 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500 hover:text-white rounded-lg transition font-bold shadow-lg shadow-emerald-900/20">
                 <i data-lucide="scan-face" class="w-5 h-5"></i> Absensi Saya
             </button>
+
             <p class="px-4 text-[10px] font-bold text-slate-600 uppercase mb-2 mt-2">Kesiswaan (BK)</p>
             <button onclick="nav('dashboard')" id="nav-dashboard" class="nav-item active w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
                 <i data-lucide="layout-dashboard" class="w-5 h-5"></i> Dashboard
@@ -74,10 +75,10 @@
                 <i data-lucide="calendar-off" class="w-5 h-5"></i> Kelola Hari Libur
             </button>
             
-            <div id="menu-super" class="border-t border-slate-800 pt-4 mt-4 hidden">
+            <div id="menu-super" class="border-t border-slate-800 pt-4 mt-4">
                 <p class="px-4 text-[10px] font-bold text-blue-500 uppercase mb-2">Super Admin</p>
                 <button onclick="nav('data')" id="nav-data" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
-                    <i data-lucide="database" class="w-5 h-5"></i> Import Data
+                    <i data-lucide="database" class="w-5 h-5"></i> Database User
                 </button>
                 <button onclick="nav('settings')" id="nav-settings" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
                     <i data-lucide="settings" class="w-5 h-5"></i> Pengaturan & Fitur
@@ -164,7 +165,6 @@
 
                     <select id="pilih-bulan" class="bg-slate-800 text-white text-xs rounded-lg px-3 py-2 outline-none border border-slate-700"></select>
                     <select id="pilih-tahun" class="bg-slate-800 text-white text-xs rounded-lg px-3 py-2 outline-none border border-slate-700"></select>
-                    
                     <select id="pilih-kelas" class="bg-slate-800 text-white text-xs rounded-lg px-3 py-2 outline-none border border-slate-700">
                         <option value="">- Pilih Kelas -</option>
                     </select>
@@ -221,12 +221,11 @@
 
         <div id="view-mapel" class="hidden space-y-6 fade-in">
             <h2 class="text-3xl font-bold text-white">Database Mata Pelajaran</h2>
-            <p class="text-slate-400 text-sm">Data ini akan muncul di halaman Guru.</p>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800">
                     <h3 class="font-bold text-white mb-4">Tambah Mapel</h3>
                     <div class="space-y-4">
-                        <input type="text" id="inputNamaMapel" class="w-full bg-slate-800 text-white p-3 rounded-lg border border-slate-700" placeholder="Nama Mapel (Cth: Matematika Wajib)">
+                        <input type="text" id="inputNamaMapel" class="w-full bg-slate-800 text-white p-3 rounded-lg border border-slate-700" placeholder="Nama Mapel (Cth: Matematika)">
                         <button onclick="tambahMapel()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-lg">Simpan</button>
                     </div>
                 </div>
@@ -245,12 +244,12 @@
                 <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800">
                     <h3 class="font-bold text-white mb-4">Tambah Fitur Baru</h3>
                     <div class="space-y-4">
-                        <div><label class="text-xs text-slate-500 uppercase font-bold">Target Pengguna</label><select id="menuTarget" class="w-full bg-slate-800 text-white p-3 rounded-lg border border-slate-700 mt-1 outline-none"><option value="siswa">Siswa</option><option value="guru">Guru</option><option value="ortu">Orang Tua</option><option value="umum">Umum</option></select></div>
-                        <div><label class="text-xs text-slate-500 uppercase font-bold">Judul Fitur</label><input type="text" id="menuJudul" class="w-full bg-slate-800 text-white p-3 rounded-lg border border-slate-700 mt-1" placeholder="Contoh: Alumni / E-Raport"></div>
-                        <div><label class="text-xs text-slate-500 uppercase font-bold">Ikon (Emoji/Teks)</label><input type="text" id="menuIcon" class="w-full bg-slate-800 text-white p-3 rounded-lg border border-slate-700 mt-1" placeholder="Contoh: 🎓 / 📜"></div>
-                        <div><label class="text-xs text-slate-500 uppercase font-bold">Nama File / Link</label><input type="text" id="menuLink" class="w-full bg-slate-800 text-white p-3 rounded-lg border border-slate-700 mt-1" placeholder="Contoh: alumni.html"></div>
-                        <div class="flex items-center gap-2 p-2 bg-slate-800/50 rounded-lg border border-slate-700"><input type="checkbox" id="menuWarna" class="w-4 h-4 cursor-pointer accent-blue-600"><label for="menuWarna" class="text-sm text-slate-300 cursor-pointer select-none">Highlight (Warna Beda)</label></div>
-                        <button onclick="simpanMenuBaru()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3 rounded-lg shadow-lg shadow-blue-500/20 transition active:scale-95">Terbitkan Fitur</button>
+                        <div><label class="text-xs text-slate-500 uppercase font-bold">Target</label><select id="menuTarget" class="w-full bg-slate-800 text-white p-3 rounded-lg border border-slate-700 mt-1 outline-none"><option value="siswa">Siswa</option><option value="guru">Guru</option><option value="ortu">Orang Tua</option><option value="umum">Umum</option></select></div>
+                        <div><label class="text-xs text-slate-500 uppercase font-bold">Judul Fitur</label><input type="text" id="menuJudul" class="w-full bg-slate-800 text-white p-3 rounded-lg border border-slate-700 mt-1" placeholder="Contoh: E-Raport"></div>
+                        <div><label class="text-xs text-slate-500 uppercase font-bold">Ikon (Emoji)</label><input type="text" id="menuIcon" class="w-full bg-slate-800 text-white p-3 rounded-lg border border-slate-700 mt-1" placeholder="Contoh: 🎓"></div>
+                        <div><label class="text-xs text-slate-500 uppercase font-bold">Link File</label><input type="text" id="menuLink" class="w-full bg-slate-800 text-white p-3 rounded-lg border border-slate-700 mt-1" placeholder="Contoh: raport.html"></div>
+                        <div class="flex items-center gap-2 p-2 bg-slate-800/50 rounded-lg border border-slate-700"><input type="checkbox" id="menuWarna" class="w-4 h-4 cursor-pointer accent-blue-600"><label for="menuWarna" class="text-sm text-slate-300 cursor-pointer select-none">Highlight</label></div>
+                        <button onclick="simpanMenuBaru()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3 rounded-lg shadow-lg active:scale-95">Terbitkan Fitur</button>
                     </div>
                 </div>
                 <div class="md:col-span-2 bg-slate-900 p-6 rounded-2xl border border-slate-800">
@@ -278,20 +277,49 @@
         </div>
 
         <div id="view-data" class="hidden space-y-6 fade-in">
-            <h2 class="text-3xl font-bold text-white">Import Database</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <h2 class="text-3xl font-bold text-white">Manajemen Database User</h2>
+            
+            <div class="flex gap-2 mb-6">
+                <button onclick="gantiTabInput('excel')" id="btn-tab-excel" class="px-4 py-2 rounded-lg font-bold bg-blue-600 text-white transition">Import Excel (Massal)</button>
+                <button onclick="gantiTabInput('manual')" id="btn-tab-manual" class="px-4 py-2 rounded-lg font-bold bg-slate-800 text-slate-400 transition hover:text-white">Input Manual (Satuan)</button>
+            </div>
+
+            <div id="area-input-excel" class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800">
-                    <h3 class="font-bold text-white text-lg mb-2">Data Siswa</h3>
+                    <h3 class="font-bold text-white text-lg mb-2">Upload Data Siswa</h3>
+                    <p class="text-xs text-slate-500 mb-4">Format Excel: [Nama, NISN, Password, Kelas, Wali Kelas]</p>
                     <input type="file" id="fileSiswa" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 mb-4"/>
                     <button onclick="prosesImport('siswa')" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-lg">Upload Siswa</button>
                 </div>
                 <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800">
-                    <h3 class="font-bold text-white text-lg mb-2">Guru & Tendik</h3>
+                    <h3 class="font-bold text-white text-lg mb-2">Upload Guru & Tendik</h3>
+                    <p class="text-xs text-slate-500 mb-4">Format Excel: [Nama, NIP, Password, -, -]</p>
                     <input type="file" id="fileGuru" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 mb-4"/>
                     <button onclick="prosesImport('guru')" class="w-full bg-orange-600 hover:bg-orange-500 text-white font-bold py-2 rounded-lg">Upload Guru</button>
                 </div>
             </div>
-            <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 text-xs text-slate-400 font-mono"><div id="log-import" class="h-40 overflow-y-auto"></div></div>
+
+            <div id="area-input-manual" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                    <h3 class="font-bold text-white text-lg mb-4 flex items-center gap-2"><i data-lucide="user-plus" class="text-blue-500"></i> Tambah Siswa Satuan</h3>
+                    <div class="space-y-4">
+                        <input type="text" id="manualNamaSiswa" class="w-full bg-slate-950 text-white p-3 rounded-lg border border-slate-700" placeholder="Nama Lengkap Siswa">
+                        <input type="text" id="manualNISN" class="w-full bg-slate-950 text-white p-3 rounded-lg border border-slate-700" placeholder="NISN (Akan jadi Username)">
+                        <input type="text" id="manualKelas" class="w-full bg-slate-950 text-white p-3 rounded-lg border border-slate-700" placeholder="Kelas (Contoh: X-1)">
+                        <button onclick="simpanManual('siswa')" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg transition">Simpan Siswa</button>
+                    </div>
+                </div>
+                <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                    <h3 class="font-bold text-white text-lg mb-4 flex items-center gap-2"><i data-lucide="briefcase" class="text-orange-500"></i> Tambah Guru Satuan</h3>
+                    <div class="space-y-4">
+                        <input type="text" id="manualNamaGuru" class="w-full bg-slate-950 text-white p-3 rounded-lg border border-slate-700" placeholder="Nama Lengkap Guru">
+                        <input type="text" id="manualNIP" class="w-full bg-slate-950 text-white p-3 rounded-lg border border-slate-700" placeholder="NIP (Akan jadi Username)">
+                        <button onclick="simpanManual('guru')" class="w-full bg-orange-600 hover:bg-orange-500 text-white font-bold py-3 rounded-lg transition">Simpan Guru</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 text-xs text-slate-400 font-mono"><div id="log-import" class="h-40 overflow-y-auto">Siap memproses data...</div></div>
         </div>
 
         <div id="view-settings" class="hidden space-y-6 fade-in">
@@ -396,13 +424,14 @@
         const db = getFirestore(app);
 
         // GLOBAL VARIABLES
-        let listSiswa = []; let mapKelas = {}; let cacheAbsenHariIni = {}; let mapProfilSiswa = {}; let cacheHariLibur = {}; 
+        let listSiswa = []; let mapKelas = {}; let cacheAbsenHariIni = {}; let cacheHariLibur = {}; 
 
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
             const role = localStorage.getItem('admin_role');
-            document.getElementById('badge-role').innerText = role === 'SUPER' ? 'SUPER ADMIN' : 'GURU BK / PIKET';
-            if(role === 'SUPER') document.getElementById('menu-super').classList.remove('hidden');
+            document.getElementById('badge-role').innerText = role === 'SUPER' ? 'SUPER ADMIN' : 'OPERATOR';
+            // UNLOCK MENU (Hapus validasi role untuk tampilan)
+            document.getElementById('menu-super').classList.remove('hidden');
 
             setupDropdown();
             await tarikDataSiswa(); 
@@ -411,14 +440,78 @@
             loadMenuManager(); 
             loadHariLibur(); 
             loadMapel(); 
-            if(role === 'SUPER') {
-                loadSettings();
-                loadDaftarAdmin(); 
-            }
+            loadSettings();
+            loadDaftarAdmin(); 
             document.getElementById('loading').style.display = 'none';
         });
 
-        // 🔥 1. LOGIC TOMBOL ABSEN ADMIN 🔥
+        // 🔥 LOGIC TAB & MANUAL INPUT 🔥
+        window.gantiTabInput = (mode) => {
+            document.getElementById('area-input-excel').classList.add('hidden');
+            document.getElementById('area-input-manual').classList.add('hidden');
+            document.getElementById('btn-tab-excel').classList.replace('bg-blue-600', 'bg-slate-800');
+            document.getElementById('btn-tab-excel').classList.replace('text-white', 'text-slate-400');
+            document.getElementById('btn-tab-manual').classList.replace('bg-blue-600', 'bg-slate-800');
+            document.getElementById('btn-tab-manual').classList.replace('text-white', 'text-slate-400');
+
+            document.getElementById(`area-input-${mode}`).classList.remove('hidden');
+            document.getElementById(`btn-tab-${mode}`).classList.replace('bg-slate-800', 'bg-blue-600');
+            document.getElementById(`btn-tab-${mode}`).classList.replace('text-slate-400', 'text-white');
+        }
+
+        window.simpanManual = async (role) => {
+            let nama, user, pass, kelas;
+            
+            if(role === 'siswa') {
+                nama = document.getElementById('manualNamaSiswa').value;
+                user = document.getElementById('manualNISN').value;
+                kelas = document.getElementById('manualKelas').value.toUpperCase();
+                pass = user; // Default password = NISN
+                if(!nama || !user || !kelas) return Swal.fire('Lengkapi Data', 'Nama, NISN, dan Kelas wajib diisi', 'warning');
+            } else {
+                nama = document.getElementById('manualNamaGuru').value;
+                user = document.getElementById('manualNIP').value;
+                pass = "123456"; // Default password guru
+                kelas = "-";
+                if(!nama || !user) return Swal.fire('Lengkapi Data', 'Nama dan NIP wajib diisi', 'warning');
+            }
+
+            try {
+                // Cek duplikat dulu
+                const docRef = doc(db, "users", user);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    return Swal.fire('Gagal', `Username ${user} sudah terdaftar!`, 'error');
+                }
+
+                await setDoc(doc(db, "users", user), {
+                    nama: nama,
+                    username: user,
+                    password: pass,
+                    role: role,
+                    kelas: kelas,
+                    wali_kelas: "-"
+                });
+
+                Swal.fire('Berhasil', `Data ${role} ${nama} tersimpan!`, 'success');
+                
+                // Reset form
+                if(role === 'siswa') {
+                    document.getElementById('manualNamaSiswa').value = '';
+                    document.getElementById('manualNISN').value = '';
+                    document.getElementById('manualKelas').value = '';
+                } else {
+                    document.getElementById('manualNamaGuru').value = '';
+                    document.getElementById('manualNIP').value = '';
+                }
+                
+                tarikDataSiswa(true); // Refresh data
+            } catch(e) {
+                Swal.fire('Error', e.message, 'error');
+            }
+        }
+
+        // ... FUNGSI LAINNYA TETAP SAMA ...
         window.pindahKeAbsen = () => {
             const adminDataStr = localStorage.getItem('admin_user_data'); 
             if(!adminDataStr) {
@@ -431,7 +524,6 @@
             window.location.href = 'siswa.html';
         }
 
-        // 🔥 2. LOGIC KELOLA ADMIN 🔥
         window.loadDaftarAdmin = () => {
              const q = query(collection(db, "users"), where("role", "==", "admin"));
              onSnapshot(q, (snap) => {
@@ -452,18 +544,10 @@
         window.angkatJadiAdmin = async () => {
             const username = document.getElementById('inputCalonAdmin').value;
             if(!username) return Swal.fire('Isi dulu', 'Masukkan username/NIP calon admin.', 'warning');
-            
             const q = query(collection(db, "users"), where("username", "==", username));
             const snap = await getDocs(q);
-            
-            if(snap.empty) {
-                return Swal.fire('Tidak Ditemukan', 'User ini belum terdaftar di sistem.', 'error');
-            }
-            
-            snap.forEach(async (d) => {
-                await updateDoc(doc(db, "users", d.id), { role: 'admin' });
-            });
-            
+            if(snap.empty) { return Swal.fire('Tidak Ditemukan', 'User ini belum terdaftar di sistem.', 'error'); }
+            snap.forEach(async (d) => { await updateDoc(doc(db, "users", d.id), { role: 'admin' }); });
             document.getElementById('inputCalonAdmin').value = '';
             Swal.fire('Berhasil', 'User telah diangkat jadi Admin.', 'success');
         }
@@ -475,11 +559,9 @@
             }
         }
 
-        // ... FUNGSI STANDARD LAINNYA ...
         window.tarikDataSiswa = async (forceRefresh = false) => {
             const cacheKey = 'master_siswa_cache';
             const cachedData = sessionStorage.getItem(cacheKey);
-
             if (!forceRefresh && cachedData) {
                 const parsed = JSON.parse(cachedData);
                 listSiswa = parsed.listSiswa;
@@ -487,7 +569,6 @@
                 updateUIKelas();
                 return;
             }
-
             try {
                 if(forceRefresh) document.getElementById('loading').style.display = 'flex';
                 const q = query(collection(db, "users"), where("role", "!=", "guru"));
@@ -520,9 +601,7 @@
 
         function pantauRealtime() {
             const todayStr = new Date().toLocaleDateString('fr-CA');
-            const qLog = query(collection(db, "absensi"), where("tanggal", "==", todayStr), limit(50));
             const qAllToday = query(collection(db, "absensi"), where("tanggal", "==", todayStr));
-
             onSnapshot(qAllToday, (snap) => {
                 cacheAbsenHariIni = {}; let hadir = 0, izin = 0;
                 let logData = [];
@@ -535,17 +614,14 @@
                     else if(st.includes("Sakit") || st.includes("Izin")) izin++;
                     logData.push(data);
                 });
-
                 document.getElementById('stat-hadir').innerText = hadir;
                 document.getElementById('stat-izin').innerText = izin;
                 document.getElementById('stat-alpha').innerText = listSiswa.length - (hadir + izin);
-                
                 logData.sort((a,b) => {
                     const timeA = a.jam_masuk ? a.jam_masuk.seconds : (a.jam_pulang ? a.jam_pulang.seconds : 0);
                     const timeB = b.jam_masuk ? b.jam_masuk.seconds : (b.jam_pulang ? b.jam_pulang.seconds : 0);
                     return timeB - timeA;
                 });
-                
                 const tabel = document.getElementById('tabel-live'); tabel.innerHTML = "";
                 logData.slice(0, 50).forEach(data => {
                      let deviceLabel = "Unknown";
@@ -553,9 +629,7 @@
                          if(data.device_info.includes("Android")) deviceLabel = "📱 Android";
                          else if(data.device_info.includes("iPhone")) deviceLabel = "📱 iPhone";
                          else if(data.device_info.includes("Windows")) deviceLabel = "💻 PC";
-                     } else if (data.lokasi_masuk && data.lokasi_masuk.includes("Kiosk")) {
-                         deviceLabel = "🏢 Kiosk";
-                     }
+                     } else if (data.lokasi_masuk && data.lokasi_masuk.includes("Kiosk")) { deviceLabel = "🏢 Kiosk"; }
                      tabel.innerHTML += `<tr class="border-b border-slate-800 hover:bg-slate-800/50"><td class="p-4 text-blue-400 font-mono text-xs">${data.riwayat_kegiatan ? data.riwayat_kegiatan[data.riwayat_kegiatan.length-1].split(' - ')[0] : '-'}</td><td class="p-4 text-white font-bold">${data.nama}</td><td class="p-4">${data.kelas}</td><td class="p-4"><span class="bg-slate-700 px-2 py-1 rounded text-xs text-white">${data.status_terakhir}</span></td><td class="p-4 text-xs text-slate-500">${deviceLabel}</td></tr>`;
                 });
                 renderGridKelas();
@@ -586,7 +660,6 @@
             if(modeRekap === 'siswa' && !kls) return Swal.fire('Pilih Kelas', 'Silakan pilih kelas siswa dulu.', 'warning');
             const blnStr = bln < 10 ? '0' + bln : bln;
             const daysInMonth = new Date(thn, bln, 0).getDate();
-            
             let headerHTML = '<tr><th class="p-2 border border-slate-700 w-10">No</th><th class="p-2 border border-slate-700 min-w-[200px] text-left">Nama Lengkap</th><th class="p-2 border border-slate-700">ID/NIP</th>';
             for(let d=1; d<=daysInMonth; d++) {
                 const cekTgl = `${thn}-${blnStr}-${d < 10 ? '0'+d : d}`;
@@ -599,11 +672,9 @@
             document.getElementById('thead-rekap').innerHTML = headerHTML;
             const tbody = document.getElementById('tbody-rekap');
             tbody.innerHTML = '<tr><td colspan="40" class="p-4 text-center"><i class="animate-spin" data-lucide="loader"></i> Mengambil data...</td></tr>';
-            
             let targetUsers = [];
             if(modeRekap === 'siswa') { targetUsers = mapKelas[kls] || []; } 
             else { const qGuru = query(collection(db, "users"), where("role", "==", "guru")); const snapGuru = await getDocs(qGuru); snapGuru.forEach(doc => { const d = doc.data(); targetUsers.push({ nama: d.nama, nisn: d.username }); }); }
-
             if(targetUsers.length === 0) { tbody.innerHTML = '<tr><td colspan="40" class="p-4 text-center">Data user tidak ditemukan.</td></tr>'; return; }
             const start = `${thn}-${blnStr}-01`; const end = `${thn}-${blnStr}-${daysInMonth}`;
             const qAbsen = query(collection(db, "absensi"), where("tanggal", ">=", start), where("tanggal", "<=", end));
