@@ -38,7 +38,7 @@
     <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col hidden md:flex">
         <div class="p-6">
             <h1 class="font-black text-2xl tracking-tighter text-blue-500">SiGanteng</h1>
-            <p class="text-xs text-slate-500 tracking-widest uppercase mt-1">Admin Panel v10.0</p>
+            <p class="text-xs text-slate-500 tracking-widest uppercase mt-1">Admin Panel v10.1 (Fixed)</p>
             <div id="badge-role" class="mt-2 inline-block px-2 py-1 rounded bg-slate-800 text-xs font-bold text-slate-300">...</div>
         </div>
 
@@ -47,23 +47,31 @@
             <button onclick="pindahKeAbsen()" class="w-full mb-4 flex items-center gap-3 px-4 py-3 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500 hover:text-white rounded-lg transition font-bold shadow-lg shadow-emerald-900/20">
                 <i data-lucide="scan-face" class="w-5 h-5"></i> Absensi Saya
             </button>
-            <p class="px-4 text-[10px] font-bold text-slate-600 uppercase mb-2">Monitoring</p>
+            <p class="px-4 text-[10px] font-bold text-slate-600 uppercase mb-2 mt-2">Kesiswaan (BK)</p>
             <button onclick="nav('dashboard')" id="nav-dashboard" class="nav-item active w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
                 <i data-lucide="layout-dashboard" class="w-5 h-5"></i> Dashboard
             </button>
             <button onclick="nav('rekap')" id="nav-rekap" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
                 <i data-lucide="calendar-days" class="w-5 h-5"></i> Rekap Absen
             </button>
+            <button onclick="nav('mbg')" id="nav-mbg" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
+                <i data-lucide="utensils" class="w-5 h-5"></i> Laporan MBG
+            </button>
 
-            <p class="px-4 text-[10px] font-bold text-slate-600 uppercase mb-2 mt-4">Manajemen</p>
+            <p class="px-4 text-[10px] font-bold text-slate-600 uppercase mb-2 mt-4">Kurikulum</p>
             <button onclick="window.open('adminKBM.html', '_blank')" class="w-full flex items-center gap-3 px-4 py-3 text-emerald-400 hover:text-white hover:bg-emerald-900/30 rounded-lg transition font-bold">
-                <i data-lucide="book-open-check" class="w-5 h-5"></i> Panel KBM 🚀
+                <i data-lucide="book-open-check" class="w-5 h-5"></i> Buka Panel KBM 🚀
             </button>
             <button onclick="nav('mapel')" id="nav-mapel" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
                 <i data-lucide="library" class="w-5 h-5"></i> Database Mapel
             </button>
+
+            <p class="px-4 text-[10px] font-bold text-slate-600 uppercase mb-2 mt-4">Sistem & Fitur</p>
             <button onclick="nav('menu-manager')" id="nav-menu-manager" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
-                 <i data-lucide="layout-grid" class="w-5 h-5"></i> Kelola Tombol
+                 <i data-lucide="layout-grid" class="w-5 h-5"></i> Kelola Tombol (App Store)
+            </button>
+            <button onclick="nav('libur')" id="nav-libur" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
+                <i data-lucide="calendar-off" class="w-5 h-5"></i> Kelola Hari Libur
             </button>
             
             <div id="menu-super" class="border-t border-slate-800 pt-4 mt-4 hidden">
@@ -72,7 +80,7 @@
                     <i data-lucide="database" class="w-5 h-5"></i> Import Data
                 </button>
                 <button onclick="nav('settings')" id="nav-settings" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
-                    <i data-lucide="settings" class="w-5 h-5"></i> Pengaturan & Admin
+                    <i data-lucide="settings" class="w-5 h-5"></i> Pengaturan & Fitur
                 </button>
             </div>
         </nav>
@@ -303,6 +311,7 @@
                     <div class="text-slate-500 italic text-sm">Memuat data admin...</div>
                 </div>
             </div>
+
             <div class="bg-slate-900 rounded-[2rem] border border-slate-800 p-8 shadow-2xl mb-6 relative overflow-hidden">
                 <div class="absolute -right-10 -top-10 w-32 h-32 bg-purple-600 rounded-full blur-[80px] opacity-20"></div>
                 <h3 class="font-bold text-white text-lg mb-6">Kontrol Fitur & Sosialisasi</h3>
@@ -404,29 +413,21 @@
             loadMapel(); 
             if(role === 'SUPER') {
                 loadSettings();
-                loadDaftarAdmin(); // 🔥 Load Daftar Admin
+                loadDaftarAdmin(); 
             }
             document.getElementById('loading').style.display = 'none';
         });
 
         // 🔥 1. LOGIC TOMBOL ABSEN ADMIN 🔥
         window.pindahKeAbsen = () => {
-            // Kita copy data admin dari localStorage 'admin_auth' (asumsi ada) ke 'userSiswa'
-            // Biar halaman siswa.html bisa baca siapa yang lagi login
-            const adminDataStr = localStorage.getItem('admin_user_data'); // Pastikan saat login admin, simpan ini
-            
+            const adminDataStr = localStorage.getItem('admin_user_data'); 
             if(!adminDataStr) {
-                // Kalau ga ada data detail, kita coba ambil dari userSiswa kalau ada
                 const cekUser = localStorage.getItem('userSiswa');
-                if(cekUser) {
-                    window.location.href = 'siswa.html';
-                } else {
-                    Swal.fire('Data Kurang', 'Login ulang dulu ya bro biar datanya kebaca.', 'warning');
-                }
+                if(cekUser) { window.location.href = 'siswa.html'; } 
+                else { Swal.fire('Data Kurang', 'Login ulang dulu ya bro biar datanya kebaca.', 'warning'); }
                 return;
             }
-            
-            localStorage.setItem('userSiswa', adminDataStr); // Timpa session siswa dengan admin
+            localStorage.setItem('userSiswa', adminDataStr); 
             window.location.href = 'siswa.html';
         }
 
@@ -452,7 +453,6 @@
             const username = document.getElementById('inputCalonAdmin').value;
             if(!username) return Swal.fire('Isi dulu', 'Masukkan username/NIP calon admin.', 'warning');
             
-            // Cek user ada gak
             const q = query(collection(db, "users"), where("username", "==", username));
             const snap = await getDocs(q);
             
@@ -470,14 +470,12 @@
 
         window.copotAdmin = async (id, nama) => {
             if(confirm(`Yakin copot status Admin dari ${nama}?`)) {
-                // Kembalikan jadi guru atau siswa (default aman: guru, nanti bisa diedit)
-                // Atau cek format NIP/NISN. Kita set 'guru' aja aman.
                 await updateDoc(doc(db, "users", id), { role: 'guru' });
                 Swal.fire('Dicopot', 'Status admin dicabut.', 'success');
             }
         }
 
-        // ... FUNGSI STANDARD LAINNYA (Sama seperti sebelumnya) ...
+        // ... FUNGSI STANDARD LAINNYA ...
         window.tarikDataSiswa = async (forceRefresh = false) => {
             const cacheKey = 'master_siswa_cache';
             const cachedData = sessionStorage.getItem(cacheKey);
