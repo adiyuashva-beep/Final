@@ -39,7 +39,7 @@
     <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col hidden md:flex">
         <div class="p-6">
             <h1 class="font-black text-2xl tracking-tighter text-blue-500">SiGanteng</h1>
-            <p class="text-xs text-slate-500 tracking-widest uppercase mt-1">Admin Panel v9.5 (Optimized)</p>
+            <p class="text-xs text-slate-500 tracking-widest uppercase mt-1">Admin Panel v9.8 (Final)</p>
             <div id="badge-role" class="mt-2 inline-block px-2 py-1 rounded bg-slate-800 text-xs font-bold text-slate-300">...</div>
         </div>
 
@@ -65,14 +65,14 @@
             </button>
 
             <p class="px-4 text-[10px] font-bold text-slate-600 uppercase mb-2 mt-4">Sistem & Fitur</p>
-<button onclick="window.open('admin_apps.html', '_blank')" class="w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
-    <i data-lucide="layout-grid" class="w-5 h-5 text-purple-400"></i> Kelola Tombol (App Store) 🚀
-</button>
+            <button onclick="nav('menu-manager')" id="nav-menu-manager" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
+                 <i data-lucide="layout-grid" class="w-5 h-5"></i> Kelola Tombol (App Store)
+            </button>
             <button onclick="nav('libur')" id="nav-libur" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
                 <i data-lucide="calendar-off" class="w-5 h-5"></i> Kelola Hari Libur
             </button>
             
-            <div id="menu-super" class="border-t border-slate-800 pt-4 mt-4">
+            <div id="menu-super" class="border-t border-slate-800 pt-4 mt-4 hidden">
                 <p class="px-4 text-[10px] font-bold text-blue-500 uppercase mb-2">Super Admin</p>
                 <button onclick="nav('data')" id="nav-data" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
                     <i data-lucide="database" class="w-5 h-5"></i> Import Data
@@ -137,7 +137,7 @@
                 <div class="overflow-x-auto max-h-96">
                     <table class="w-full text-left text-slate-400">
                         <thead class="bg-slate-950 text-xs uppercase font-bold text-slate-500 sticky top-0">
-                            <tr><th class="p-4">Jam</th><th class="p-4">Nama Siswa</th><th class="p-4">Kelas</th><th class="p-4">Status</th><th class="p-4">Via</th></tr>
+                            <tr><th class="p-4">Jam</th><th class="p-4">Nama Siswa</th><th class="p-4">Kelas</th><th class="p-4">Status</th><th class="p-4">Device</th></tr>
                         </thead>
                         <tbody id="tabel-live" class="divide-y divide-slate-800"></tbody>
                     </table>
@@ -218,6 +218,7 @@
 
         <div id="view-mapel" class="hidden space-y-6 fade-in">
             <h2 class="text-3xl font-bold text-white">Database Mata Pelajaran</h2>
+            <p class="text-slate-400 text-sm">Data ini akan muncul di halaman Guru.</p>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800">
                     <h3 class="font-bold text-white mb-4">Tambah Mapel</h3>
@@ -387,7 +388,6 @@
             setupDropdown();
             // 🔥 LOAD DATA SISWA (HEMAT MODE)
             await tarikDataSiswa(); // Cek cache dulu didalam fungsi
-            // await tarikDataProfilLengkap(); // Dihapus biar ga berat, load on demand aja pas buka modal
             
             pantauRealtime();
             loadMenuManager(); 
@@ -445,51 +445,64 @@
 
         // 2. MONITORING REALTIME (OPTIMIZED LIMIT)
         function pantauRealtime() {
-            const todayStr = new Date().toLocaleDateString('fr-CA');
+            const todayStr = new Date().toLocaleDateString('fr-CA'); // PENTING: Gunakan format lokal YYYY-MM-DD
             
-            // Listener Statistik & Log (Hanya Log Terbaru)
             // Query 1: Log Table (Limit 50 biar ringan)
-            const qLog = query(collection(db, "absensi"), where("tanggal", "==", todayStr), orderBy("waktu_lengkap", "desc"), limit(50)); // Asumsi ada field waktu_lengkap, kalau gak ada orderBy jam_masuk
+            const qLog = query(collection(db, "absensi"), where("tanggal", "==", todayStr), limit(50));
             
-            // Query 2: Statistik (Ini terpaksa ambil semua hari ini buat counter, tapi karena cuma id/status field yg kecil masih oke)
-            // Atau kita hitung manual di client kalau datanya gak jutaan.
+            // Query 2: Statistik (Terpisah biar gak berat di snapshot log)
+            // Menggunakan query dasar dan hitung di client utk real-time count
             const qAllToday = query(collection(db, "absensi"), where("tanggal", "==", todayStr));
 
             onSnapshot(qAllToday, (snap) => {
                 cacheAbsenHariIni = {}; let hadir = 0, izin = 0;
+                let logData = [];
+
                 snap.forEach(doc => {
                     const data = doc.data();
                     const nisn = String(data.nisn).replace(/[^a-zA-Z0-9]/g, '');
                     cacheAbsenHariIni[nisn] = data;
-                    const st = data.status_terakhir;
+                    
+                    const st = data.status_terakhir || "";
                     if(st.includes("Masuk") || st.includes("Hadir") || st.includes("Pulang") || st.includes("Kembali")) hadir++;
                     else if(st.includes("Sakit") || st.includes("Izin")) izin++;
+
+                    logData.push(data);
                 });
+
                 document.getElementById('stat-hadir').innerText = hadir;
                 document.getElementById('stat-izin').innerText = izin;
                 document.getElementById('stat-alpha').innerText = listSiswa.length - (hadir + izin);
                 
-                // Update Tabel Log (Manual sort dari data yang masuk snapshot)
-                // Biar hemat kita render ulang log tabel dari data snapshot terbaru (limit 50)
-                // Tapi karena kita pakai qAllToday, kita ambil 50 terakhir manual
-                const logs = [];
-                snap.forEach(doc => logs.push(doc.data()));
-                // Sort manual by time (karena qAllToday gak ada order)
-                logs.sort((a,b) => {
-                    const ta = a.jam_masuk ? a.jam_masuk.seconds : 0;
-                    const tb = b.jam_masuk ? b.jam_masuk.seconds : 0;
-                    return tb - ta;
+                // Urutkan Log (Manual karena qAllToday tidak di-order demi performa query)
+                // Kita ambil 50 teratas berdasarkan jam
+                logData.sort((a,b) => {
+                    // Cek properti jam yang tersedia
+                    const timeA = a.jam_masuk ? a.jam_masuk.seconds : (a.jam_pulang ? a.jam_pulang.seconds : 0);
+                    const timeB = b.jam_masuk ? b.jam_masuk.seconds : (b.jam_pulang ? b.jam_pulang.seconds : 0);
+                    return timeB - timeA;
                 });
                 
                 const tabel = document.getElementById('tabel-live'); tabel.innerHTML = "";
-                logs.slice(0, 50).forEach(data => {
-                     tabel.innerHTML += `<tr class="border-b border-slate-800 hover:bg-slate-800/50"><td class="p-4 text-blue-400 font-mono">${data.riwayat_kegiatan ? data.riwayat_kegiatan[data.riwayat_kegiatan.length-1].split(' - ')[0] : '-'}</td><td class="p-4 text-white font-bold">${data.nama}</td><td class="p-4">${data.kelas}</td><td class="p-4"><span class="bg-slate-700 px-2 py-1 rounded text-xs text-white">${data.status_terakhir}</span></td><td class="p-4 text-xs">${data.lokasi_masuk?.includes("Kiosk") ? "🏢 Kiosk" : "📱 HP"}</td></tr>`;
+                logData.slice(0, 50).forEach(data => {
+                     // Parsing info device
+                     let deviceLabel = "Unknown";
+                     if (data.device_info) {
+                         if(data.device_info.includes("Android")) deviceLabel = "📱 Android";
+                         else if(data.device_info.includes("iPhone")) deviceLabel = "📱 iPhone";
+                         else if(data.device_info.includes("Windows")) deviceLabel = "💻 PC";
+                     } else if (data.lokasi_masuk && data.lokasi_masuk.includes("Kiosk")) {
+                         deviceLabel = "🏢 Kiosk";
+                     }
+
+                     tabel.innerHTML += `<tr class="border-b border-slate-800 hover:bg-slate-800/50"><td class="p-4 text-blue-400 font-mono text-xs">${data.riwayat_kegiatan ? data.riwayat_kegiatan[data.riwayat_kegiatan.length-1].split(' - ')[0] : '-'}</td><td class="p-4 text-white font-bold">${data.nama}</td><td class="p-4">${data.kelas}</td><td class="p-4"><span class="bg-slate-700 px-2 py-1 rounded text-xs text-white">${data.status_terakhir}</span></td><td class="p-4 text-xs text-slate-500">${deviceLabel}</td></tr>`;
                 });
 
                 renderGridKelas();
                 ['X', 'XI', 'XII'].forEach(t => hitungMBG(t));
             });
         }
+        
         // --- LOGIC BARU: REKAP GURU/TENDIK ---
         let modeRekap = 'siswa'; // Default
 
@@ -497,7 +510,6 @@
             modeRekap = mode;
             document.getElementById('judul-rekap-tipe').innerText = mode === 'siswa' ? '(SISWA)' : '(GURU & TENDIK)';
             
-            // Ubah tampilan tombol
             if(mode === 'siswa') {
                 document.getElementById('btn-mode-siswa').className = "px-3 py-1 text-xs font-bold rounded-md bg-blue-600 text-white transition";
                 document.getElementById('btn-mode-guru').className = "px-3 py-1 text-xs font-bold rounded-md text-slate-400 hover:text-white transition";
@@ -507,23 +519,20 @@
                 document.getElementById('btn-mode-guru').className = "px-3 py-1 text-xs font-bold rounded-md bg-orange-600 text-white transition";
                 document.getElementById('pilih-kelas').classList.add('hidden');
             }
-            // Kosongkan tabel biar ga bingung
             document.getElementById('tbody-rekap').innerHTML = '<tr><td colspan="40" class="p-10 text-center text-slate-500 italic">Klik tombol Tampilkan untuk memuat data.</td></tr>';
         }
 
-        // UPDATE FUNGSI loadRekap (Biar bisa handle Guru)
+        // UPDATE FUNGSI loadRekap
         window.loadRekap = async () => {
             const bln = parseInt(document.getElementById('pilih-bulan').value) + 1;
             const thn = document.getElementById('pilih-tahun').value;
             const kls = document.getElementById('pilih-kelas').value;
             
-            // Validasi
             if(modeRekap === 'siswa' && !kls) return Swal.fire('Pilih Kelas', 'Silakan pilih kelas siswa dulu.', 'warning');
 
             const blnStr = bln < 10 ? '0' + bln : bln;
             const daysInMonth = new Date(thn, bln, 0).getDate();
             
-            // Bikin Header Tabel
             let headerHTML = '<tr><th class="p-2 border border-slate-700 w-10">No</th><th class="p-2 border border-slate-700 min-w-[200px] text-left">Nama Lengkap</th><th class="p-2 border border-slate-700">ID/NIP</th>';
             for(let d=1; d<=daysInMonth; d++) {
                 const cekTgl = `${thn}-${blnStr}-${d < 10 ? '0'+d : d}`;
@@ -539,17 +548,15 @@
             tbody.innerHTML = '<tr><td colspan="40" class="p-4 text-center"><i class="animate-spin" data-lucide="loader"></i> Mengambil data...</td></tr>';
             lucide.createIcons();
 
-            // --- AMBIL DATA USER ---
             let targetUsers = [];
             if(modeRekap === 'siswa') {
-                targetUsers = mapKelas[kls] || []; // Ambil dari cache kelas
+                targetUsers = mapKelas[kls] || []; 
             } else {
-                // Ambil Guru dari server (users dengan role=guru)
                 const qGuru = query(collection(db, "users"), where("role", "==", "guru"));
                 const snapGuru = await getDocs(qGuru);
                 snapGuru.forEach(doc => {
                     const d = doc.data();
-                    targetUsers.push({ nama: d.nama, nisn: d.username }); // Samakan format obj
+                    targetUsers.push({ nama: d.nama, nisn: d.username }); 
                 });
             }
 
@@ -558,15 +565,12 @@
                 return;
             }
 
-            // --- AMBIL DATA ABSENSI ---
             const start = `${thn}-${blnStr}-01`;
             const end = `${thn}-${blnStr}-${daysInMonth}`;
             
-            // Query Absen: Filter tanggal dulu
             const qAbsen = query(collection(db, "absensi"), where("tanggal", ">=", start), where("tanggal", "<=", end));
             const snapAbsen = await getDocs(qAbsen);
             
-            // Mapping Absen
             let dataMap = {};
             targetUsers.forEach(u => {
                 dataMap[u.nisn] = { nama: u.nama, att: {}, counts: {h:0, s:0, i:0, a:0} };
@@ -574,8 +578,6 @@
 
             snapAbsen.forEach(doc => {
                 const d = doc.data();
-                // Filter manual: Cek apakah user ini ada di targetUsers kita
-                // (Karena query firebase gabisa "IN" array yang sangat banyak)
                 if(dataMap[d.nisn]) {
                     const tgl = parseInt(d.tanggal.split('-')[2]);
                     const st = d.status_terakhir;
@@ -588,11 +590,10 @@
                 }
             });
 
-            // RENDER TABEL
             tbody.innerHTML = '';
             targetUsers.sort((a,b) => a.nama.localeCompare(b.nama)).forEach((u, idx) => {
                 const r = dataMap[u.nisn];
-                const nisn = u.nisn; // Untuk guru ini adalah NIP/Username
+                const nisn = u.nisn; 
                 
                 let rowHTML = `<tr class="hover:bg-slate-800 border-b border-slate-800">
                     <td class="p-2 border border-slate-700 text-center">${idx+1}</td>
@@ -633,17 +634,37 @@
                 tbody.innerHTML += rowHTML;
             });
         }
-        // ... FUNGSI LAIN (SAMA SEPERTI SEBELUMNYA) ...
-        window.loadRekap = async () => { const bln = parseInt(document.getElementById('pilih-bulan').value) + 1; const thn = document.getElementById('pilih-tahun').value; const kls = document.getElementById('pilih-kelas').value; if(!kls) return Swal.fire('Pilih Kelas', 'Silakan pilih kelas dulu.', 'warning'); const blnStr = bln < 10 ? '0' + bln : bln; const daysInMonth = new Date(thn, bln, 0).getDate(); let headerHTML = '<tr><th class="p-2 border border-slate-700 w-10">No</th><th class="p-2 border border-slate-700 min-w-[200px] text-left">Nama Siswa</th><th class="p-2 border border-slate-700">NISN</th>'; for(let d=1; d<=daysInMonth; d++) { const cekTgl = `${thn}-${blnStr}-${d < 10 ? '0'+d : d}`; const isMerah = cacheHariLibur[cekTgl]; const dayOfWeek = new Date(thn, bln-1, d).getDay(); let bgHead = (dayOfWeek === 0 || dayOfWeek === 6 || isMerah) ? 'bg-red-900/50 text-red-200' : 'bg-slate-900'; headerHTML += `<th class="p-2 border border-slate-700 ${bgHead} w-8 text-center" title="${isMerah || ''}">${d}</th>`; } headerHTML += '<th class="p-2 border border-slate-700 bg-emerald-900">H</th><th class="p-2 border border-slate-700 bg-blue-900">S</th><th class="p-2 border border-slate-700 bg-yellow-900">I</th><th class="p-2 border border-slate-700 bg-red-900">A</th></tr>'; document.getElementById('thead-rekap').innerHTML = headerHTML; const tbody = document.getElementById('tbody-rekap'); tbody.innerHTML = '<tr><td colspan="40" class="p-4 text-center">Mengambil data absensi...</td></tr>'; const start = `${thn}-${blnStr}-01`; const end = `${thn}-${blnStr}-${daysInMonth}`; const q = query(collection(db, "absensi"), where("tanggal", ">=", start), where("tanggal", "<=", end)); const snap = await getDocs(q); let dataMap = {}; if(mapKelas[kls]) { mapKelas[kls].forEach(s => { dataMap[s.nisn] = { nama: s.nama, att: {}, counts: {h:0, s:0, i:0, a:0} }; }); } snap.forEach(doc => { const d = doc.data(); const nisn = String(d.nisn).replace(/[^a-zA-Z0-9]/g, ''); if(dataMap[nisn]) { const tgl = parseInt(d.tanggal.split('-')[2]); const st = d.status_terakhir; let code = 'A'; if(st.includes("Masuk") || st.includes("Hadir") || st.includes("Pulang") || st.includes("Kembali")) { code = 'H'; dataMap[nisn].counts.h++; } else if(st.includes("Sakit")) { code = 'S'; dataMap[nisn].counts.s++; } else if(st.includes("Izin")) { code = 'I'; dataMap[nisn].counts.i++; } dataMap[nisn].att[tgl] = code; } }); tbody.innerHTML = ''; if(Object.keys(dataMap).length === 0) { tbody.innerHTML = '<tr><td colspan="40" class="p-4 text-center">Tidak ada siswa.</td></tr>'; return; } Object.keys(dataMap).sort((a,b) => dataMap[a].nama.localeCompare(dataMap[b].nama)).forEach((nisn, idx) => { const r = dataMap[nisn]; let rowHTML = `<tr class="hover:bg-slate-800 border-b border-slate-800"><td class="p-2 border border-slate-700 text-center">${idx+1}</td><td class="p-2 border border-slate-700 text-left font-bold text-slate-300">${r.nama}</td><td class="p-2 border border-slate-700 text-center font-mono text-xs">${nisn}</td>`; let totalAlpha = 0; for(let d=1; d<=daysInMonth; d++) { const dateStr = `${thn}-${blnStr}-${d < 10 ? '0'+d : d}`; const dayOfWeek = new Date(thn, bln-1, d).getDay(); const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6); const isLiburNasional = cacheHariLibur[dateStr]; const status = r.att[d]; let cellClass = ""; let cellText = ""; if (status) { if (status === 'H') { cellClass = "bg-hadir"; cellText = "•"; } else if (status === 'S') { cellClass = "bg-sakit"; cellText = "S"; } else if (status === 'I') { cellClass = "bg-izin"; cellText = "I"; } } else { if (isLiburNasional) { cellClass = "bg-red-900/40 text-red-500 font-bold"; cellText = "L"; } else if (isWeekend) { cellClass = "bg-weekend"; cellText = ""; } else { const cellDate = new Date(thn, bln-1, d); if(cellDate < new Date()) { totalAlpha++; cellClass = "bg-alpha"; cellText = "A"; } else { cellText = "-"; } } } rowHTML += `<td class="p-2 border border-slate-700 text-center ${cellClass}" title="${isLiburNasional || ''}">${cellText}</td>`; } rowHTML += `<td class="p-2 border border-slate-700 font-bold text-emerald-400">${r.counts.h}</td><td class="p-2 border border-slate-700 font-bold text-blue-400">${r.counts.s}</td><td class="p-2 border border-slate-700 font-bold text-yellow-400">${r.counts.i}</td><td class="p-2 border border-slate-700 font-bold text-red-400">${totalAlpha}</td></tr>`; tbody.innerHTML += rowHTML; }); }
-        
+
         async function loadSettings() { onSnapshot(doc(db, "pengaturan", "sekolah"), (docSnap) => { if (docSnap.exists()) { const d = docSnap.data(); document.getElementById('toggleGPS').checked = d.validasi_gps_aktif; document.getElementById('inputLat').value = d.lokasi_lat || "-7.6739830"; document.getElementById('inputLng').value = d.lokasi_lng || "109.6319560"; document.getElementById('inputRadius').value = d.radius_meter || 50; updateLabelRadius(); updateLabelStatus(); } }); onSnapshot(doc(db, "pengaturan", "fitur"), (docSnap) => { if (docSnap.exists()) { const d = docSnap.data(); document.getElementById('toggleKBM_Ortu').checked = d.kbm_ortu_aktif; document.getElementById('toggleRefleksi_Guru').checked = d.refleksi_guru_aktif; } }); }
         window.simpanConfig = async () => { const btn = document.getElementById('btnSaveConfig'); btn.innerHTML = `<i class="animate-spin" data-lucide="loader-2"></i> Menyimpan...`; lucide.createIcons(); try { await setDoc(doc(db, "pengaturan", "sekolah"), { lokasi_lat: parseFloat(document.getElementById('inputLat').value), lokasi_lng: parseFloat(document.getElementById('inputLng').value), radius_meter: parseInt(document.getElementById('inputRadius').value), validasi_gps_aktif: document.getElementById('toggleGPS').checked }, { merge: true }); await setDoc(doc(db, "pengaturan", "fitur"), { kbm_ortu_aktif: document.getElementById('toggleKBM_Ortu').checked, refleksi_guru_aktif: document.getElementById('toggleRefleksi_Guru').checked }, { merge: true }); Swal.fire({title: 'Berhasil!', icon: 'success', background: '#1e293b', color: '#fff'}); } catch(e) { Swal.fire('Error', e.message, 'error'); } finally { btn.innerHTML = `<i data-lucide="save"></i> SIMPAN SEMUA PENGATURAN`; lucide.createIcons(); } }
         function loadHariLibur() { const q = query(collection(db, "hari_libur"), orderBy("tanggal", "asc")); onSnapshot(q, (snapshot) => { const tbody = document.getElementById('tbody-libur'); tbody.innerHTML = ''; cacheHariLibur = {}; if(snapshot.empty) { tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center italic">Tidak ada jadwal libur.</td></tr>'; return; } snapshot.forEach(doc => { const d = doc.data(); cacheHariLibur[d.tanggal] = d.keterangan; const tglIndo = d.tanggal.split('-').reverse().join('-'); tbody.innerHTML += `<tr class="hover:bg-slate-800 border-b border-slate-800"><td class="p-3 font-mono text-white">${tglIndo}</td><td class="p-3 text-slate-300 font-bold">${d.keterangan}</td><td class="p-3 text-right"><button onclick="hapusLibur('${doc.id}')" class="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white p-2 rounded transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td></tr>`; }); lucide.createIcons(); }); }
         window.simpanLibur = async () => { const tgl = document.getElementById('inputTglLibur').value; const ket = document.getElementById('inputKetLibur').value; if(!tgl || !ket) return Swal.fire('Gagal', 'Lengkapi!', 'warning'); await addDoc(collection(db, "hari_libur"), { tanggal: tgl, keterangan: ket }); Swal.fire('Sukses', 'Disimpan', 'success'); }
         window.hapusLibur = async (id) => { if(confirm("Hapus?")) await deleteDoc(doc(db, "hari_libur", id)); }
-        function loadMapel() { onSnapshot(query(collection(db, "mata_pelajaran"), orderBy("nama", "asc")), (snap) => { const list = document.getElementById('list-mapel'); list.innerHTML = ''; snap.forEach(doc => { list.innerHTML += `<li class="flex justify-between items-center bg-slate-800 p-3 rounded-lg border border-slate-700"><span class="text-white font-bold">${doc.data().nama}</span><button onclick="hapusMapel('${doc.id}')" class="text-red-500 hover:text-red-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button></li>`; }); lucide.createIcons(); }); }
-        window.tambahMapel = async () => { const nama = document.getElementById('inputNamaMapel').value; if(nama) { await addDoc(collection(db, "mata_pelajaran"), {nama}); Swal.fire('Sukses','','success'); } }
-        window.hapusMapel = async (id) => { if(confirm("Hapus?")) await deleteDoc(doc(db,"mata_pelajaran",id)); }
+        
+        // --- MAPEL LOGIC (FIXED) ---
+        function loadMapel() { 
+            // Pastikan collection namanya benar 'mata_pelajaran'
+            onSnapshot(query(collection(db, "mata_pelajaran"), orderBy("nama", "asc")), (snap) => { 
+                const list = document.getElementById('list-mapel'); list.innerHTML = ''; 
+                if(snap.empty) { list.innerHTML = '<li class="text-center text-slate-500 italic">Belum ada mapel.</li>'; return; }
+                snap.forEach(doc => { list.innerHTML += `<li class="flex justify-between items-center bg-slate-800 p-3 rounded-lg border border-slate-700"><span class="text-white font-bold">${doc.data().nama}</span><button onclick="hapusMapel('${doc.id}')" class="text-red-500 hover:text-red-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button></li>`; }); lucide.createIcons(); 
+            }); 
+        }
+        window.tambahMapel = async () => { 
+            const nama = document.getElementById('inputNamaMapel').value.trim(); 
+            if(nama) { 
+                // Cek duplikat sederhana di client (optional, but good)
+                const list = document.getElementById('list-mapel').innerText;
+                if(list.includes(nama)) { return Swal.fire('Sudah Ada', 'Mapel ini sudah terdaftar.', 'warning'); }
+                
+                await addDoc(collection(db, "mata_pelajaran"), {nama}); 
+                document.getElementById('inputNamaMapel').value = ''; // Reset
+                Swal.fire('Sukses','Mapel ditambahkan','success'); 
+            } 
+        }
+        window.hapusMapel = async (id) => { if(confirm("Hapus mapel ini?")) await deleteDoc(doc(db,"mata_pelajaran",id)); }
+        // ---------------------------
+
         window.simpanMenuBaru = async () => { const t = document.getElementById('menuTarget').value; const j = document.getElementById('menuJudul').value; const i = document.getElementById('menuIcon').value; const l = document.getElementById('menuLink').value; if(j&&l) { await addDoc(collection(db, "menu_dinamis"), {target:t, judul:j, icon:i, link:l, highlight:document.getElementById('menuWarna').checked, created_at: new Date().toISOString()}); Swal.fire('Sukses','','success'); } }
         function loadMenuManager() { onSnapshot(query(collection(db, "menu_dinamis"), orderBy("created_at", "asc")), (snap) => { const tb = document.getElementById('tbody-menu-list'); tb.innerHTML = ''; snap.forEach(d => { const data = d.data(); tb.innerHTML += `<tr class="hover:bg-slate-800"><td class="p-3 uppercase text-blue-400 font-bold">${data.target}</td><td class="p-3">${data.icon}</td><td class="p-3 text-white">${data.judul}</td><td class="p-3 text-xs font-mono text-blue-400">${data.link}</td><td class="p-3 text-right"><button onclick="hapusMenu('${d.id}')" class="text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td></tr>`; }); lucide.createIcons(); }); }
         window.hapusMenu = async(id) => { if(confirm("Hapus?")) await deleteDoc(doc(db,"menu_dinamis",id)); }
@@ -665,4 +686,3 @@
     </script>
 </body>
 </html>
-
