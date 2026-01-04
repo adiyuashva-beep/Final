@@ -18,7 +18,6 @@
         .table-sticky th { position: sticky; top: 0; z-index: 10; background: #1e293b; }
         .table-sticky td:first-child, .table-sticky th:first-child { position: sticky; left: 0; z-index: 20; background: #1e293b; }
         
-        /* Toggle Switch */
         .toggle-checkbox:checked { right: 0; border-color: #10b981; }
         .toggle-checkbox:checked + .toggle-label { background-color: #10b981; }
         
@@ -39,37 +38,32 @@
     <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col hidden md:flex">
         <div class="p-6">
             <h1 class="font-black text-2xl tracking-tighter text-blue-500">SiGanteng</h1>
-            <p class="text-xs text-slate-500 tracking-widest uppercase mt-1">Admin Panel v9.8 (Final)</p>
+            <p class="text-xs text-slate-500 tracking-widest uppercase mt-1">Admin Panel v10.0</p>
             <div id="badge-role" class="mt-2 inline-block px-2 py-1 rounded bg-slate-800 text-xs font-bold text-slate-300">...</div>
         </div>
 
         <nav class="flex-1 space-y-1 px-3 mt-4 overflow-y-auto hide-scroll">
             
-            <p class="px-4 text-[10px] font-bold text-slate-600 uppercase mb-2 mt-2">Kesiswaan (BK)</p>
+            <button onclick="pindahKeAbsen()" class="w-full mb-4 flex items-center gap-3 px-4 py-3 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500 hover:text-white rounded-lg transition font-bold shadow-lg shadow-emerald-900/20">
+                <i data-lucide="scan-face" class="w-5 h-5"></i> Absensi Saya
+            </button>
+            <p class="px-4 text-[10px] font-bold text-slate-600 uppercase mb-2">Monitoring</p>
             <button onclick="nav('dashboard')" id="nav-dashboard" class="nav-item active w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
                 <i data-lucide="layout-dashboard" class="w-5 h-5"></i> Dashboard
             </button>
             <button onclick="nav('rekap')" id="nav-rekap" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
                 <i data-lucide="calendar-days" class="w-5 h-5"></i> Rekap Absen
             </button>
-            <button onclick="nav('mbg')" id="nav-mbg" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
-                <i data-lucide="utensils" class="w-5 h-5"></i> Laporan MBG
-            </button>
 
-            <p class="px-4 text-[10px] font-bold text-slate-600 uppercase mb-2 mt-4">Kurikulum</p>
+            <p class="px-4 text-[10px] font-bold text-slate-600 uppercase mb-2 mt-4">Manajemen</p>
             <button onclick="window.open('adminKBM.html', '_blank')" class="w-full flex items-center gap-3 px-4 py-3 text-emerald-400 hover:text-white hover:bg-emerald-900/30 rounded-lg transition font-bold">
-                <i data-lucide="book-open-check" class="w-5 h-5"></i> Buka Panel KBM 🚀
+                <i data-lucide="book-open-check" class="w-5 h-5"></i> Panel KBM 🚀
             </button>
             <button onclick="nav('mapel')" id="nav-mapel" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
                 <i data-lucide="library" class="w-5 h-5"></i> Database Mapel
             </button>
-
-            <p class="px-4 text-[10px] font-bold text-slate-600 uppercase mb-2 mt-4">Sistem & Fitur</p>
             <button onclick="nav('menu-manager')" id="nav-menu-manager" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
-                 <i data-lucide="layout-grid" class="w-5 h-5"></i> Kelola Tombol (App Store)
-            </button>
-            <button onclick="nav('libur')" id="nav-libur" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
-                <i data-lucide="calendar-off" class="w-5 h-5"></i> Kelola Hari Libur
+                 <i data-lucide="layout-grid" class="w-5 h-5"></i> Kelola Tombol
             </button>
             
             <div id="menu-super" class="border-t border-slate-800 pt-4 mt-4 hidden">
@@ -78,7 +72,7 @@
                     <i data-lucide="database" class="w-5 h-5"></i> Import Data
                 </button>
                 <button onclick="nav('settings')" id="nav-settings" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
-                    <i data-lucide="settings" class="w-5 h-5"></i> Pengaturan & Fitur
+                    <i data-lucide="settings" class="w-5 h-5"></i> Pengaturan & Admin
                 </button>
             </div>
         </nav>
@@ -94,7 +88,10 @@
         
         <div class="md:hidden flex justify-between items-center mb-6">
             <h1 class="font-bold text-lg text-blue-500">SiGanteng Admin</h1>
-            <button onclick="logout()" class="text-red-500"><i data-lucide="log-out"></i></button>
+            <div class="flex gap-2">
+                 <button onclick="pindahKeAbsen()" class="text-emerald-500"><i data-lucide="scan-face"></i></button>
+                 <button onclick="logout()" class="text-red-500"><i data-lucide="log-out"></i></button>
+            </div>
         </div>
 
         <div id="view-dashboard" class="space-y-6 fade-in">
@@ -178,8 +175,7 @@
         </div>
 
         <div id="view-mbg" class="hidden space-y-6 fade-in">
-            <h2 class="text-2xl font-bold text-white mb-4">Laporan Logistik (MBG)</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="bg-slate-900 rounded-2xl border border-slate-800 p-6 relative overflow-hidden group hover:border-blue-500 transition cursor-pointer" onclick="previewMBG('X')">
                     <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20"><i data-lucide="utensils" class="w-24 h-24 text-blue-500"></i></div>
                     <h3 class="text-xl font-black text-white">KELAS X</h3>
@@ -196,7 +192,6 @@
                     <div class="flex gap-2 mt-4"><div class="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded text-xs font-bold">Hadir: <span id="mbg-xii-hadir">0</span></div><div class="bg-red-500/20 text-red-400 px-3 py-1 rounded text-xs font-bold">Sisa: <span id="mbg-xii-sisa">0</span></div></div>
                 </div>
             </div>
-            
             <div id="container-tabel-mbg" class="hidden bg-white text-slate-900 rounded-2xl p-6 shadow-xl mt-6 border border-slate-700">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="font-bold text-lg text-slate-800" id="judul-tabel-mbg">Detail Logistik</h3>
@@ -258,8 +253,7 @@
         </div>
 
         <div id="view-libur" class="hidden space-y-6 fade-in">
-            <h2 class="text-3xl font-bold text-white">Kelola Hari Libur</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800">
                     <h3 class="font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="plus-circle" class="w-5 h-5 text-red-500"></i> Tambah Libur</h3>
                     <div class="space-y-4">
@@ -294,6 +288,21 @@
 
         <div id="view-settings" class="hidden space-y-6 fade-in">
             <h2 class="text-3xl font-bold text-white flex items-center gap-3"><i data-lucide="settings" class="w-8 h-8 text-blue-500"></i> Pengaturan & Fitur</h2>
+            
+            <div class="bg-slate-900 rounded-[2rem] border border-slate-800 p-8 shadow-2xl mb-6 relative overflow-hidden">
+                <h3 class="font-bold text-white text-lg mb-6 flex items-center gap-2"><i data-lucide="shield-check" class="text-blue-500"></i> Kelola Tim Admin</h3>
+                <div class="flex gap-4 items-end mb-6">
+                    <div class="flex-1">
+                        <label class="text-xs text-slate-500 uppercase font-bold">NIP / Username Calon Admin</label>
+                        <input type="text" id="inputCalonAdmin" class="w-full bg-slate-950 text-white p-3 rounded-lg border border-slate-700 mt-1" placeholder="Masukkan NIP atau Username...">
+                    </div>
+                    <button onclick="angkatJadiAdmin()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg shadow-lg">Jadikan Admin</button>
+                </div>
+                <h4 class="text-sm font-bold text-slate-500 mb-2">Daftar Admin Aktif:</h4>
+                <div id="list-admin-aktif" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div class="text-slate-500 italic text-sm">Memuat data admin...</div>
+                </div>
+            </div>
             <div class="bg-slate-900 rounded-[2rem] border border-slate-800 p-8 shadow-2xl mb-6 relative overflow-hidden">
                 <div class="absolute -right-10 -top-10 w-32 h-32 bg-purple-600 rounded-full blur-[80px] opacity-20"></div>
                 <h3 class="font-bold text-white text-lg mb-6">Kontrol Fitur & Sosialisasi</h3>
@@ -308,6 +317,7 @@
                     </div>
                 </div>
             </div>
+
             <div class="bg-slate-900 rounded-[2rem] border border-slate-800 p-8 shadow-2xl relative overflow-hidden">
                 <div class="absolute -top-10 -right-10 w-40 h-40 bg-blue-600 rounded-full blur-[80px] opacity-20"></div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -386,24 +396,93 @@
             if(role === 'SUPER') document.getElementById('menu-super').classList.remove('hidden');
 
             setupDropdown();
-            // 🔥 LOAD DATA SISWA (HEMAT MODE)
-            await tarikDataSiswa(); // Cek cache dulu didalam fungsi
+            await tarikDataSiswa(); 
             
             pantauRealtime();
             loadMenuManager(); 
             loadHariLibur(); 
             loadMapel(); 
-            if(role === 'SUPER') loadSettings();
+            if(role === 'SUPER') {
+                loadSettings();
+                loadDaftarAdmin(); // 🔥 Load Daftar Admin
+            }
             document.getElementById('loading').style.display = 'none';
         });
 
-        // 1. DATA SISWA (OPTIMIZED CACHE)
+        // 🔥 1. LOGIC TOMBOL ABSEN ADMIN 🔥
+        window.pindahKeAbsen = () => {
+            // Kita copy data admin dari localStorage 'admin_auth' (asumsi ada) ke 'userSiswa'
+            // Biar halaman siswa.html bisa baca siapa yang lagi login
+            const adminDataStr = localStorage.getItem('admin_user_data'); // Pastikan saat login admin, simpan ini
+            
+            if(!adminDataStr) {
+                // Kalau ga ada data detail, kita coba ambil dari userSiswa kalau ada
+                const cekUser = localStorage.getItem('userSiswa');
+                if(cekUser) {
+                    window.location.href = 'siswa.html';
+                } else {
+                    Swal.fire('Data Kurang', 'Login ulang dulu ya bro biar datanya kebaca.', 'warning');
+                }
+                return;
+            }
+            
+            localStorage.setItem('userSiswa', adminDataStr); // Timpa session siswa dengan admin
+            window.location.href = 'siswa.html';
+        }
+
+        // 🔥 2. LOGIC KELOLA ADMIN 🔥
+        window.loadDaftarAdmin = () => {
+             const q = query(collection(db, "users"), where("role", "==", "admin"));
+             onSnapshot(q, (snap) => {
+                 const container = document.getElementById('list-admin-aktif');
+                 container.innerHTML = '';
+                 snap.forEach(doc => {
+                     const d = doc.data();
+                     container.innerHTML += `
+                        <div class="flex justify-between items-center bg-slate-950 p-3 rounded-lg border border-slate-800">
+                            <div><p class="text-white font-bold text-sm">${d.nama}</p><p class="text-xs text-slate-500 font-mono">${d.username}</p></div>
+                            <button onclick="copotAdmin('${doc.id}', '${d.nama}')" class="text-red-500 hover:text-white bg-red-500/10 hover:bg-red-600 p-2 rounded transition"><i data-lucide="shield-off" class="w-4 h-4"></i></button>
+                        </div>`;
+                 });
+                 lucide.createIcons();
+             });
+        }
+
+        window.angkatJadiAdmin = async () => {
+            const username = document.getElementById('inputCalonAdmin').value;
+            if(!username) return Swal.fire('Isi dulu', 'Masukkan username/NIP calon admin.', 'warning');
+            
+            // Cek user ada gak
+            const q = query(collection(db, "users"), where("username", "==", username));
+            const snap = await getDocs(q);
+            
+            if(snap.empty) {
+                return Swal.fire('Tidak Ditemukan', 'User ini belum terdaftar di sistem.', 'error');
+            }
+            
+            snap.forEach(async (d) => {
+                await updateDoc(doc(db, "users", d.id), { role: 'admin' });
+            });
+            
+            document.getElementById('inputCalonAdmin').value = '';
+            Swal.fire('Berhasil', 'User telah diangkat jadi Admin.', 'success');
+        }
+
+        window.copotAdmin = async (id, nama) => {
+            if(confirm(`Yakin copot status Admin dari ${nama}?`)) {
+                // Kembalikan jadi guru atau siswa (default aman: guru, nanti bisa diedit)
+                // Atau cek format NIP/NISN. Kita set 'guru' aja aman.
+                await updateDoc(doc(db, "users", id), { role: 'guru' });
+                Swal.fire('Dicopot', 'Status admin dicabut.', 'success');
+            }
+        }
+
+        // ... FUNGSI STANDARD LAINNYA (Sama seperti sebelumnya) ...
         window.tarikDataSiswa = async (forceRefresh = false) => {
             const cacheKey = 'master_siswa_cache';
             const cachedData = sessionStorage.getItem(cacheKey);
 
             if (!forceRefresh && cachedData) {
-                console.log("⚡ Pakai Data Siswa dari Cache (Hemat!)");
                 const parsed = JSON.parse(cachedData);
                 listSiswa = parsed.listSiswa;
                 mapKelas = parsed.mapKelas;
@@ -415,7 +494,7 @@
                 if(forceRefresh) document.getElementById('loading').style.display = 'flex';
                 const q = query(collection(db, "users"), where("role", "!=", "guru"));
                 const snap = await getDocs(q);
-                listSiswa = []; mapKelas = {}; const kelasSet = new Set();
+                listSiswa = []; mapKelas = {};
                 snap.forEach(doc => {
                     const s = doc.data();
                     if(s.kelas && s.kelas !== '-' && s.role !== 'guru') {
@@ -427,8 +506,6 @@
                         mapKelas[kls].push(obj);
                     }
                 });
-                
-                // Simpan ke Cache
                 sessionStorage.setItem(cacheKey, JSON.stringify({listSiswa, mapKelas}));
                 updateUIKelas();
                 if(forceRefresh) { document.getElementById('loading').style.display = 'none'; Swal.fire('Sip','Data siswa diperbarui','success'); }
@@ -440,33 +517,24 @@
             sel.innerHTML = '<option value="">- Pilih Kelas -</option>';
             Object.keys(mapKelas).sort().forEach(k => sel.add(new Option(k, k)));
             document.getElementById('stat-total').innerText = listSiswa.length;
-            renderGridKelas(); // Render ulang grid
+            renderGridKelas();
         }
 
-        // 2. MONITORING REALTIME (OPTIMIZED LIMIT)
         function pantauRealtime() {
-            const todayStr = new Date().toLocaleDateString('fr-CA'); // PENTING: Gunakan format lokal YYYY-MM-DD
-            
-            // Query 1: Log Table (Limit 50 biar ringan)
+            const todayStr = new Date().toLocaleDateString('fr-CA');
             const qLog = query(collection(db, "absensi"), where("tanggal", "==", todayStr), limit(50));
-            
-            // Query 2: Statistik (Terpisah biar gak berat di snapshot log)
-            // Menggunakan query dasar dan hitung di client utk real-time count
             const qAllToday = query(collection(db, "absensi"), where("tanggal", "==", todayStr));
 
             onSnapshot(qAllToday, (snap) => {
                 cacheAbsenHariIni = {}; let hadir = 0, izin = 0;
                 let logData = [];
-
                 snap.forEach(doc => {
                     const data = doc.data();
                     const nisn = String(data.nisn).replace(/[^a-zA-Z0-9]/g, '');
                     cacheAbsenHariIni[nisn] = data;
-                    
                     const st = data.status_terakhir || "";
                     if(st.includes("Masuk") || st.includes("Hadir") || st.includes("Pulang") || st.includes("Kembali")) hadir++;
                     else if(st.includes("Sakit") || st.includes("Izin")) izin++;
-
                     logData.push(data);
                 });
 
@@ -474,10 +542,7 @@
                 document.getElementById('stat-izin').innerText = izin;
                 document.getElementById('stat-alpha').innerText = listSiswa.length - (hadir + izin);
                 
-                // Urutkan Log (Manual karena qAllToday tidak di-order demi performa query)
-                // Kita ambil 50 teratas berdasarkan jam
                 logData.sort((a,b) => {
-                    // Cek properti jam yang tersedia
                     const timeA = a.jam_masuk ? a.jam_masuk.seconds : (a.jam_pulang ? a.jam_pulang.seconds : 0);
                     const timeB = b.jam_masuk ? b.jam_masuk.seconds : (b.jam_pulang ? b.jam_pulang.seconds : 0);
                     return timeB - timeA;
@@ -485,7 +550,6 @@
                 
                 const tabel = document.getElementById('tabel-live'); tabel.innerHTML = "";
                 logData.slice(0, 50).forEach(data => {
-                     // Parsing info device
                      let deviceLabel = "Unknown";
                      if (data.device_info) {
                          if(data.device_info.includes("Android")) deviceLabel = "📱 Android";
@@ -494,22 +558,17 @@
                      } else if (data.lokasi_masuk && data.lokasi_masuk.includes("Kiosk")) {
                          deviceLabel = "🏢 Kiosk";
                      }
-
                      tabel.innerHTML += `<tr class="border-b border-slate-800 hover:bg-slate-800/50"><td class="p-4 text-blue-400 font-mono text-xs">${data.riwayat_kegiatan ? data.riwayat_kegiatan[data.riwayat_kegiatan.length-1].split(' - ')[0] : '-'}</td><td class="p-4 text-white font-bold">${data.nama}</td><td class="p-4">${data.kelas}</td><td class="p-4"><span class="bg-slate-700 px-2 py-1 rounded text-xs text-white">${data.status_terakhir}</span></td><td class="p-4 text-xs text-slate-500">${deviceLabel}</td></tr>`;
                 });
-
                 renderGridKelas();
                 ['X', 'XI', 'XII'].forEach(t => hitungMBG(t));
             });
         }
         
-        // --- LOGIC BARU: REKAP GURU/TENDIK ---
-        let modeRekap = 'siswa'; // Default
-
+        let modeRekap = 'siswa';
         window.gantiModeRekap = (mode) => {
             modeRekap = mode;
             document.getElementById('judul-rekap-tipe').innerText = mode === 'siswa' ? '(SISWA)' : '(GURU & TENDIK)';
-            
             if(mode === 'siswa') {
                 document.getElementById('btn-mode-siswa').className = "px-3 py-1 text-xs font-bold rounded-md bg-blue-600 text-white transition";
                 document.getElementById('btn-mode-guru').className = "px-3 py-1 text-xs font-bold rounded-md text-slate-400 hover:text-white transition";
@@ -522,14 +581,11 @@
             document.getElementById('tbody-rekap').innerHTML = '<tr><td colspan="40" class="p-10 text-center text-slate-500 italic">Klik tombol Tampilkan untuk memuat data.</td></tr>';
         }
 
-        // UPDATE FUNGSI loadRekap
         window.loadRekap = async () => {
             const bln = parseInt(document.getElementById('pilih-bulan').value) + 1;
             const thn = document.getElementById('pilih-tahun').value;
             const kls = document.getElementById('pilih-kelas').value;
-            
             if(modeRekap === 'siswa' && !kls) return Swal.fire('Pilih Kelas', 'Silakan pilih kelas siswa dulu.', 'warning');
-
             const blnStr = bln < 10 ? '0' + bln : bln;
             const daysInMonth = new Date(thn, bln, 0).getDate();
             
@@ -543,39 +599,19 @@
             }
             headerHTML += '<th class="p-2 border border-slate-700 bg-emerald-900">H</th><th class="p-2 border border-slate-700 bg-blue-900">S</th><th class="p-2 border border-slate-700 bg-yellow-900">I</th><th class="p-2 border border-slate-700 bg-red-900">A</th></tr>';
             document.getElementById('thead-rekap').innerHTML = headerHTML;
-
             const tbody = document.getElementById('tbody-rekap');
             tbody.innerHTML = '<tr><td colspan="40" class="p-4 text-center"><i class="animate-spin" data-lucide="loader"></i> Mengambil data...</td></tr>';
-            lucide.createIcons();
-
-            let targetUsers = [];
-            if(modeRekap === 'siswa') {
-                targetUsers = mapKelas[kls] || []; 
-            } else {
-                const qGuru = query(collection(db, "users"), where("role", "==", "guru"));
-                const snapGuru = await getDocs(qGuru);
-                snapGuru.forEach(doc => {
-                    const d = doc.data();
-                    targetUsers.push({ nama: d.nama, nisn: d.username }); 
-                });
-            }
-
-            if(targetUsers.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="40" class="p-4 text-center">Data user tidak ditemukan.</td></tr>';
-                return;
-            }
-
-            const start = `${thn}-${blnStr}-01`;
-            const end = `${thn}-${blnStr}-${daysInMonth}`;
             
+            let targetUsers = [];
+            if(modeRekap === 'siswa') { targetUsers = mapKelas[kls] || []; } 
+            else { const qGuru = query(collection(db, "users"), where("role", "==", "guru")); const snapGuru = await getDocs(qGuru); snapGuru.forEach(doc => { const d = doc.data(); targetUsers.push({ nama: d.nama, nisn: d.username }); }); }
+
+            if(targetUsers.length === 0) { tbody.innerHTML = '<tr><td colspan="40" class="p-4 text-center">Data user tidak ditemukan.</td></tr>'; return; }
+            const start = `${thn}-${blnStr}-01`; const end = `${thn}-${blnStr}-${daysInMonth}`;
             const qAbsen = query(collection(db, "absensi"), where("tanggal", ">=", start), where("tanggal", "<=", end));
             const snapAbsen = await getDocs(qAbsen);
-            
             let dataMap = {};
-            targetUsers.forEach(u => {
-                dataMap[u.nisn] = { nama: u.nama, att: {}, counts: {h:0, s:0, i:0, a:0} };
-            });
-
+            targetUsers.forEach(u => { dataMap[u.nisn] = { nama: u.nama, att: {}, counts: {h:0, s:0, i:0, a:0} }; });
             snapAbsen.forEach(doc => {
                 const d = doc.data();
                 if(dataMap[d.nisn]) {
@@ -585,52 +621,26 @@
                     if(st.includes("Masuk") || st.includes("Hadir") || st.includes("Pulang")) { code = 'H'; dataMap[d.nisn].counts.h++; }
                     else if(st.includes("Sakit")) { code = 'S'; dataMap[d.nisn].counts.s++; }
                     else if(st.includes("Izin")) { code = 'I'; dataMap[d.nisn].counts.i++; }
-                    
                     dataMap[d.nisn].att[tgl] = code;
                 }
             });
-
             tbody.innerHTML = '';
             targetUsers.sort((a,b) => a.nama.localeCompare(b.nama)).forEach((u, idx) => {
                 const r = dataMap[u.nisn];
-                const nisn = u.nisn; 
-                
-                let rowHTML = `<tr class="hover:bg-slate-800 border-b border-slate-800">
-                    <td class="p-2 border border-slate-700 text-center">${idx+1}</td>
-                    <td class="p-2 border border-slate-700 text-left font-bold text-slate-300 sticky left-0 bg-slate-900">${r.nama}</td>
-                    <td class="p-2 border border-slate-700 text-center font-mono text-xs text-slate-500">${nisn}</td>`;
-                
+                let rowHTML = `<tr class="hover:bg-slate-800 border-b border-slate-800"><td class="p-2 border border-slate-700 text-center">${idx+1}</td><td class="p-2 border border-slate-700 text-left font-bold text-slate-300 sticky left-0 bg-slate-900">${r.nama}</td><td class="p-2 border border-slate-700 text-center font-mono text-xs text-slate-500">${u.nisn}</td>`;
                 let totalAlpha = 0;
                 for(let d=1; d<=daysInMonth; d++) {
                     const dateStr = `${thn}-${blnStr}-${d < 10 ? '0'+d : d}`;
                     const dayOfWeek = new Date(thn, bln-1, d).getDay();
                     const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
                     const isLiburNasional = cacheHariLibur[dateStr];
-                    
                     const status = r.att[d];
                     let cellClass = ""; let cellText = "";
-
-                    if (status) {
-                        if (status === 'H') { cellClass = "bg-hadir"; cellText = "•"; }
-                        else if (status === 'S') { cellClass = "bg-sakit"; cellText = "S"; }
-                        else if (status === 'I') { cellClass = "bg-izin"; cellText = "I"; }
-                    } else {
-                        if (isLiburNasional) { cellClass = "bg-red-900/40 text-red-500 font-bold"; cellText = "L"; }
-                        else if (isWeekend) { cellClass = "bg-weekend"; cellText = ""; }
-                        else {
-                            const cellDate = new Date(thn, bln-1, d);
-                            if(cellDate < new Date()) { totalAlpha++; cellClass = "bg-alpha"; cellText = "A"; }
-                            else { cellText = "-"; }
-                        }
-                    }
+                    if (status) { if (status === 'H') { cellClass = "bg-hadir"; cellText = "•"; } else if (status === 'S') { cellClass = "bg-sakit"; cellText = "S"; } else if (status === 'I') { cellClass = "bg-izin"; cellText = "I"; } } 
+                    else { if (isLiburNasional) { cellClass = "bg-red-900/40 text-red-500 font-bold"; cellText = "L"; } else if (isWeekend) { cellClass = "bg-weekend"; cellText = ""; } else { const cellDate = new Date(thn, bln-1, d); if(cellDate < new Date()) { totalAlpha++; cellClass = "bg-alpha"; cellText = "A"; } else { cellText = "-"; } } }
                     rowHTML += `<td class="p-2 border border-slate-700 text-center ${cellClass}">${cellText}</td>`;
                 }
-                
-                rowHTML += `<td class="p-2 border border-slate-700 font-bold text-emerald-400">${r.counts.h}</td>
-                            <td class="p-2 border border-slate-700 font-bold text-blue-400">${r.counts.s}</td>
-                            <td class="p-2 border border-slate-700 font-bold text-yellow-400">${r.counts.i}</td>
-                            <td class="p-2 border border-slate-700 font-bold text-red-400">${totalAlpha}</td></tr>`;
-                
+                rowHTML += `<td class="p-2 border border-slate-700 font-bold text-emerald-400">${r.counts.h}</td><td class="p-2 border border-slate-700 font-bold text-blue-400">${r.counts.s}</td><td class="p-2 border border-slate-700 font-bold text-yellow-400">${r.counts.i}</td><td class="p-2 border border-slate-700 font-bold text-red-400">${totalAlpha}</td></tr>`;
                 tbody.innerHTML += rowHTML;
             });
         }
@@ -640,31 +650,9 @@
         function loadHariLibur() { const q = query(collection(db, "hari_libur"), orderBy("tanggal", "asc")); onSnapshot(q, (snapshot) => { const tbody = document.getElementById('tbody-libur'); tbody.innerHTML = ''; cacheHariLibur = {}; if(snapshot.empty) { tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center italic">Tidak ada jadwal libur.</td></tr>'; return; } snapshot.forEach(doc => { const d = doc.data(); cacheHariLibur[d.tanggal] = d.keterangan; const tglIndo = d.tanggal.split('-').reverse().join('-'); tbody.innerHTML += `<tr class="hover:bg-slate-800 border-b border-slate-800"><td class="p-3 font-mono text-white">${tglIndo}</td><td class="p-3 text-slate-300 font-bold">${d.keterangan}</td><td class="p-3 text-right"><button onclick="hapusLibur('${doc.id}')" class="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white p-2 rounded transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td></tr>`; }); lucide.createIcons(); }); }
         window.simpanLibur = async () => { const tgl = document.getElementById('inputTglLibur').value; const ket = document.getElementById('inputKetLibur').value; if(!tgl || !ket) return Swal.fire('Gagal', 'Lengkapi!', 'warning'); await addDoc(collection(db, "hari_libur"), { tanggal: tgl, keterangan: ket }); Swal.fire('Sukses', 'Disimpan', 'success'); }
         window.hapusLibur = async (id) => { if(confirm("Hapus?")) await deleteDoc(doc(db, "hari_libur", id)); }
-        
-        // --- MAPEL LOGIC (FIXED) ---
-        function loadMapel() { 
-            // Pastikan collection namanya benar 'mata_pelajaran'
-            onSnapshot(query(collection(db, "mata_pelajaran"), orderBy("nama", "asc")), (snap) => { 
-                const list = document.getElementById('list-mapel'); list.innerHTML = ''; 
-                if(snap.empty) { list.innerHTML = '<li class="text-center text-slate-500 italic">Belum ada mapel.</li>'; return; }
-                snap.forEach(doc => { list.innerHTML += `<li class="flex justify-between items-center bg-slate-800 p-3 rounded-lg border border-slate-700"><span class="text-white font-bold">${doc.data().nama}</span><button onclick="hapusMapel('${doc.id}')" class="text-red-500 hover:text-red-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button></li>`; }); lucide.createIcons(); 
-            }); 
-        }
-        window.tambahMapel = async () => { 
-            const nama = document.getElementById('inputNamaMapel').value.trim(); 
-            if(nama) { 
-                // Cek duplikat sederhana di client (optional, but good)
-                const list = document.getElementById('list-mapel').innerText;
-                if(list.includes(nama)) { return Swal.fire('Sudah Ada', 'Mapel ini sudah terdaftar.', 'warning'); }
-                
-                await addDoc(collection(db, "mata_pelajaran"), {nama}); 
-                document.getElementById('inputNamaMapel').value = ''; // Reset
-                Swal.fire('Sukses','Mapel ditambahkan','success'); 
-            } 
-        }
+        function loadMapel() { onSnapshot(query(collection(db, "mata_pelajaran"), orderBy("nama", "asc")), (snap) => { const list = document.getElementById('list-mapel'); list.innerHTML = ''; if(snap.empty) { list.innerHTML = '<li class="text-center text-slate-500 italic">Belum ada mapel.</li>'; return; } snap.forEach(doc => { list.innerHTML += `<li class="flex justify-between items-center bg-slate-800 p-3 rounded-lg border border-slate-700"><span class="text-white font-bold">${doc.data().nama}</span><button onclick="hapusMapel('${doc.id}')" class="text-red-500 hover:text-red-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button></li>`; }); lucide.createIcons(); }); }
+        window.tambahMapel = async () => { const nama = document.getElementById('inputNamaMapel').value.trim(); if(nama) { const list = document.getElementById('list-mapel').innerText; if(list.includes(nama)) { return Swal.fire('Sudah Ada', 'Mapel ini sudah terdaftar.', 'warning'); } await addDoc(collection(db, "mata_pelajaran"), {nama}); document.getElementById('inputNamaMapel').value = ''; Swal.fire('Sukses','Mapel ditambahkan','success'); } }
         window.hapusMapel = async (id) => { if(confirm("Hapus mapel ini?")) await deleteDoc(doc(db,"mata_pelajaran",id)); }
-        // ---------------------------
-
         window.simpanMenuBaru = async () => { const t = document.getElementById('menuTarget').value; const j = document.getElementById('menuJudul').value; const i = document.getElementById('menuIcon').value; const l = document.getElementById('menuLink').value; if(j&&l) { await addDoc(collection(db, "menu_dinamis"), {target:t, judul:j, icon:i, link:l, highlight:document.getElementById('menuWarna').checked, created_at: new Date().toISOString()}); Swal.fire('Sukses','','success'); } }
         function loadMenuManager() { onSnapshot(query(collection(db, "menu_dinamis"), orderBy("created_at", "asc")), (snap) => { const tb = document.getElementById('tbody-menu-list'); tb.innerHTML = ''; snap.forEach(d => { const data = d.data(); tb.innerHTML += `<tr class="hover:bg-slate-800"><td class="p-3 uppercase text-blue-400 font-bold">${data.target}</td><td class="p-3">${data.icon}</td><td class="p-3 text-white">${data.judul}</td><td class="p-3 text-xs font-mono text-blue-400">${data.link}</td><td class="p-3 text-right"><button onclick="hapusMenu('${d.id}')" class="text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td></tr>`; }); lucide.createIcons(); }); }
         window.hapusMenu = async(id) => { if(confirm("Hapus?")) await deleteDoc(doc(db,"menu_dinamis",id)); }
