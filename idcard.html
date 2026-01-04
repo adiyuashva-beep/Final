@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kartu Pelajar Digital - SiGanteng</title>
+    <title>Kartu Pelajar Digital</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -13,109 +13,103 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&display=swap" rel="stylesheet">
 
     <style>
-        body { font-family: 'Outfit', sans-serif; background-color: #0f172a; overflow-x: hidden; }
+        body { font-family: 'Outfit', sans-serif; background-color: #0f172a; overflow: hidden; }
         
-        .card-bg {
-            background-color: #050505;
+        /* KUNCI AGAR DOWNLOAD = TAMPILAN
+           Kita buat container dengan ukuran FIX (Standard ID Card CR80: 2.125 x 3.375 inch)
+           Di layar HP nanti kita 'Scale' tampilannya, tapi aslinya tetap besar.
+        */
+        #canvas-wrapper {
+            width: 638px;  /* Lebar Asli High Res */
+            height: 1011px; /* Tinggi Asli High Res */
             position: relative;
+            background: #000;
+            border-radius: 30px;
             overflow: hidden;
-            border-radius: 2rem; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            /* Background Design */
+            background-image: 
+                radial-gradient(circle at 0% 0%, rgba(251, 191, 36, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 100% 100%, rgba(37, 99, 235, 0.15) 0%, transparent 50%);
         }
 
-        .batik-overlay {
-            position: absolute; inset: 0;
-            background-image: url("https://www.transparenttextures.com/patterns/batik.png"); 
-            background-size: 150px; background-repeat: repeat;
-            opacity: 0.15; mix-blend-mode: overlay;
-            mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,0) 70%, rgba(0,0,0,1) 100%);
-            -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,0) 70%, rgba(0,0,0,1) 100%);
-        }
-
-        /* TEXT GOLD BARU (Lebih Solid & Shadow Halus) */
         .text-gold {
             color: #fbbf24;
-            text-shadow: 0 2px 10px rgba(251, 191, 36, 0.2);
+            text-shadow: 0 2px 15px rgba(251, 191, 36, 0.3);
         }
-
-        .logo-glow { filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.8)); }
+        
+        .card-pattern {
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-center p-4 bg-slate-950">
+<body class="h-screen w-screen flex flex-col items-center justify-center bg-slate-950 text-white">
 
-    <div class="fixed top-4 left-4 z-50">
-        <a href="siswa.html" class="bg-white/10 backdrop-blur-md p-3 rounded-full text-white hover:bg-white/20 transition border border-white/10">
-            <i data-lucide="arrow-left" class="w-6 h-6"></i>
+    <div class="fixed top-6 left-6 z-50">
+        <a href="siswa.html" class="bg-slate-800/80 backdrop-blur p-3 rounded-full border border-slate-700 hover:bg-slate-700 transition">
+            <i data-lucide="arrow-left" class="w-6 h-6 text-white"></i>
         </a>
     </div>
 
-    <div id="kartu-container" class="relative w-full max-w-[340px] aspect-[9/16] rounded-[2rem] shadow-2xl transform transition hover:scale-[1.02] duration-300 card-bg border border-slate-800">
+    <div id="preview-area" class="relative flex items-center justify-center p-4 transition-transform duration-300 ease-out origin-center">
         
-        <div class="absolute inset-0 bg-gradient-to-br from-amber-900/20 via-black to-blue-900/20 z-0"></div>
-        <div class="batik-overlay z-0"></div>
-        <div class="absolute -top-10 -right-10 w-40 h-40 bg-amber-500/30 rounded-full blur-[60px] z-0 animate-pulse"></div>
-        <div class="absolute -bottom-10 -left-10 w-40 h-40 bg-blue-600/30 rounded-full blur-[60px] z-0 animate-pulse"></div>
-
-        <div class="relative z-10 h-full flex flex-col justify-between p-6">
+        <div id="canvas-wrapper" class="card-pattern border-[3px] border-slate-800">
             
-            <div class="flex justify-between items-start mt-2 w-full">
-                <div class="relative">
-                    <img id="logo-sekolah-img" src="" class="logo-glow w-14 h-14 object-contain" crossorigin="anonymous">
-                </div>
+            <div class="absolute top-0 left-0 w-full p-10 flex justify-between items-start z-10">
+                <img id="logo-sekolah-img" src="logo_sekolah.png" class="w-20 h-20 object-contain drop-shadow-lg" crossorigin="anonymous" onerror="this.style.display='none'">
                 <div class="text-right">
-                    <h2 class="text-white font-black text-2xl tracking-tighter leading-none mb-1">SMAN 1</h2>
-                    <p class="text-amber-500 text-[10px] font-bold tracking-[0.4em] uppercase">PEJAGOAN</p>
+                    <h2 class="text-4xl font-black tracking-tighter leading-none mb-1">KARTU<br>PELAJAR</h2>
+                    <p class="text-amber-500 font-bold tracking-[0.3em] text-sm mt-2">SMAN 1 PEJAGOAN</p>
                 </div>
             </div>
 
-            <div class="text-center mt-2 flex flex-col items-center w-full">
-                
-                <div class="relative w-40 h-40 mb-6">
-                    <div class="absolute inset-0 rounded-full border border-dashed border-amber-500/40 animate-[spin_15s_linear_infinite]"></div>
-                    <div class="absolute inset-2 rounded-full p-1 bg-gradient-to-tr from-amber-500 to-amber-800 shadow-2xl overflow-hidden">
-                        <img id="card-foto" src="" class="w-full h-full rounded-full object-cover bg-slate-900" crossorigin="anonymous">
+            <div class="absolute top-40 left-0 w-full flex justify-center z-10">
+                <div class="relative w-56 h-56">
+                    <div class="absolute inset-0 rounded-full bg-gradient-to-tr from-amber-500 via-transparent to-blue-600 animate-spin-slow opacity-50 blur-md"></div>
+                    <div class="absolute inset-2 rounded-full p-1.5 bg-gradient-to-b from-slate-700 to-slate-900 shadow-2xl overflow-hidden border border-slate-600">
+                        <img id="card-foto" src="" class="w-full h-full rounded-full object-cover bg-slate-800" crossorigin="anonymous">
                     </div>
-                    <div class="absolute bottom-0 right-0 bg-slate-900 border border-amber-500 rounded-full p-1.5 shadow-lg z-20">
-                        <img id="logo-siganteng-img" src="" class="w-6 h-6 object-contain" crossorigin="anonymous">
-                    </div>
-                </div>
-
-                <div class="w-full px-1">
-                    <h1 id="card-nama" class="text-2xl font-black text-white uppercase tracking-wide leading-tight drop-shadow-lg">...</h1>
-                </div>
-                
-                <div class="mt-3 w-full">
-                    <p class="text-[10px] text-slate-400 uppercase tracking-widest mb-0.5">KELAS</p>
-                    <h3 id="card-kelas" class="text-xl font-black text-gold tracking-[0.2em] leading-none">...</h3>
-                </div>
-
-                <div class="mt-8 w-full grid grid-cols-2 gap-4 border-t border-white/10 pt-4 px-2">
-                    <div class="text-left">
-                        <p class="text-[9px] text-slate-400 uppercase tracking-widest font-bold mb-1">NISN / ID</p>
-                        <p id="card-nisn" class="text-lg font-mono font-bold text-white tracking-wider leading-none">...</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-[9px] text-slate-400 uppercase tracking-widest font-bold mb-1">PERIODE</p>
-                        <p class="text-sm font-bold text-white leading-none">2025 / 2026</p>
+                    <div class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-slate-900 px-4 py-1 rounded-full border border-amber-500 shadow-xl">
+                        <span class="text-[10px] font-bold text-amber-500 tracking-widest">SISWA AKTIF</span>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-[#F5F5F0] p-3 rounded-xl shadow-[0_0_20px_rgba(251,191,36,0.1)] flex items-center gap-4 mt-2 w-full">
-                <div id="qrcode" class="flex-shrink-0 mix-blend-multiply opacity-90"></div>
-                <div class="flex-1 border-l-2 border-slate-300 pl-3">
-                    <p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest mb-1">KARTU DIGITAL</p>
-                    <p class="text-[10px] text-slate-800 font-bold leading-tight">Gunakan QR ini untuk presensi di Kiosk Sekolah.</p>
+            <div class="absolute top-[420px] left-0 w-full px-10 text-center z-10">
+                <h1 id="card-nama" class="text-4xl font-black uppercase text-white leading-tight mb-2 drop-shadow-md line-clamp-2">...</h1>
+                <p id="card-nisn" class="text-xl font-mono text-slate-400 font-bold tracking-widest">...</p>
+                
+                <div class="w-20 h-1 bg-gradient-to-r from-transparent via-amber-500 to-transparent mx-auto mt-6 mb-6"></div>
+                
+                <p class="text-sm text-slate-500 italic">"Kartu ini adalah identitas resmi siswa selama berstatus pelajar aktif."</p>
+            </div>
+
+            <div class="absolute bottom-0 w-full bg-slate-900/90 backdrop-blur-xl p-8 border-t border-white/5 flex items-center justify-between z-20">
+                <div>
+                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">SCAN UNTUK ABSENSI</p>
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                        <p class="text-xs font-bold text-emerald-400">SiGanteng Verified</p>
+                    </div>
                 </div>
+                <div class="bg-white p-2 rounded-xl">
+                    <div id="qrcode"></div>
+                </div>
+            </div>
+
+            <div class="absolute top-1/2 left-0 w-full h-px bg-white/5"></div>
+            <div class="absolute bottom-40 right-10 opacity-5">
+                <i data-lucide="shield-check" class="w-64 h-64 text-white"></i>
             </div>
 
         </div>
     </div>
 
-    <div class="mt-8 text-center space-y-3 pb-10">
-        <button onclick="downloadKartu()" class="bg-amber-600 hover:bg-amber-500 text-white px-8 py-4 rounded-2xl font-bold shadow-lg shadow-amber-900/40 flex items-center gap-3 mx-auto transition active:scale-95 border border-amber-400/30">
-            <i data-lucide="download" class="w-5 h-5"></i> SIMPAN KARTU
+    <div class="fixed bottom-10 z-50">
+        <button onclick="downloadKartu()" id="btnDownload" class="bg-gradient-to-r from-amber-600 to-orange-600 text-white px-8 py-4 rounded-2xl font-bold shadow-[0_0_30px_rgba(245,158,11,0.4)] flex items-center gap-3 transition hover:scale-105 active:scale-95 border border-amber-400/30">
+            <i data-lucide="download" class="w-6 h-6"></i>
+            <span>SIMPAN KE GALERI</span>
         </button>
-        <p class="text-slate-500 text-xs">Simpan gambar ini untuk akses Kiosk.</p>
     </div>
 
     <script type="module">
@@ -126,26 +120,50 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // 1. SCALING LOGIC (BIAR MUAT DI LAYAR HP TAPI DOWNLOADNYA GEDE)
+        function resizePreview() {
+            const wrapper = document.getElementById('canvas-wrapper');
+            const container = document.getElementById('preview-area');
+            const screenWidth = window.innerWidth;
+            const screenHeight = window.innerHeight;
+            
+            // Kita ingin kartu tampil sekitar 85% lebar layar HP
+            const targetWidth = screenWidth * 0.85; 
+            const scale = targetWidth / 638; // 638 adalah lebar asli kartu
+            
+            // Batasi scale biar gak kegedean di Desktop
+            const finalScale = Math.min(scale, 0.8); 
+
+            container.style.transform = `scale(${finalScale})`;
+        }
+
+        window.addEventListener('resize', resizePreview);
+
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
-            
+            resizePreview(); // Jalankan scale saat load
+
             const userLokal = localStorage.getItem('userSiswa');
             if (!userLokal) { window.location.href = 'index.html'; return; }
             const user = JSON.parse(userLokal);
             const nisn = String(user.username || user.nisn);
 
-            document.getElementById('logo-sekolah-img').src = "logo_sekolah.png";
-            document.getElementById('logo-siganteng-img').src = "logo.png";
+            // RENDER DATA
+            document.getElementById('card-nama').innerText = user.nama;
+            document.getElementById('card-nisn').innerText = nisn;
             
-            updateUI(user.nama, user.kelas, nisn, `https://ui-avatars.com/api/?name=${user.nama}&background=1e293b&color=fbbf24&bold=true`);
-
+            // RENDER QR (Ukuran Besar untuk Cetak)
             const qrContainer = document.getElementById("qrcode");
             qrContainer.innerHTML = ""; 
             new QRCode(qrContainer, {
-                text: nisn, width: 60, height: 60,
-                colorDark : "#000000", colorLight : "#F5F5F0",
+                text: nisn, width: 100, height: 100, // Ukuran QR Pixel
+                colorDark : "#000000", colorLight : "#ffffff",
                 correctLevel : QRCode.CorrectLevel.H
             });
+
+            // LOAD FOTO (Prioritas: Firebase -> UI Avatars)
+            const defaultFoto = `https://ui-avatars.com/api/?name=${user.nama}&background=1e293b&color=fbbf24&bold=true`;
+            document.getElementById('card-foto').src = defaultFoto;
 
             try {
                 const docRef = doc(db, "siswa", nisn);
@@ -153,64 +171,67 @@
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     if(data.foto_profil) {
+                        // Proxy Image biar bisa di-download canvas (CORS Fix)
                         const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(data.foto_profil)}&output=png`;
                         document.getElementById('card-foto').src = proxyUrl;
                     }
                 }
-            } catch(e) { console.log(e); }
+            } catch(e) { console.log("Gagal load foto real", e); }
         });
 
-        function updateUI(nama, kelas, nisn, fotoDefault) {
-            document.getElementById('card-nama').innerText = nama;
-            document.getElementById('card-kelas').innerText = kelas || "SISWA";
-            document.getElementById('card-nisn').innerText = nisn;
-            document.getElementById('card-foto').src = fotoDefault;
-        }
-
+        // 2. DOWNLOAD LOGIC
         window.downloadKartu = () => {
-            const kartu = document.getElementById('kartu-container');
-            const btn = document.querySelector('button');
+            const cardElement = document.getElementById('canvas-wrapper');
+            const btn = document.getElementById('btnDownload');
             
-            btn.innerText = "Memproses...";
+            btn.innerHTML = `<span class="animate-pulse">Memproses...</span>`;
             btn.disabled = true;
 
-            setTimeout(() => {
-                html2canvas(kartu, {
-                    scale: 3, 
-                    useCORS: true,
-                    allowTaint: true,
-                    backgroundColor: null,
-                    logging: false
-                }).then(canvas => {
-                    const link = document.createElement('a');
-                    link.download = `ID_CARD_${document.getElementById('card-nisn').innerText}.png`;
-                    link.href = canvas.toDataURL("image/png");
-                    link.click();
+            // Kita capture elemen ASLI yang ukurannya besar (638x1011)
+            // html2canvas akan mengabaikan transform:scale CSS pada parent
+            html2canvas(cardElement, {
+                scale: 2, // 2x Scale biar tajam banget pas dicetak (setara 600 DPI)
+                useCORS: true, // Wajib buat gambar profil
+                allowTaint: true,
+                backgroundColor: null,
+                logging: false,
+                width: 638, // Paksa ukuran lebar
+                height: 1011 // Paksa ukuran tinggi
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `KARTU_PELAJAR_${document.getElementById('card-nisn').innerText}.png`;
+                link.href = canvas.toDataURL("image/png", 1.0);
+                link.click();
 
-                    btn.innerHTML = `<i data-lucide="check" class="w-5 h-5"></i> Tersimpan!`;
-                    btn.classList.replace('bg-amber-600', 'bg-emerald-600');
-                    
-                    setTimeout(() => {
-                        btn.innerHTML = `<i data-lucide="download" class="w-5 h-5"></i> SIMPAN KARTU`;
-                        btn.classList.replace('bg-emerald-600', 'bg-amber-600');
-                        btn.disabled = false;
-                        lucide.createIcons();
-
-                        // 🔥 POP-UP AJAKAN UPLOAD STORY 🔥
-                        Swal.fire({
-                            title: 'Kartu Tersimpan! 📸',
-                            html: 'Keren kan? 😎<br>Yuk <b>Upload ke Story</b> (WA/IG/TikTok) tag sekolah dan temen2 kamu!',
-                            icon: 'success',
-                            confirmButtonText: 'Siap, Ndan!',
-                            confirmButtonColor: '#d97706',
-                            background: '#1e293b',
-                            color: '#fff',
-                            backdrop: `rgba(0,0,123,0.4)`
-                        });
-
-                    }, 1000);
+                // Feedback UI
+                btn.className = "bg-emerald-600 text-white px-8 py-4 rounded-2xl font-bold shadow-lg flex items-center gap-3 transition";
+                btn.innerHTML = `<i data-lucide="check"></i> <span>BERHASIL!</span>`;
+                
+                // Pop-up Keren
+                Swal.fire({
+                    title: 'Disimpan ke Galeri! 📸',
+                    text: 'Silakan kirim file ini ke Wali Kelas untuk dicetak.',
+                    imageUrl: canvas.toDataURL("image/png"),
+                    imageHeight: 200,
+                    imageAlt: 'Preview Kartu',
+                    confirmButtonText: 'Siap!',
+                    confirmButtonColor: '#059669',
+                    background: '#0f172a',
+                    color: '#fff'
                 });
-            }, 200);
+
+                setTimeout(() => {
+                    btn.className = "bg-gradient-to-r from-amber-600 to-orange-600 text-white px-8 py-4 rounded-2xl font-bold shadow-[0_0_30px_rgba(245,158,11,0.4)] flex items-center gap-3 transition hover:scale-105 active:scale-95 border border-amber-400/30";
+                    btn.innerHTML = `<i data-lucide="download" class="w-6 h-6"></i> <span>SIMPAN KE GALERI</span>`;
+                    btn.disabled = false;
+                    lucide.createIcons();
+                }, 3000);
+            }).catch(err => {
+                console.error(err);
+                Swal.fire('Gagal', 'Ada masalah saat menyimpan gambar. Coba screenshot manual saja.', 'error');
+                btn.disabled = false;
+                btn.innerText = "COBA LAGI";
+            });
         };
     </script>
 </body>
