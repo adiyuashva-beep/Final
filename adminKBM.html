@@ -9,7 +9,7 @@
     <link rel="icon" type="image/png" href="logo.png">
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -41,20 +41,29 @@
 
         <div id="antenna-container" class="hidden flex gap-2"></div>
 
-        <div class="flex items-center gap-2">
-            <div class="flex items-center bg-slate-800 rounded-lg p-1 border border-slate-700 mr-2">
-                <button onclick="geserHari(-1)" class="p-2 hover:bg-slate-700 rounded-md text-slate-400"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
-                <input type="date" id="filter-tanggal" class="bg-transparent text-white text-sm font-bold px-2 outline-none cursor-pointer" onchange="loadDataKBM()">
-                <button onclick="geserHari(1)" class="p-2 hover:bg-slate-700 rounded-md text-slate-400"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+        <div class="flex items-center gap-4">
+            <div class="flex flex-col items-end">
+                <label class="text-[9px] text-slate-500 uppercase font-bold mb-1">Tampilan Monitoring</label>
+                <div class="flex items-center bg-slate-800 rounded-lg p-1 border border-slate-700">
+                    <button onclick="geserHari(-1)" class="p-2 hover:bg-slate-700 rounded-md text-slate-400"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+                    <input type="date" id="filter-tanggal" class="bg-transparent text-white text-sm font-bold px-2 outline-none cursor-pointer" onchange="loadDaftarKelasReal()">
+                    <button onclick="geserHari(1)" class="p-2 hover:bg-slate-700 rounded-md text-slate-400"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+                </div>
             </div>
             
-            <button onclick="downloadExcelKBM('harian')" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2.5 rounded-lg text-xs font-bold flex items-center gap-2 transition border border-slate-600" title="Download Tanggal Ini Saja">
-                <i data-lucide="file-sheet" class="w-4 h-4"></i> Harian
-            </button>
+            <div class="h-8 w-px bg-slate-700 mx-2"></div>
 
-            <button onclick="downloadExcelKBM('bulanan')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-lg text-xs font-bold flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition" title="Download Bulan Ini Full">
-                <i data-lucide="files" class="w-4 h-4"></i> Rekap Bulanan
-            </button>
+            <div class="flex flex-col items-end">
+                <label class="text-[9px] text-emerald-500 uppercase font-bold mb-1">Export Data (Max 7 Hari)</label>
+                <div class="flex gap-2">
+                    <input type="date" id="dl-start" class="bg-slate-800 border border-slate-600 text-white text-xs rounded px-2 py-1">
+                    <span class="text-slate-500 text-xs py-1">-</span>
+                    <input type="date" id="dl-end" class="bg-slate-800 border border-slate-600 text-white text-xs rounded px-2 py-1">
+                    <button onclick="downloadExcelAman()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded text-xs font-bold shadow-lg transition flex items-center gap-2">
+                        <i data-lucide="download" class="w-3 h-3"></i> Excel
+                    </button>
+                </div>
+            </div>
         </div>
     </header>
 
@@ -138,64 +147,50 @@
         // INIT
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
-            document.getElementById('filter-tanggal').value = new Date().toLocaleDateString('fr-CA');
+            const today = new Date().toLocaleDateString('fr-CA');
+            document.getElementById('filter-tanggal').value = today;
+            // Set Default Download Range (Hari ini)
+            document.getElementById('dl-start').value = today;
+            document.getElementById('dl-end').value = today;
+            
             loadDaftarKelasReal();
             loadAntenaKurikulum();
         });
 
-        // 1. CARI DAFTAR KELAS (JARING GANDA)
-        async function loadDaftarKelasReal() {
+        // 1. MONITORING JURNAL HARIAN (GRID UTAMA)
+        window.loadDaftarKelasReal = async function() {
             allClasses.clear();
             const grid = document.getElementById('grid-container');
+            
+            // Render Skeleton Loading
             grid.innerHTML = `<div class="col-span-full text-center py-20"><div class="animate-spin w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full mx-auto mb-4"></div><p class="text-slate-400 font-mono animate-pulse">Memindai Database...</p></div>`;
 
-            try {
-                // A. DARI DATA USER
-                const qSiswa = query(collection(db, "users"), where("kelas", "!=", "-"));
-                const snapSiswa = await getDocs(qSiswa);
-                snapSiswa.forEach(doc => {
-                    const d = doc.data();
-                    if (d.role !== 'guru' && d.kelas && d.kelas.length > 1) {
-                        allClasses.add(d.kelas.toUpperCase().trim());
-                    }
-                });
-                
-                // B. LANJUT MONITORING
-                pantauJurnalRealtime();
-            } catch (e) {
-                console.error(e);
-                pantauJurnalRealtime(); // Tetap paksa lanjut
-            }
+            // A. Ambil Daftar Kelas dari Cache (kalau ada dari Admin utama) atau Query Ringan
+            // Untuk amannya, kita rely on data jurnal yg masuk hari ini + cache manual
+            pantauJurnalRealtime();
         }
 
-        // 2. MONITORING JURNAL HARIAN (ANTI TILANG)
         function pantauJurnalRealtime() {
             const tgl = document.getElementById('filter-tanggal').value;
-            // Query tanpa OrderBy biar database gak ngambek
+            // Query Jurnal Hari Ini
             const q = query(collection(db, "jurnal_guru"), where("tanggal", "==", tgl));
 
             onSnapshot(q, (snap) => {
                 allJurnalHarian = [];
                 mapJurnalByKelas = {};
                 
-                // Siapkan wadah kelas
-                allClasses.forEach(k => mapJurnalByKelas[k] = []);
-
                 snap.forEach(doc => {
                     const d = doc.data();
                     d.id = doc.id;
                     allJurnalHarian.push(d);
                     
                     const k = d.kelas ? d.kelas.toUpperCase().trim() : "LAINNYA";
-                    // Kalau kelas baru (misal belum ada siswa tapi guru dah ngisi)
-                    if (!allClasses.has(k)) {
-                        allClasses.add(k);
-                        mapJurnalByKelas[k] = [];
-                    }
+                    if (!mapJurnalByKelas[k]) mapJurnalByKelas[k] = [];
                     mapJurnalByKelas[k].push(d);
+                    allClasses.add(k);
                 });
 
-                // Sorting Manual (Terbaru di Atas)
+                // Sort Terbaru
                 const sortDesc = (a, b) => (b.waktu?.toMillis() || 0) - (a.waktu?.toMillis() || 0);
                 allJurnalHarian.sort(sortDesc);
                 Object.keys(mapJurnalByKelas).forEach(key => mapJurnalByKelas[key].sort(sortDesc));
@@ -207,56 +202,52 @@
             });
         }
 
-        // 3. RENDER GRID
         function renderGrid() {
             const container = document.getElementById('grid-container');
             container.innerHTML = '';
             
-            if (allClasses.size === 0) {
-                container.innerHTML = `<div class="col-span-full text-center py-20 text-slate-500 bg-slate-900/50 rounded-3xl border border-slate-800"><i data-lucide="folder-open" class="w-16 h-16 mx-auto mb-4 opacity-30"></i><h3 class="text-lg font-bold text-slate-400">Data Kosong</h3></div>`;
+            if (Object.keys(mapJurnalByKelas).length === 0) {
+                container.innerHTML = `<div class="col-span-full text-center py-20 text-slate-500 bg-slate-900/50 rounded-3xl border border-slate-800"><i data-lucide="folder-open" class="w-16 h-16 mx-auto mb-4 opacity-30"></i><h3 class="text-lg font-bold text-slate-400">Belum ada jurnal masuk hari ini.</h3></div>`;
                 lucide.createIcons(); return;
             }
 
-            // Urutkan X, XI, XII
             const sortedClasses = Array.from(allClasses).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
 
             sortedClasses.forEach(kls => {
                 const jurnals = mapJurnalByKelas[kls] || [];
                 const count = jurnals.length;
-                let statusClass = count > 0 ? "status-aman" : "status-kosong";
-                let text = count > 0 ? `<span class="text-emerald-400 font-bold">${count} Mapel Masuk</span>` : "Belum Ada KBM";
+                let statusClass = "status-aman"; // Karena hanya menampilkan yg ada jurnalnya
                 
                 container.innerHTML += `
                     <div onclick="bukaDetail('${kls}')" class="glass-panel rounded-xl p-4 cursor-pointer hover:bg-slate-800 transition group relative overflow-hidden ${statusClass}">
-                        <div class="flex justify-between items-start mb-2"><h3 class="text-xl font-black text-white group-hover:text-emerald-400 transition">${kls}</h3><i data-lucide="${count>0?'check-circle':'minus'}" class="w-5 h-5 text-white/50"></i></div>
-                        <p class="text-sm font-bold text-slate-400 mb-4">${text}</p>
+                        <div class="flex justify-between items-start mb-2"><h3 class="text-xl font-black text-white group-hover:text-emerald-400 transition">${kls}</h3><i data-lucide="check-circle" class="w-5 h-5 text-emerald-500"></i></div>
+                        <p class="text-sm font-bold text-slate-400 mb-4"><span class="text-emerald-400 font-bold">${count} Mapel Masuk</span></p>
                     </div>`;
             });
             filterGrid();
         }
 
-        // 4. MODAL DETAIL + KOMENTAR SISWA
+        // 2. MODAL DETAIL + LOAD RESPON SISWA (ON DEMAND)
+        // Kita hanya load respon siswa SAAT modal dibuka (Hemat Kuota)
         window.bukaDetail = async function(kls) {
             const list = document.getElementById('modal-list');
             const tgl = document.getElementById('filter-tanggal').value;
             document.getElementById('modal-judul').innerText = `Jurnal Kelas ${kls}`;
             document.getElementById('modal-tanggal').innerText = tgl;
-            list.innerHTML = '<div class="text-center text-slate-400 italic py-10"><i class="animate-spin" data-lucide="loader-2"></i> Mengambil data...</div>';
+            list.innerHTML = '<div class="text-center text-slate-400 italic py-10"><i class="animate-spin" data-lucide="loader-2"></i> Mengambil respon siswa...</div>';
+            
             document.getElementById('modal-detail').classList.remove('invisible', 'opacity-0');
             document.getElementById('modal-detail').classList.add('visible', 'opacity-100');
             document.getElementById('modal-content').classList.replace('scale-95', 'scale-100');
             lucide.createIcons();
 
             const dataJurnal = mapJurnalByKelas[kls] || [];
-            if (dataJurnal.length === 0) { list.innerHTML = `<div class="text-center py-10 text-slate-500 italic">Belum ada guru yang mengisi jurnal.</div>`; return; }
-
-            // Query Refleksi
+            
+            // Disini kita baru fetch respon siswa untuk kelas ini saja
             const qRefleksi = query(collection(db, "refleksi_siswa"), where("kelas", "==", kls), where("tanggal", "==", tgl));
             const snapRef = await getDocs(qRefleksi);
             
-            let statsMap = {}; 
-            let commentsMap = {};
-            
+            let statsMap = {}; let commentsMap = {};
             snapRef.forEach(doc => {
                 const r = doc.data();
                 if(!statsMap[r.id_jurnal]) { statsMap[r.id_jurnal] = {p:0,b:0,s:0}; commentsMap[r.id_jurnal] = []; }
@@ -296,67 +287,87 @@
         }
 
         window.tutupModal = () => { document.getElementById('modal-detail').classList.add('invisible', 'opacity-0'); document.getElementById('modal-content').classList.replace('scale-100', 'scale-95'); }
-        function renderStatistik() { document.getElementById('stat-total-jurnal').innerText = allJurnalHarian.length; document.getElementById('stat-kelas-aktif').innerText = Object.values(mapJurnalByKelas).filter(a=>a.length>0).length; document.getElementById('stat-kelas-kosong').innerText = allClasses.size - Object.values(mapJurnalByKelas).filter(a=>a.length>0).length; }
+        function renderStatistik() { document.getElementById('stat-total-jurnal').innerText = allJurnalHarian.length; document.getElementById('stat-kelas-aktif').innerText = Object.values(mapJurnalByKelas).filter(a=>a.length>0).length; document.getElementById('stat-kelas-kosong').innerText = 0; }
         function renderTimelineSidebar() { const c = document.getElementById('sidebar-timeline'); c.innerHTML=''; if(allJurnalHarian.length===0){c.innerHTML='<div class="text-center text-slate-600 text-xs italic">Belum ada data.</div>';return;} allJurnalHarian.slice(0,10).forEach(d=>{ const jam=d.waktu?new Date(d.waktu.toDate()).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}):'-'; c.innerHTML+=`<div class="flex gap-3 items-start border-l-2 border-slate-800 pl-3 pb-2 fade-in"><div class="flex-1"><div class="flex justify-between"><span class="text-[10px] font-bold text-emerald-500">${d.kelas}</span><span class="text-[9px] text-slate-500 font-mono">${jam}</span></div><p class="text-xs text-slate-300 font-bold truncate">${d.nama_guru}</p></div></div>`; }); }
-        
         async function loadAntenaKurikulum() { const c = document.getElementById('antenna-container'); onSnapshot(query(collection(db, "menu_dinamis"), orderBy("created_at", "asc")), (snap) => { c.innerHTML = ''; let has=false; snap.forEach(d => { const dt = d.data(); if (dt.target === 'kurikulum' || dt.target === 'umum' || dt.target === 'admin') { has=true; c.innerHTML += `<a href="${dt.link}" target="_blank" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition shadow-lg"><span>${dt.icon}</span> ${dt.judul}</a>`; } }); if(has) c.classList.remove('hidden'); else c.classList.add('hidden'); }); }
-        
-        window.geserHari = (d) => { const i=document.getElementById('filter-tanggal'); const dt=new Date(i.value); dt.setDate(dt.getDate()+d); i.value=dt.toISOString().split('T')[0]; window.loadDataKBM(); }
-        window.filterGrid = () => { const k=document.getElementById('cari-kelas').value.toUpperCase(); for(let c of document.getElementById('grid-container').children) { c.style.display = c.querySelector('h3').innerText.includes(k) ? "block" : "none"; } }
+        window.geserHari = (d) => { const i=document.getElementById('filter-tanggal'); const dt=new Date(i.value); dt.setDate(dt.getDate()+d); i.value=dt.toISOString().split('T')[0]; window.loadDaftarKelasReal(); }
+        window.filterGrid = () => { const k=document.getElementById('cari-kelas').value.toUpperCase(); for(let c of document.getElementById('grid-container').children) { if(c.querySelector('h3')) c.style.display = c.querySelector('h3').innerText.includes(k) ? "block" : "none"; } }
 
-        // 🔥 5. DOWNLOAD EXCEL ULTIMATE (HARIAN & BULANAN) 🔥
-        window.downloadExcelKBM = async (mode = 'harian') => {
-            const tglInput = document.getElementById('filter-tanggal').value;
-            const titleLoading = mode === 'harian' ? 'Rekap Harian...' : 'Rekap Bulanan...';
+        // 🔥 FITUR UTAMA: DOWNLOAD AMAN (ANTI BOM KUOTA) 🔥
+        window.downloadExcelAman = async () => {
+            const start = document.getElementById('dl-start').value;
+            const end = document.getElementById('dl-end').value;
             
-            Swal.fire({ title: titleLoading, text: 'Menggabungkan jurnal & curhatan siswa...', didOpen: () => Swal.showLoading() });
+            if(!start || !end) return Swal.fire('Tanggal?', 'Pilih rentang tanggal dulu.', 'warning');
+            
+            // 1. VALIDASI RENTANG WAKTU (Max 7 Hari)
+            const diffTime = Math.abs(new Date(end) - new Date(start));
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+            
+            if(diffDays > 7) {
+                return Swal.fire({
+                    icon: 'error',
+                    title: 'Bahaya Kuota!',
+                    text: `Anda memilih ${diffDays} hari. Maksimal download adalah 7 hari demi keamanan server. Silakan pecah downloadnya.`
+                });
+            }
+
+            // 2. Konfirmasi User
+            const confirm = await Swal.fire({
+                title: 'Download Excel?',
+                text: `Rentang: ${start} s/d ${end}. Pilih mode download:`,
+                icon: 'question',
+                showCancelButton: true,
+                showDenyButton: true,
+                confirmButtonText: 'Lengkap (Siswa)',
+                denyButtonText: 'Ringkas (Guru Saja)',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#059669',
+                denyButtonColor: '#3b82f6'
+            });
+
+            if (confirm.isDismissed) return;
+
+            const modeDetail = confirm.isConfirmed; // True = Lengkap, False = Ringkas (Deny)
+            
+            Swal.fire({ title: 'Sedang Mengunduh...', text: 'Mengambil data dari server...', didOpen: () => Swal.showLoading() });
 
             try {
-                let qJurnal, qRefleksi;
-
-                if (mode === 'harian') {
-                    // Query Harian
-                    qJurnal = query(collection(db, "jurnal_guru"), where("tanggal", "==", tglInput));
-                    qRefleksi = query(collection(db, "refleksi_siswa"), where("tanggal", "==", tglInput));
-                } else {
-                    // Query Bulanan
-                    const [yyyy, mm] = tglInput.split('-');
-                    const start = `${yyyy}-${mm}-01`;
-                    const end = `${yyyy}-${mm}-31`; // Trik aman (string compare)
-                    
-                    qJurnal = query(collection(db, "jurnal_guru"), where("tanggal", ">=", start), where("tanggal", "<=", end));
-                    qRefleksi = query(collection(db, "refleksi_siswa"), where("tanggal", ">=", start), where("tanggal", "<=", end));
-                }
-
-                // EKSEKUSI DATA
-                const [snapJurnal, snapRef] = await Promise.all([getDocs(qJurnal), getDocs(qRefleksi)]);
-
+                // Query Jurnal (Wajib)
+                const qJurnal = query(collection(db, "jurnal_guru"), where("tanggal", ">=", start), where("tanggal", "<=", end));
+                const snapJurnal = await getDocs(qJurnal);
+                
                 if (snapJurnal.empty) { Swal.fire('Kosong', 'Tidak ada data jurnal pada periode ini.', 'info'); return; }
 
-                // Mapping Refleksi
                 let mapRefleksi = {};
-                snapRef.forEach(doc => {
-                    const r = doc.data();
-                    if(!mapRefleksi[r.id_jurnal]) mapRefleksi[r.id_jurnal] = [];
-                    let emot = r.rating == 3 ? "🤩" : (r.rating == 2 ? "🤔" : "🤯");
-                    mapRefleksi[r.id_jurnal].push(`${r.nama} (${emot}): ${r.pesan}`);
-                });
+                
+                // Query Refleksi (Hanya jika mode Lengkap)
+                if (modeDetail) {
+                    const qRefleksi = query(collection(db, "refleksi_siswa"), where("tanggal", ">=", start), where("tanggal", "<=", end));
+                    const snapRef = await getDocs(qRefleksi);
+                    snapRef.forEach(doc => {
+                        const r = doc.data();
+                        if(!mapRefleksi[r.id_jurnal]) mapRefleksi[r.id_jurnal] = [];
+                        let emot = r.rating == 3 ? "🤩" : (r.rating == 2 ? "🤔" : "🤯");
+                        mapRefleksi[r.id_jurnal].push(`${r.nama} (${emot}): ${r.pesan}`);
+                    });
+                }
 
-                // Mapping Jurnal
+                // Gabungkan Data
                 let rawData = [];
                 snapJurnal.forEach(doc => {
                     const d = doc.data();
-                    d.id = doc.id; // Penting buat gabungin curhatan
+                    d.id = doc.id;
                     rawData.push(d);
                 });
 
-                // Sort: Tanggal dulu, baru Jam
+                // Sort
                 rawData.sort((a, b) => {
                     if (a.tanggal !== b.tanggal) return b.tanggal.localeCompare(a.tanggal);
                     return (b.waktu?.toMillis() || 0) - (a.waktu?.toMillis() || 0);
                 });
 
-                // Format Excel
+                // Mapping Excel
                 const dataExport = rawData.map(d => ({
                     Tanggal: d.tanggal,
                     Jam: d.waktu ? new Date(d.waktu.toDate()).toLocaleTimeString('id-ID') : '-',
@@ -364,28 +375,27 @@
                     Guru: d.nama_guru,
                     Mapel: d.mapel,
                     Materi: d.materi,
-                    Respon_Siswa: mapRefleksi[d.id] ? mapRefleksi[d.id].join(" | ") : "-",
+                    Respon_Siswa: modeDetail ? (mapRefleksi[d.id] ? mapRefleksi[d.id].join(" | ") : "Belum ada respon") : "Mode Ringkas",
                     Bukti_Foto: d.foto_bukti
                 }));
 
                 const ws = XLSX.utils.json_to_sheet(dataExport);
                 
-                // Link Cantik (Kolom H / Index 7)
-                const range = XLSX.utils.decode_range(ws['!ref']);
-                for (let R = range.s.r + 1; R <= range.e.r; ++R) {
-                    const c = ws[XLSX.utils.encode_cell({r: R, c: 7})];
-                    if (c && c.v && c.v.startsWith('http')) { c.l = { Target: c.v }; c.v = "📸 LIHAT"; }
+                // Link Cantik
+                if(ws['!ref']) {
+                    const range = XLSX.utils.decode_range(ws['!ref']);
+                    for (let R = range.s.r + 1; R <= range.e.r; ++R) {
+                        const c = ws[XLSX.utils.encode_cell({r: R, c: 7})]; // Kolom H (Bukti Foto)
+                        if (c && c.v && c.v.startsWith('http')) { c.l = { Target: c.v }; c.v = "📸 LIHAT"; }
+                    }
                 }
 
                 const wb = XLSX.utils.book_new();
-                const sheetName = mode === 'harian' ? "Harian" : "Bulanan";
-                XLSX.utils.book_append_sheet(wb, ws, sheetName);
-                
-                const namaFile = mode === 'harian' ? `REKAP_HARIAN_${tglInput}.xlsx` : `REKAP_BULANAN_${tglInput.substring(0,7)}.xlsx`;
-                XLSX.writeFile(wb, namaFile);
+                XLSX.utils.book_append_sheet(wb, ws, "Rekap KBM");
+                XLSX.writeFile(wb, `REKAP_KBM_${start}_sd_${end}.xlsx`);
 
                 Swal.close();
-                Swal.fire('Selesai', `Rekap ${sheetName} berhasil didownload.`, 'success');
+                Swal.fire('Selesai', 'File berhasil didownload.', 'success');
 
             } catch (e) {
                 console.error(e);
