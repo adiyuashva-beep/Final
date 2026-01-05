@@ -29,7 +29,7 @@
         
         /* --- STYLE BARU KAMERA ESTETIK --- */
         .camera-overlay {
-            background: rgba(15, 23, 42, 0.85); /* Slate-900 transparent */
+            background: rgba(15, 23, 42, 0.95);
             backdrop-filter: blur(8px);
         }
         
@@ -58,7 +58,7 @@
         }
         @keyframes flyAnim {
             0% { transform: scale(1); opacity: 1; border-radius: 24px; }
-            20% { transform: scale(0.9); } /* Ancang-ancang */
+            20% { transform: scale(0.9); } 
             100% { transform: scale(0.1) translateY(-800px); opacity: 0; border-radius: 50%; }
         }
 
@@ -74,8 +74,8 @@
 </head>
 <body class="text-slate-800 h-screen flex flex-col overflow-hidden bg-slate-50">
 
-    <input type="file" id="fileInputProfil" accept="image/*" class="hidden" onchange="prosesUploadGaleri(this, 'profil')">
-    <input type="file" id="fileInputBukti" accept="image/*" class="hidden" onchange="prosesUploadGaleri(this, 'bukti')">
+    <input type="file" id="fileInputProfil" accept="image/*" style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0;" onchange="prosesUploadGaleri(this, 'profil')">
+    <input type="file" id="fileInputBukti" accept="image/*" style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0;" onchange="prosesUploadGaleri(this, 'bukti')">
 
     <main id="main-container" class="flex-1 overflow-y-auto hide-scroll relative">
         
@@ -517,8 +517,36 @@
             } 
         }
 
-        function cekGPS() { if(navigator.geolocation) { navigator.geolocation.watchPosition((p) => { lokasiUser = {lat: p.coords.latitude, lng: p.coords.longitude}; if(map) { if(!markerSiswa) markerSiswa = L.marker(lokasiUser).addTo(map); else markerSiswa.setLatLng(lokasiUser); const d = map.distance(lokasiUser, [SEKOLAH_LAT, SEKOLAH_LNG]); const r = configSekolah.radius_meter || 50; const box = document.getElementById('jarakBox'); if (configSekolah.validasi_gps_aktif && d > r) { box.innerText = `JAUH: ${Math.round(d)}m (Max: ${r}m)`; box.className = "bg-rose-500 text-white text-[10px] font-bold py-2.5 px-4 rounded-xl shadow-lg"; } else { box.innerText = "DALAM JANGKAUAN"; box.className = "bg-emerald-500 text-white text-[10px] font-bold py-2.5 px-4 rounded-xl shadow-lg"; } } }, null, { enableHighAccuracy: true }); } }
-        window.validasiGPS = () => { if(!lokasiUser) { Swal.fire('Tunggu GPS','Mencari lokasi...','info'); return false; } const d = map.distance(lokasiUser, [SEKOLAH_LAT, SEKOLAH_LNG]); if (configSekolah.validasi_gps_aktif && d > (configSekolah.radius_meter || 50)) { Swal.fire({icon: 'error', title: 'Kejauhan!', text: `Jarakmu ${Math.round(d)}m.`, confirmButtonColor: '#f43f5e'}); return false; } return true; }
+        // --- GPS LEBIH KETAT (Timeout + HighAccuracy) ---
+        function cekGPS() { 
+            if(navigator.geolocation) { 
+                // High Accuracy = True biar ga pake wifi doang
+                // Timeout 10s biar ga stuck
+                navigator.geolocation.watchPosition((p) => { 
+                    lokasiUser = {lat: p.coords.latitude, lng: p.coords.longitude}; 
+                    if(map) { 
+                        if(!markerSiswa) markerSiswa = L.marker(lokasiUser).addTo(map); else markerSiswa.setLatLng(lokasiUser); 
+                        const d = map.distance(lokasiUser, [SEKOLAH_LAT, SEKOLAH_LNG]); 
+                        const r = configSekolah.radius_meter || 50; 
+                        const box = document.getElementById('jarakBox'); 
+                        if (configSekolah.validasi_gps_aktif && d > r) { box.innerText = `JAUH: ${Math.round(d)}m (Max: ${r}m)`; box.className = "bg-rose-500 text-white text-[10px] font-bold py-2.5 px-4 rounded-xl shadow-lg"; } 
+                        else { box.innerText = "DALAM JANGKAUAN"; box.className = "bg-emerald-500 text-white text-[10px] font-bold py-2.5 px-4 rounded-xl shadow-lg"; } 
+                    } 
+                }, (error) => {
+                    // KALO GPS ERROR / DITOLAK
+                    console.error("GPS Error:", error);
+                    // Jangan Swal disini, kasian kalau spam. Cukup tau lokasiUser = null
+                }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }); 
+            } 
+        }
+
+        window.validasiGPS = () => { 
+            if(!lokasiUser) { Swal.fire('Tunggu GPS','Mencari lokasi... (Pastikan GPS Aktif)','info'); return false; } 
+            const d = map.distance(lokasiUser, [SEKOLAH_LAT, SEKOLAH_LNG]); 
+            if (configSekolah.validasi_gps_aktif && d > (configSekolah.radius_meter || 50)) { Swal.fire({icon: 'error', title: 'Kejauhan!', text: `Jarakmu ${Math.round(d)}m.`, confirmButtonColor: '#f43f5e'}); return false; } 
+            return true; 
+        }
+
         function initMap() { map = L.map('mapMini', {zoomControl:false, attributionControl: false}).setView([SEKOLAH_LAT,SEKOLAH_LNG], 17); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map); updateMapCircle(); }
         function updateMapCircle() { if(!map) return; map.eachLayer((layer) => { if(layer instanceof L.Circle) { map.removeLayer(layer); } }); L.circle([SEKOLAH_LAT, SEKOLAH_LNG], { radius: configSekolah.radius_meter || 50, color: configSekolah.validasi_gps_aktif ? '#ef4444' : '#10b981', fillOpacity: 0.2 }).addTo(map); }
         function cekBolehPulang() { const now = new Date(); const day = now.getDay(); const totalMenit = (now.getHours() * 60) + now.getMinutes(); if (day >= 1 && day <= 4) return totalMenit >= 930; if (day === 5) return totalMenit >= 820; return false; }
@@ -530,7 +558,6 @@
                 const grpSekolah = document.getElementById('groupDiSekolah'); 
                 const statusHero = document.getElementById('hero-status'); 
                 
-                // RESET TAMPILAN
                 document.getElementById('info-jam-masuk').innerText = "--:--";
                 document.getElementById('info-jam-pulang').innerText = "--:--";
 
@@ -540,7 +567,6 @@
                     statusHero.innerText = st; 
                     document.getElementById('sub-status').innerText = "Update: " + new Date().toLocaleTimeString('id-ID'); 
 
-                    // 🔥 UPDATE KOTAK RIWAYAT JAM 🔥
                     if(data.jam_masuk) document.getElementById('info-jam-masuk').innerText = new Date(data.jam_masuk.seconds*1000).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
                     if(data.jam_pulang) document.getElementById('info-jam-pulang').innerText = new Date(data.jam_pulang.seconds*1000).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
 
@@ -567,7 +593,30 @@
             }); 
         }
 
-        async function kirimData(status, ket, foto) { document.getElementById('loadingOverlay').classList.remove('hidden'); const todayStr = getTodayID(); const docID = `${todayStr}_${userSiswa.nisn}`; try { let updateData = { nisn: userSiswa.nisn, nama: userSiswa.nama, kelas: userSiswa.kelas, tanggal: todayStr, status_terakhir: status, riwayat_kegiatan: arrayUnion(`${new Date().toLocaleTimeString()} - ${status} (${ket})`) }; if (foto !== "-") { const snap = await uploadString(ref(storage, `absen/${todayStr}/${userSiswa.nisn}_${status}_${Date.now()}.jpg`), foto, 'data_url'); const url = await getDownloadURL(snap.ref); if(status === "Masuk") { updateData.foto_masuk = url; updateData.jam_masuk = serverTimestamp(); updateData.lokasi_masuk = `${lokasiUser.lat},${lokasiUser.lng}`; } else if(status === "Pulang") { updateData.foto_pulang = url; updateData.jam_pulang = serverTimestamp(); } else { updateData.foto_bukti = url; } } await setDoc(doc(db, "absensi", docID), updateData, { merge: true }); tutupKamera(); Swal.fire('Berhasil!', status + ' Tercatat', 'success'); } catch (e) { Swal.fire('Error', e.message, 'error'); } finally { document.getElementById('loadingOverlay').classList.add('hidden'); } }
+        async function kirimData(status, ket, foto) { 
+            document.getElementById('loadingOverlay').classList.remove('hidden'); 
+            const todayStr = getTodayID(); 
+            const docID = `${todayStr}_${userSiswa.nisn}`; 
+            
+            try { 
+                let updateData = { nisn: userSiswa.nisn, nama: userSiswa.nama, kelas: userSiswa.kelas, tanggal: todayStr, status_terakhir: status, riwayat_kegiatan: arrayUnion(`${new Date().toLocaleTimeString()} - ${status} (${ket})`) }; 
+                if (foto !== "-") { 
+                    const snap = await uploadString(ref(storage, `absen/${todayStr}/${userSiswa.nisn}_${status}_${Date.now()}.jpg`), foto, 'data_url'); 
+                    const url = await getDownloadURL(snap.ref); 
+                    if(status === "Masuk") { updateData.foto_masuk = url; updateData.jam_masuk = serverTimestamp(); updateData.lokasi_masuk = `${lokasiUser.lat},${lokasiUser.lng}`; } 
+                    else if(status === "Pulang") { updateData.foto_pulang = url; updateData.jam_pulang = serverTimestamp(); } 
+                    else { updateData.foto_bukti = url; } 
+                } 
+                await setDoc(doc(db, "absensi", docID), updateData, { merge: true }); 
+                tutupKamera(); 
+                Swal.fire('Berhasil!', status + ' Tercatat', 'success'); 
+            } catch (e) { 
+                Swal.fire('Error', e.message, 'error'); 
+            } finally { 
+                document.getElementById('loadingOverlay').classList.add('hidden'); 
+            } 
+        }
+
         window.klikMasuk = () => { if(validasiGPS()) bukaCam("Masuk"); }
         window.klikPulang = () => { if(validasiGPS()) { if (!cekBolehPulang()) { Swal.fire({ title: 'Yakin?', text: "Belum jam pulang resmi.", icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya', confirmButtonColor: '#d33' }).then((r) => { if (r.isConfirmed) bukaCam("Pulang"); }); } else { bukaCam("Pulang"); } } }
         window.klikIzinKeluar = () => { const alasan = prompt("Alasan keluar:"); if(alasan) kirimData("Izin Keluar", alasan, "-"); }
