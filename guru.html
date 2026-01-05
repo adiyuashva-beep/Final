@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Guru - SiGanteng (v11.5 Fix)</title>
+    <title>Guru - SiGanteng (v12.0 Final Fix)</title>
     
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="logo.png">
@@ -275,7 +275,6 @@
             } catch (e) { console.log("Gagal sync waktu.", e); isTimeValidated = false; }
         }
 
-        // 1. INIT & PROFIL
         function initDashboard() { 
             document.getElementById('nama-guru').innerText = userGuru.nama; 
             document.getElementById('nip-guru').innerText = "NIP: " + userGuru.username; 
@@ -289,74 +288,82 @@
             const kls = document.getElementById('jurnal-kelas').value;
             const container = document.getElementById('list-absen-mapel');
             const area = document.getElementById('area-absen-mapel');
-            
             if (!kls) { area.classList.add('hidden'); return; }
-            
             area.classList.remove('hidden');
             container.innerHTML = '<div class="text-center text-xs text-slate-400 italic">Memuat siswa...</div>';
-            
             const q = query(collection(db, "users"), where("kelas", "==", kls), where("role", "==", "siswa"));
             const snap = await getDocs(q);
-            
             container.innerHTML = '';
             document.getElementById('jml-siswa-mapel').innerText = snap.size + ' Siswa';
-            
             if(snap.empty) { container.innerHTML = '<div class="text-center text-xs text-slate-400">Tidak ada siswa.</div>'; return; }
-
             let siswaArr = [];
             snap.forEach(doc => siswaArr.push(doc.data()));
             siswaArr.sort((a,b) => a.nama.localeCompare(b.nama));
-
             siswaArr.forEach(s => {
                 const id = s.username; 
-                container.innerHTML += `
-                    <div class="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-100 siswa-item" data-nisn="${id}" data-nama="${s.nama}">
-                        <span class="text-xs font-bold text-slate-700 truncate w-32">${s.nama}</span>
-                        <div class="flex gap-1">
-                            <label class="radio-label"><input type="radio" name="absen_${id}" value="H" checked><span class="opt-h">H</span></label>
-                            <label class="radio-label"><input type="radio" name="absen_${id}" value="S"><span class="opt-s">S</span></label>
-                            <label class="radio-label"><input type="radio" name="absen_${id}" value="I"><span class="opt-i">I</span></label>
-                            <label class="radio-label"><input type="radio" name="absen_${id}" value="A"><span class="opt-a">A</span></label>
-                        </div>
-                    </div>
-                `;
+                container.innerHTML += `<div class="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-100 siswa-item" data-nisn="${id}" data-nama="${s.nama}"><span class="text-xs font-bold text-slate-700 truncate w-32">${s.nama}</span><div class="flex gap-1"><label class="radio-label"><input type="radio" name="absen_${id}" value="H" checked><span class="opt-h">H</span></label><label class="radio-label"><input type="radio" name="absen_${id}" value="S"><span class="opt-s">S</span></label><label class="radio-label"><input type="radio" name="absen_${id}" value="I"><span class="opt-i">I</span></label><label class="radio-label"><input type="radio" name="absen_${id}" value="A"><span class="opt-a">A</span></label></div></div>`;
             });
         }
 
-        // --- WALI KELAS UPDATED (LOGIKA SIMPLE) ---
+        // --- WALI KELAS FIX (LOGIKA LOOPING DATA SISWA) ---
         async function initWaliKelas(kelasWali) {
             document.getElementById('panel-wali-kelas').classList.remove('hidden');
             document.getElementById('nama-kelas-wali').innerText = kelasWali;
             document.getElementById('badge-wali').classList.remove('hidden');
             document.getElementById('judul-modal-wali').innerText = kelasWali;
+            
+            // Ambil Data Siswa (Master Data)
             const qSiswa = query(collection(db, "users"), where("kelas", "==", kelasWali), where("role", "==", "siswa"));
             const snap = await getDocs(qSiswa);
             dataSiswaWali = [];
             snap.forEach(doc => dataSiswaWali.push(doc.data()));
             dataSiswaWali.sort((a,b) => a.nama.localeCompare(b.nama));
+            
+            // Baru pantau absen
             pantauAbsenWali(kelasWali);
         }
 
         function pantauAbsenWali(kelasWali) {
             const todayStr = getTodayID();
             const q = query(collection(db, "absensi"), where("tanggal", "==", todayStr), where("kelas", "==", kelasWali));
+            
             onSnapshot(q, (snap) => {
-                let h=0, i=0; dataAbsenWali = {};
+                // 1. Petakan data absen supaya mudah dicari (Dictionary/Map)
+                dataAbsenWali = {};
                 snap.forEach(doc => {
                     const d = doc.data(); 
-                    dataAbsenWali[d.nisn] = d;
-                    if(d.status_terakhir.includes("Masuk") || d.status_terakhir.includes("Hadir") || d.status_terakhir.includes("Pulang")) h++;
-                    else if(d.status_terakhir.includes("Sakit") || d.status_terakhir.includes("Izin")) i++;
+                    dataAbsenWali[d.nisn] = d; 
                 });
-                
-                // Hitung yang belum absen
-                let belumCount = dataSiswaWali.length - (h + i);
-                if(belumCount < 0) belumCount = 0;
 
-                document.getElementById('wali-hadir').innerText = h; 
-                document.getElementById('wali-izin').innerText = i; 
-                // Tampilkan di Card Dashboard
-                document.getElementById('wali-belum').innerText = belumCount; 
+                // 2. HITUNG MANUAL BERDASARKAN MASTER DATA SISWA
+                let hitungHadir = 0;
+                let hitungIzin = 0;
+                let hitungBelum = 0;
+
+                dataSiswaWali.forEach(siswa => {
+                    const absenData = dataAbsenWali[siswa.username];
+                    
+                    if (!absenData) {
+                        // Kalau tidak ada di data absen, berarti BELUM ABSEN
+                        hitungBelum++;
+                    } else {
+                        // Kalau ada, cek statusnya
+                        const st = absenData.status_terakhir || "";
+                        if(st.includes("Masuk") || st.includes("Hadir") || st.includes("Pulang")) {
+                            hitungHadir++;
+                        } else if(st.includes("Sakit") || st.includes("Izin")) {
+                            hitungIzin++;
+                        } else {
+                            // Jaga-jaga kalau ada status aneh, anggap belum
+                            hitungBelum++;
+                        }
+                    }
+                });
+
+                // 3. Update Tampilan Dashboard (PASTI SINKRON)
+                document.getElementById('wali-hadir').innerText = hitungHadir; 
+                document.getElementById('wali-izin').innerText = hitungIzin; 
+                document.getElementById('wali-belum').innerText = hitungBelum; 
             });
         }
 
@@ -370,22 +377,18 @@
                 return; 
             }
             
-            // Loop SEMUA siswa agar jumlah sinkron dengan counter dashboard
+            // Loop data siswa (Source of Truth)
             dataSiswaWali.forEach(s => {
-                const absen = dataAbsenWali[s.username]; // Cek di data realtime
+                const absen = dataAbsenWali[s.username];
                 
-                // DEFAULT STATUS: Belum Absen (Abu-abu)
                 let statusHtml = `<span class="text-[10px] font-bold bg-slate-100 text-slate-500 px-2 py-0.5 rounded">Belum Absen</span>`;
                 
                 if(absen) {
-                    // LOGIKA SIMPEL: JAM MASUK atau STATUS IZIN
                     if (absen.jam_masuk) {
-                        // Kalau ada jam masuk, tampilkan jamnya
                         const date = absen.jam_masuk.toDate();
                         const jamStr = date.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
                         statusHtml = `<span class="text-[10px] font-bold bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded">Masuk: ${jamStr}</span>`;
                     } else if (absen.status_terakhir.includes("Izin") || absen.status_terakhir.includes("Sakit")) {
-                        // Kalau Izin/Sakit
                         statusHtml = `<span class="text-[10px] font-bold bg-blue-100 text-blue-600 px-2 py-0.5 rounded">${absen.status_terakhir}</span>`;
                     }
                 }
