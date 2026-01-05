@@ -30,13 +30,14 @@
 </head>
 <body class="text-slate-800 h-screen flex flex-col overflow-hidden bg-slate-50">
 
-    <input type="file" id="fileInputProfil" accept="image/*" class="hidden" onchange="prosesUploadGaleri(this)">
+    <input type="file" id="fileInputProfil" accept="image/*" class="hidden" onchange="prosesUploadGaleri(this, 'profil')">
+    <input type="file" id="fileInputBukti" accept="image/*" class="hidden" onchange="prosesUploadGaleri(this, 'bukti')">
 
     <main id="main-container" class="flex-1 overflow-y-auto hide-scroll relative">
         
         <div id="page-dashboard" class="p-6 fade-in min-h-screen pb-32">
             <div class="flex flex-col items-center justify-center mb-6 mt-4">
-                <div class="relative group cursor-pointer active:scale-95 transition" onclick="pilihFotoGaleri()">
+                <div class="relative group cursor-pointer active:scale-95 transition" onclick="pilihFotoGaleri('profil')">
                     <div class="story-ring w-32 h-32 shadow-xl shadow-pink-500/20">
                         <img id="dash-foto" src="" class="w-full h-full rounded-full object-cover border-4 border-white bg-white">
                     </div>
@@ -141,7 +142,16 @@
                      <label class="block text-sm font-bold text-slate-600 mb-2">Bukti Foto <span id="labelWajibFoto" class="text-red-500 hidden">(Wajib)</span></label>
                      <div class="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center">
                          <img id="previewBukti" src="" class="hidden w-full h-48 object-cover rounded-xl mb-4">
-                         <button id="btnAmbilBukti" onclick="bukaCam('BuktiSakit')" class="bg-blue-50 text-blue-600 px-6 py-3 rounded-full font-bold text-sm flex items-center gap-2 mx-auto"><i data-lucide="camera" class="w-4 h-4"></i> Ambil Foto</button>
+                         
+                         <div class="flex gap-2 justify-center">
+                             <button id="btnAmbilBukti" onclick="bukaCam('BuktiSakit')" class="bg-blue-50 text-blue-600 px-4 py-3 rounded-xl font-bold text-xs flex items-center gap-2 hover:bg-blue-100">
+                                 <i data-lucide="camera" class="w-4 h-4"></i> Kamera
+                             </button>
+                             <button onclick="pilihFotoGaleri('bukti')" class="bg-indigo-50 text-indigo-600 px-4 py-3 rounded-xl font-bold text-xs flex items-center gap-2 hover:bg-indigo-100">
+                                 <i data-lucide="image-plus" class="w-4 h-4"></i> Galeri
+                             </button>
+                         </div>
+                         <p class="text-[10px] text-slate-400 mt-2">Pilih Kamera untuk foto langsung, atau Galeri untuk upload surat dokter.</p>
                      </div>
                  </div>
                  <button onclick="kirimLaporanIzin()" class="w-full bg-slate-800 text-white p-5 rounded-[2rem] shadow-xl font-bold text-lg mt-8 active:scale-95 transition">KIRIM LAPORAN</button>
@@ -162,7 +172,7 @@
              <div class="flex flex-col items-center mb-8">
                 <div class="w-28 h-28 relative mb-4">
                      <img id="profil-page-foto" src="" class="w-full h-full rounded-full object-cover border-4 border-slate-100 shadow-xl">
-                     <button onclick="pilihFotoGaleri()" class="absolute bottom-0 right-0 bg-blue-600 text-white p-2.5 rounded-full border-4 border-white shadow-sm"><i data-lucide="image-plus" class="w-4 h-4"></i></button>
+                     <button onclick="pilihFotoGaleri('profil')" class="absolute bottom-0 right-0 bg-blue-600 text-white p-2.5 rounded-full border-4 border-white shadow-sm"><i data-lucide="image-plus" class="w-4 h-4"></i></button>
                 </div>
                 <h3 class="font-black text-xl text-slate-800" id="profil-page-nama">...</h3>
                 <p class="text-slate-400 text-sm font-mono" id="profil-page-nisn">...</p>
@@ -256,7 +266,6 @@
 
                 syncAdminSettings(); loadFotoProfil(); renderMenu(); mulaiJam(); pantauDataRealtime(); cekGPS(); 
                 
-                // 🔥 ANTENA DINAMIS DIPASANG DISINI 🔥
                 loadMenuDinamis(); 
                 loadTimelineKBM();
 
@@ -269,12 +278,13 @@
             } else { window.location.href = 'index.html'; }
         });
 
-        // 🔥 FITUR BARU: PILIH FOTO DARI GALERI 🔥
-        window.pilihFotoGaleri = () => {
-            document.getElementById('fileInputProfil').click();
+        // 🔥 FITUR BARU: PILIH FOTO DARI GALERI (UNIVERSAL) 🔥
+        window.pilihFotoGaleri = (tipe) => {
+            if(tipe === 'profil') document.getElementById('fileInputProfil').click();
+            else document.getElementById('fileInputBukti').click();
         }
 
-        window.prosesUploadGaleri = (input) => {
+        window.prosesUploadGaleri = (input, tipe) => {
             if (input.files && input.files[0]) {
                 const file = input.files[0];
                 
@@ -292,7 +302,7 @@
                     img.onload = () => {
                         // KOMPRESI PAKAI CANVAS
                         const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 500; // Cukup buat avatar
+                        const MAX_WIDTH = 500; // Cukup buat avatar/bukti
                         const scaleSize = MAX_WIDTH / img.width;
                         canvas.width = MAX_WIDTH;
                         canvas.height = img.height * scaleSize;
@@ -302,7 +312,17 @@
 
                         // Convert ke WebP/JPEG kualitas rendah (0.7)
                         const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-                        prosesUpdateProfil(dataUrl); // Upload fungsi yg sudah ada
+
+                        if(tipe === 'profil') {
+                            prosesUpdateProfil(dataUrl);
+                        } else {
+                            // Untuk Bukti Sakit
+                            tempFotoBukti = dataUrl;
+                            document.getElementById('previewBukti').src = dataUrl;
+                            document.getElementById('previewBukti').classList.remove('hidden');
+                            document.getElementById('btnAmbilBukti').innerHTML = `<span class="text-green-600 font-bold">Foto Ada!</span>`;
+                            Swal.close();
+                        }
                     }
                 }
                 reader.readAsDataURL(file);
@@ -381,7 +401,6 @@
                 const snap = await uploadString(ref(storage, `profil_siswa/${userSiswa.nisn}_${Date.now()}.jpg`), fotoData, 'data_url'); 
                 const downloadURL = await getDownloadURL(snap.ref); 
                 await setDoc(doc(db, "siswa", userSiswa.nisn), { foto_profil: downloadURL, last_update_foto: serverTimestamp() }, { merge: true }); 
-                // tutupKamera(); // Gak perlu tutup kamera karena ini dari galeri
                 Swal.fire({ title: 'Ganteng Maksimal!', text: 'Foto profil baru terpasang.', icon: 'success', timer: 1500, showConfirmButton: false }); 
             } catch (error) { 
                 Swal.fire('Gagal', error.message, 'error'); 
