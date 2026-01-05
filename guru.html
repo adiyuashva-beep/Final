@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Guru - SiGanteng (v14.0 Force Show)</title>
+    <title>Guru - SiGanteng (v15.0 Auto-Sync)</title>
     
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="logo.png">
@@ -21,7 +21,6 @@
         .modal { opacity: 0; visibility: hidden; transition: all 0.3s ease-in-out; }
         .modal.active { opacity: 1; visibility: visible; }
         
-        /* Radio Button Mapel */
         .radio-label input { display: none; }
         .radio-label span { display: inline-block; padding: 4px 10px; border-radius: 8px; font-size: 10px; font-weight: bold; cursor: pointer; border: 1px solid #e2e8f0; color: #94a3b8; }
         .radio-label input:checked + span.opt-h { background-color: #d1fae5; color: #059669; border-color: #10b981; }
@@ -54,7 +53,7 @@
             <div>
                 <h2 id="nama-guru" class="text-lg font-bold leading-tight">...</h2>
                 <p id="nip-guru" class="text-xs font-mono text-slate-300 mt-1">...</p>
-                <div id="badge-wali" class="mt-2 inline-block bg-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded">WALI KELAS</div>
+                <div id="badge-wali" class="mt-2 hidden bg-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded">WALI KELAS</div>
             </div>
         </div>
     </header>
@@ -65,13 +64,13 @@
             <div class="absolute -right-5 -top-5 w-24 h-24 bg-orange-200 rounded-full opacity-20 blur-xl"></div>
             
             <h3 class="font-bold text-orange-800 text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
-                <i data-lucide="shield-check" class="w-4 h-4"></i> Kelas: <span id="nama-kelas-wali" class="bg-white px-2 py-0.5 rounded text-black">...</span>
+                <i data-lucide="shield-check" class="w-4 h-4"></i> Kelas: <span id="nama-kelas-wali" class="bg-white px-2 py-0.5 rounded text-black animate-pulse">Memuat...</span>
             </h3>
             
             <button onclick="bukaModalWali()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-black uppercase text-xs shadow-lg shadow-blue-500/30 active:scale-95 transition flex items-center justify-center gap-3">
                 <i data-lucide="eye" class="w-6 h-6"></i> CEK ABSEN SISWA
             </button>
-            <p class="text-[10px] text-orange-400 text-center mt-2 italic">*Klik tombol di atas untuk lihat detail.</p>
+            <p class="text-[10px] text-orange-400 text-center mt-2 italic">*Data diambil realtime dari database pusat.</p>
         </div>
 
         <div class="bg-white p-6 rounded-[2rem] shadow-lg border border-slate-100">
@@ -151,7 +150,6 @@
                 <h3 class="font-bold">Status Kelas <span id="judul-modal-wali"></span></h3>
                 <button onclick="document.getElementById('modal-wali').classList.remove('active')" class="p-1 bg-white/20 rounded-full hover:bg-red-500"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            
             <div class="overflow-y-auto p-3 grid grid-cols-2 gap-2 bg-slate-50" id="list-siswa-wali">
                 <div class="text-center py-10 text-slate-400 italic col-span-2">Memuat data...</div>
             </div>
@@ -231,7 +229,7 @@
                 userGuru = dataUser;
                 if(userGuru.role === 'siswa') { window.location.href = 'siswa.html'; return; }
 
-                initDashboard();
+                initDashboard(); // Set nama awal
                 syncAdmin();
                 cekGPS(); 
                 loadDaftarKelas();
@@ -239,18 +237,59 @@
                 loadRiwayatJurnal();
                 loadMenuDinamis();
                 
-                // --- LOGIKA WALI KELAS "FORCE SHOW" ---
-                // Saya ubah logikanya. Panel akan SELALU MUNCUL, tinggal namanya diisi.
-                let namaKelas = "BELUM DISET";
-                if(userGuru.wali_kelas && userGuru.wali_kelas !== "-" && userGuru.wali_kelas !== "") {
-                    namaKelas = userGuru.wali_kelas;
-                }
-                
-                // Jalan terus, walau belum diset (biar tombol kelihatan)
-                initWaliKelas(namaKelas); 
+                // 🔥 KUNCI PERBAIKAN: AUTO-UPDATE PROFIL 🔥
+                // Jangan percaya data session 100%, ambil ulang data guru dari DB
+                refreshUserData(); 
 
             } else { window.location.href = 'index.html'; }
         });
+
+        // 🔥 FUNGSI BARU UNTUK UPDATE PROFIL 🔥
+        async function refreshUserData() {
+            try {
+                // Ambil data terbaru dari koleksi 'guru' (bukan cache)
+                const docRef = doc(db, "guru", userGuru.username);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const freshData = docSnap.data();
+                    
+                    // Update tampilan foto profil kalau ada
+                    if(freshData.foto_profil) {
+                        document.getElementById('foto-guru').src = freshData.foto_profil;
+                    }
+
+                    // Update Status Wali Kelas (Ini yang bikin "...")
+                    if(freshData.wali_kelas && freshData.wali_kelas !== "-" && freshData.wali_kelas !== "") {
+                        console.log("Wali Kelas Terdeteksi: " + freshData.wali_kelas);
+                        
+                        // Update UI
+                        document.getElementById('nama-kelas-wali').innerText = freshData.wali_kelas;
+                        document.getElementById('nama-kelas-wali').classList.remove('animate-pulse');
+                        document.getElementById('badge-wali').classList.remove('hidden');
+                        document.getElementById('judul-modal-wali').innerText = freshData.wali_kelas;
+                        
+                        // Update UserGuru Global (Penting!)
+                        userGuru.wali_kelas = freshData.wali_kelas;
+                        
+                        // Simpan ke Session biar refresh berikutnya cepet
+                        sessionStorage.setItem('user_siganteng', JSON.stringify(userGuru));
+                        
+                        // Jalankan Logic Wali Kelas
+                        initWaliKelas(freshData.wali_kelas);
+                    } else {
+                        // Kalau bukan wali
+                        document.getElementById('nama-kelas-wali').innerText = "Bukan Wali Kelas";
+                        document.getElementById('nama-kelas-wali').classList.remove('animate-pulse');
+                        // Hide Panel Wali (Opsional, tapi kamu minta muncul terus kan?)
+                        // document.getElementById('panel-wali-kelas').style.display = 'none';
+                    }
+                }
+            } catch (e) {
+                console.error("Gagal refresh profil:", e);
+                document.getElementById('nama-kelas-wali').innerText = "Gagal Sync";
+            }
+        }
 
         async function syncWaktuServer() {
             try {
@@ -272,22 +311,11 @@
         function initDashboard() { 
             document.getElementById('nama-guru').innerText = userGuru.nama; 
             document.getElementById('nip-guru').innerText = "NIP: " + userGuru.username; 
-            getDoc(doc(db, "guru", userGuru.username)).then(snap => {
-                if(snap.exists() && snap.data().foto_profil) document.getElementById('foto-guru').src = snap.data().foto_profil;
-                else document.getElementById('foto-guru').src = `https://ui-avatars.com/api/?name=${userGuru.nama}&background=10b981&color=fff`;
-            });
+            // Foto diload di refreshUserData biar sekalian
         }
 
         async function initWaliKelas(kelasWali) {
-            document.getElementById('nama-kelas-wali').innerText = kelasWali;
-            document.getElementById('judul-modal-wali').innerText = kelasWali;
-            
-            // Kalau kelas belum diset, gak usah load database
-            if(kelasWali === "BELUM DISET") {
-                 dataSiswaWali = [];
-                 return;
-            }
-
+            // Ambil Daftar Siswa
             const qSiswa = query(collection(db, "users"), where("kelas", "==", kelasWali), where("role", "==", "siswa"));
             const snap = await getDocs(qSiswa);
             dataSiswaWali = [];
@@ -307,13 +335,17 @@
             container.innerHTML = '';
             
             // Cek Data
-            if(document.getElementById('nama-kelas-wali').innerText === "BELUM DISET") {
-                 Swal.fire('Info', 'Akun Anda belum disetting sebagai Wali Kelas di Database.', 'info');
+            if(document.getElementById('nama-kelas-wali').innerText.includes("...")) {
+                 Swal.fire('Loading', 'Sedang mengambil data kelas...', 'info');
+                 return;
+            }
+            if(document.getElementById('nama-kelas-wali').innerText === "Bukan Wali Kelas") {
+                 Swal.fire('Akses Ditolak', 'Anda tidak terdaftar sebagai Wali Kelas.', 'error');
                  return;
             }
 
             if(dataSiswaWali.length === 0) { 
-                container.innerHTML = '<div class="text-center text-slate-400 col-span-2">Data siswa kosong.</div>'; 
+                container.innerHTML = '<div class="text-center text-slate-400 col-span-2">Belum ada siswa di kelas ini.</div>'; 
                 document.getElementById('modal-wali').classList.add('active'); 
                 return; 
             }
