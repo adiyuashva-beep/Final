@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Guru - SiGanteng (v12.5 SatSet)</title>
+    <title>Guru - SiGanteng (v13.0 Anti-Ghaib)</title>
     
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="logo.png">
@@ -21,15 +21,13 @@
         .modal { opacity: 0; visibility: hidden; transition: all 0.3s ease-in-out; }
         .modal.active { opacity: 1; visibility: visible; }
         
-        /* Custom Radio Button untuk Absen Mapel */
+        /* Radio Button Mapel */
         .radio-label input { display: none; }
         .radio-label span { display: inline-block; padding: 4px 10px; border-radius: 8px; font-size: 10px; font-weight: bold; cursor: pointer; border: 1px solid #e2e8f0; color: #94a3b8; }
         .radio-label input:checked + span.opt-h { background-color: #d1fae5; color: #059669; border-color: #10b981; }
         .radio-label input:checked + span.opt-s { background-color: #dbeafe; color: #2563eb; border-color: #3b82f6; }
         .radio-label input:checked + span.opt-i { background-color: #ffedd5; color: #ea580c; border-color: #f97316; }
         .radio-label input:checked + span.opt-a { background-color: #fee2e2; color: #dc2626; border-color: #ef4444; }
-        
-        button:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(100%); }
     </style>
 </head>
 <body class="text-slate-800 min-h-screen flex flex-col pb-24">
@@ -56,12 +54,25 @@
             <div>
                 <h2 id="nama-guru" class="text-lg font-bold leading-tight">...</h2>
                 <p id="nip-guru" class="text-xs font-mono text-slate-300 mt-1">...</p>
-                <div id="badge-wali" class="hidden mt-2 inline-block bg-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded">WALI KELAS</div>
+                <div id="badge-wali" class="mt-2 inline-block bg-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded" style="display: none;">WALI KELAS</div>
             </div>
         </div>
     </header>
 
     <main class="flex-1 px-5 -mt-16 relative z-20 space-y-6">
+
+        <div id="panel-wali-kelas" style="display: none;" class="bg-orange-50 p-6 rounded-[2rem] shadow-lg border border-orange-100 relative overflow-hidden mb-4">
+            <div class="absolute -right-5 -top-5 w-24 h-24 bg-orange-200 rounded-full opacity-20 blur-xl"></div>
+            
+            <h3 class="font-bold text-orange-800 text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
+                <i data-lucide="shield-check" class="w-4 h-4"></i> Kelas Anda: <span id="nama-kelas-wali">...</span>
+            </h3>
+            
+            <button onclick="bukaModalWali()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-black uppercase text-xs shadow-lg shadow-blue-500/30 active:scale-95 transition flex items-center justify-center gap-3">
+                <i data-lucide="eye" class="w-5 h-5"></i> CEK SISWA (REALTIME)
+            </button>
+            <p class="text-[10px] text-orange-400 text-center mt-2 italic">*Klik tombol biru di atas untuk absen manual.</p>
+        </div>
 
         <div class="bg-white p-6 rounded-[2rem] shadow-lg border border-slate-100">
             <div class="flex justify-between items-center mb-4">
@@ -83,22 +94,7 @@
         </div>
 
         <div id="section-menu-dinamis" class="hidden">
-            <h3 class="font-bold text-slate-700 text-sm mb-2 ml-1 flex items-center gap-2">
-                <i data-lucide="grid" class="w-4 h-4 text-blue-500"></i> Layanan Guru & Staf
-            </h3>
             <div id="grid-menu-dinamis" class="grid grid-cols-2 gap-3"></div>
-        </div>
-
-        <div id="panel-wali-kelas" class="hidden bg-orange-50 p-6 rounded-[2rem] shadow-lg border border-orange-100 relative overflow-hidden">
-            <div class="absolute -right-5 -top-5 w-24 h-24 bg-orange-200 rounded-full opacity-20 blur-xl"></div>
-            <h3 class="font-bold text-orange-800 text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
-                <i data-lucide="shield-check" class="w-4 h-4"></i> Kelas Anda: <span id="nama-kelas-wali">...</span>
-            </h3>
-            
-            <button onclick="bukaModalWali()" class="w-full bg-white text-orange-600 border border-orange-200 py-4 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-orange-100 transition shadow-md flex items-center justify-center gap-3">
-                <i data-lucide="eye" class="w-5 h-5"></i> CEK STATUS SISWA (REALTIME)
-            </button>
-            <p class="text-[10px] text-orange-400 text-center mt-2 italic">*Klik tombol untuk melihat siapa yang sudah masuk.</p>
         </div>
 
         <div class="bg-white p-6 rounded-[2rem] shadow-lg border border-slate-100">
@@ -133,7 +129,7 @@
 
                 <button onclick="kirimJurnal()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold text-xs shadow-lg shadow-blue-500/30 active:scale-95 transition">SIMPAN JURNAL & ABSENSI</button>
             </div>
-
+            
             <div class="mt-4 pt-4 border-t border-slate-100">
                 <button onclick="downloadRekapJurnal()" class="w-full bg-emerald-50 text-emerald-700 py-3 rounded-xl font-bold text-xs border border-emerald-100 hover:bg-emerald-100 transition flex items-center justify-center gap-2">
                     <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> DOWNLOAD JURNAL + REFLEKSI
@@ -141,10 +137,6 @@
             </div>
 
             <div class="mt-4 pt-4 border-t border-slate-100">
-                <div class="flex justify-between items-center mb-3">
-                    <h4 class="font-bold text-xs text-slate-400 uppercase">Riwayat Hari Ini</h4>
-                    <span id="badge-refleksi" class="hidden text-[9px] bg-purple-100 text-purple-600 px-2 py-0.5 rounded font-bold">Evaluasi ON</span>
-                </div>
                 <div id="list-riwayat-jurnal" class="space-y-2">
                     <div class="text-center text-slate-300 text-xs italic py-2">Belum ada jurnal hari ini.</div>
                 </div>
@@ -154,12 +146,12 @@
     </main>
 
     <div id="modal-wali" class="modal fixed inset-0 z-50 flex items-center justify-center bg-slate-900/90 backdrop-blur-sm p-4">
-        <div class="modal-content bg-white w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
-            <div class="bg-orange-50 p-4 border-b border-orange-100 flex justify-between items-center">
-                <h3 class="font-bold text-orange-800">Detail Kelas <span id="judul-modal-wali"></span></h3>
-                <button onclick="document.getElementById('modal-wali').classList.remove('active')" class="p-2 bg-white rounded-full text-slate-400 hover:text-red-500"><i data-lucide="x" class="w-4 h-4"></i></button>
+        <div class="modal-content bg-white w-full max-w-md rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="bg-blue-600 p-4 border-b border-blue-700 flex justify-between items-center text-white">
+                <h3 class="font-bold">Status Kelas <span id="judul-modal-wali"></span></h3>
+                <button onclick="document.getElementById('modal-wali').classList.remove('active')" class="p-1 bg-white/20 rounded-full hover:bg-red-500"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <div class="overflow-y-auto p-3 grid grid-cols-2 gap-2" id="list-siswa-wali">
+            <div class="overflow-y-auto p-3 grid grid-cols-2 gap-2 bg-slate-50" id="list-siswa-wali">
                 <div class="text-center py-10 text-slate-400 italic col-span-2">Memuat data...</div>
             </div>
         </div>
@@ -213,7 +205,6 @@
         let SEKOLAH_LAT = -7.6739830;
         let SEKOLAH_LNG = 109.6319560;
 
-        // SECURITY & TIME SYNC
         let serverTimeOffset = 0;
         let isTimeValidated = false;
         let isSubmitting = false; 
@@ -247,7 +238,21 @@
                 loadRiwayatJurnal();
                 loadMenuDinamis();
                 
-                if(userGuru.wali_kelas && userGuru.wali_kelas !== "-") { initWaliKelas(userGuru.wali_kelas); }
+                // --- LOGIKA WALI KELAS "ANTI-GHAIB" ---
+                // Cek langsung datanya, kalau ada, langsung nyalakan elemennya
+                if(userGuru.wali_kelas && userGuru.wali_kelas !== "-" && userGuru.wali_kelas !== "") { 
+                    // Tampilkan Badge
+                    document.getElementById('badge-wali').style.display = 'inline-block';
+                    // Tampilkan Panel Besar
+                    document.getElementById('panel-wali-kelas').style.display = 'block';
+                    // Jalankan fungsi
+                    initWaliKelas(userGuru.wali_kelas); 
+                } else {
+                    // Pastikan sembunyi kalau bukan wali
+                    document.getElementById('badge-wali').style.display = 'none';
+                    document.getElementById('panel-wali-kelas').style.display = 'none';
+                }
+
             } else { window.location.href = 'index.html'; }
         });
 
@@ -277,6 +282,73 @@
             });
         }
 
+        // --- WALI KELAS LOGIC ---
+        async function initWaliKelas(kelasWali) {
+            document.getElementById('nama-kelas-wali').innerText = kelasWali;
+            document.getElementById('judul-modal-wali').innerText = kelasWali;
+            
+            // Ambil Daftar Siswa (Sekali saja)
+            const qSiswa = query(collection(db, "users"), where("kelas", "==", kelasWali), where("role", "==", "siswa"));
+            const snap = await getDocs(qSiswa);
+            dataSiswaWali = [];
+            snap.forEach(doc => dataSiswaWali.push(doc.data()));
+            dataSiswaWali.sort((a,b) => a.nama.localeCompare(b.nama));
+            
+            // Listen Data Absen (Realtime) - Disimpan di variable global
+            const todayStr = getTodayID();
+            const q = query(collection(db, "absensi"), where("tanggal", "==", todayStr), where("kelas", "==", kelasWali));
+            onSnapshot(q, (snap) => {
+                dataAbsenWali = {};
+                snap.forEach(doc => { const d = doc.data(); dataAbsenWali[d.nisn] = d; });
+            });
+        }
+
+        window.bukaModalWali = async () => {
+            const container = document.getElementById('list-siswa-wali'); 
+            container.innerHTML = '';
+            
+            if(dataSiswaWali.length === 0) { 
+                container.innerHTML = '<div class="text-center text-slate-400 col-span-2">Belum ada data siswa di database.</div>'; 
+                document.getElementById('modal-wali').classList.add('active'); 
+                return; 
+            }
+            
+            dataSiswaWali.forEach(s => {
+                const absen = dataAbsenWali[s.username];
+                
+                // Status Default: Belum Absen
+                let bgClass = "bg-white border-slate-200";
+                let statusIcon = `<div class="w-2 h-2 rounded-full bg-slate-300"></div>`;
+                let statusText = `<span class="text-slate-400 text-[9px]">Belum Absen</span>`;
+                
+                if(absen) {
+                    if (absen.jam_masuk) {
+                        const date = absen.jam_masuk.toDate();
+                        const jamStr = date.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
+                        bgClass = "bg-emerald-50 border-emerald-300 ring-1 ring-emerald-100";
+                        statusIcon = `<div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>`;
+                        statusText = `<span class="text-emerald-700 font-bold text-[9px]">Masuk: ${jamStr}</span>`;
+                    } else if (absen.status_terakhir.includes("Izin") || absen.status_terakhir.includes("Sakit")) {
+                        bgClass = "bg-blue-50 border-blue-300";
+                        statusIcon = `<div class="w-2 h-2 rounded-full bg-blue-500"></div>`;
+                        statusText = `<span class="text-blue-700 font-bold text-[9px]">${absen.status_terakhir}</span>`;
+                    }
+                }
+                
+                container.innerHTML += `
+                    <div class="flex items-center gap-2 p-2 rounded-lg border ${bgClass} shadow-sm transition hover:scale-[1.02]">
+                        <img src="https://ui-avatars.com/api/?name=${s.nama}&background=random&color=fff&size=64" class="w-8 h-8 rounded-full object-cover border border-slate-200">
+                        <div class="overflow-hidden flex-1">
+                            <div class="font-bold text-[10px] text-slate-700 leading-tight truncate w-full mb-0.5">${s.nama}</div>
+                            <div class="flex items-center gap-1">
+                                ${statusIcon} ${statusText}
+                            </div>
+                        </div>
+                    </div>`;
+            });
+            document.getElementById('modal-wali').classList.add('active');
+        }
+
         window.loadSiswaUntukAbsen = async () => {
             const kls = document.getElementById('jurnal-kelas').value;
             const container = document.getElementById('list-absen-mapel');
@@ -296,74 +368,6 @@
                 const id = s.username; 
                 container.innerHTML += `<div class="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-100 siswa-item" data-nisn="${id}" data-nama="${s.nama}"><span class="text-xs font-bold text-slate-700 truncate w-32">${s.nama}</span><div class="flex gap-1"><label class="radio-label"><input type="radio" name="absen_${id}" value="H" checked><span class="opt-h">H</span></label><label class="radio-label"><input type="radio" name="absen_${id}" value="S"><span class="opt-s">S</span></label><label class="radio-label"><input type="radio" name="absen_${id}" value="I"><span class="opt-i">I</span></label><label class="radio-label"><input type="radio" name="absen_${id}" value="A"><span class="opt-a">A</span></label></div></div>`;
             });
-        }
-
-        async function initWaliKelas(kelasWali) {
-            document.getElementById('panel-wali-kelas').classList.remove('hidden');
-            document.getElementById('nama-kelas-wali').innerText = kelasWali;
-            document.getElementById('badge-wali').classList.remove('hidden');
-            document.getElementById('judul-modal-wali').innerText = kelasWali;
-            
-            const qSiswa = query(collection(db, "users"), where("kelas", "==", kelasWali), where("role", "==", "siswa"));
-            const snap = await getDocs(qSiswa);
-            dataSiswaWali = [];
-            snap.forEach(doc => dataSiswaWali.push(doc.data()));
-            dataSiswaWali.sort((a,b) => a.nama.localeCompare(b.nama));
-            
-            // Kita tetap listen data absen realtime, tapi tidak update angka dashboard (karena sudah dihapus)
-            // Hanya simpan ke dataAbsenWali untuk persiapan saat tombol diklik
-            const todayStr = getTodayID();
-            const q = query(collection(db, "absensi"), where("tanggal", "==", todayStr), where("kelas", "==", kelasWali));
-            onSnapshot(q, (snap) => {
-                dataAbsenWali = {};
-                snap.forEach(doc => { const d = doc.data(); dataAbsenWali[d.nisn] = d; });
-            });
-        }
-
-        window.bukaModalWali = async () => {
-            const container = document.getElementById('list-siswa-wali'); 
-            container.innerHTML = '';
-            
-            if(dataSiswaWali.length === 0) { 
-                container.innerHTML = '<div class="text-center text-slate-400 col-span-2">Data siswa kosong.</div>'; 
-                document.getElementById('modal-wali').classList.add('active'); 
-                return; 
-            }
-            
-            // Loop data siswa -> RENDER GRID 2 KOLOM (Compact)
-            dataSiswaWali.forEach(s => {
-                const absen = dataAbsenWali[s.username];
-                
-                // Style Default: Abu-abu (Belum Absen)
-                let cardClass = "bg-slate-50 border-slate-200";
-                let statusText = "Belum Absen";
-                let statusClass = "text-slate-400";
-                
-                if(absen) {
-                    if (absen.jam_masuk) {
-                        const date = absen.jam_masuk.toDate();
-                        const jamStr = date.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
-                        statusText = `Masuk: ${jamStr}`;
-                        cardClass = "bg-emerald-50 border-emerald-200"; // Hijau
-                        statusClass = "text-emerald-600 font-bold";
-                    } else if (absen.status_terakhir.includes("Izin") || absen.status_terakhir.includes("Sakit")) {
-                        statusText = absen.status_terakhir;
-                        cardClass = "bg-blue-50 border-blue-200"; // Biru
-                        statusClass = "text-blue-600 font-bold";
-                    }
-                }
-                
-                // Tampilan Compact Card
-                container.innerHTML += `
-                    <div class="flex items-center gap-2 p-2 rounded-xl border ${cardClass} shadow-sm">
-                        <img src="https://ui-avatars.com/api/?name=${s.nama}&background=random&color=fff&size=64" class="w-8 h-8 rounded-full object-cover bg-white">
-                        <div class="overflow-hidden">
-                            <div class="font-bold text-[10px] text-slate-700 leading-tight truncate w-full">${s.nama}</div>
-                            <div class="text-[9px] ${statusClass} mt-0.5">${statusText}</div>
-                        </div>
-                    </div>`;
-            });
-            document.getElementById('modal-wali').classList.add('active');
         }
 
         async function loadDaftarKelas() {
