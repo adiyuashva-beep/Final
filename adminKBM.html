@@ -3,11 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Kurikulum - Monitoring KBM</title>
-    
-    <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/png" href="logo.png">
-
+    <title>Admin KBM & Jurnal - SiGanteng</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
@@ -15,392 +11,226 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
-        body { font-family: 'Outfit', sans-serif; background-color: #0f172a; color: #e2e8f0; }
-        .hide-scroll::-webkit-scrollbar { display: none; }
-        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
-        
-        .status-aman { border-left: 4px solid #10b981; background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(30, 41, 59, 1) 100%); }
-        .status-kosong { border-left: 4px solid #64748b; background: #1e293b; opacity: 0.7; }
-        
-        .fade-in { animation: fadeIn 0.5s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        body { font-family: 'Outfit', sans-serif; background-color: #f1f5f9; }
+        .glass-panel { background: white; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border-radius: 1rem; }
+        .grid-box { transition: all 0.2s; cursor: pointer; }
+        .grid-box:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
     </style>
 </head>
-<body class="h-screen flex flex-col overflow-hidden">
+<body class="p-6">
 
-    <header class="h-20 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-6 z-20 shadow-lg">
-        <div class="flex items-center gap-4">
-            <div class="bg-emerald-500/10 p-2 rounded-xl border border-emerald-500/50">
-                <i data-lucide="book-open-check" class="w-8 h-8 text-emerald-400"></i>
-            </div>
-            <div>
-                <h1 class="text-xl font-black text-white tracking-tight">PANEL KURIKULUM</h1>
-                <p class="text-[10px] text-slate-400 font-mono tracking-widest uppercase">Quality Control KBM</p>
-            </div>
-        </div>
-
-        <div id="antenna-container" class="hidden flex gap-2"></div>
-
-        <div class="flex items-center gap-4">
-            <div class="flex flex-col items-end">
-                <label class="text-[9px] text-slate-500 uppercase font-bold mb-1">Tampilan Monitoring</label>
-                <div class="flex items-center bg-slate-800 rounded-lg p-1 border border-slate-700">
-                    <button onclick="geserHari(-1)" class="p-2 hover:bg-slate-700 rounded-md text-slate-400"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
-                    <input type="date" id="filter-tanggal" class="bg-transparent text-white text-sm font-bold px-2 outline-none cursor-pointer" onchange="loadDaftarKelasReal()">
-                    <button onclick="geserHari(1)" class="p-2 hover:bg-slate-700 rounded-md text-slate-400"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
-                </div>
-            </div>
-            
-            <div class="h-8 w-px bg-slate-700 mx-2"></div>
-
-            <div class="flex flex-col items-end">
-                <label class="text-[9px] text-emerald-500 uppercase font-bold mb-1">Export Data (Max 7 Hari)</label>
-                <div class="flex gap-2">
-                    <input type="date" id="dl-start" class="bg-slate-800 border border-slate-600 text-white text-xs rounded px-2 py-1">
-                    <span class="text-slate-500 text-xs py-1">-</span>
-                    <input type="date" id="dl-end" class="bg-slate-800 border border-slate-600 text-white text-xs rounded px-2 py-1">
-                    <button onclick="downloadExcelAman()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded text-xs font-bold shadow-lg transition flex items-center gap-2">
-                        <i data-lucide="download" class="w-3 h-3"></i> Excel
-                    </button>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <main class="flex-1 flex overflow-hidden">
+    <div class="max-w-7xl mx-auto space-y-6">
         
-        <aside class="w-72 bg-slate-950 border-r border-slate-800 flex flex-col p-6 overflow-y-auto hide-scroll">
-            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Statistik Harian</h3>
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-black text-slate-800 tracking-tighter">MONITORING KBM</h1>
+                <p class="text-slate-500 font-medium">Rekap Jurnal Mengajar Guru (Realtime)</p>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="window.location.href='admin.html'" class="bg-white border border-slate-300 text-slate-600 px-4 py-2 rounded-xl font-bold hover:bg-slate-50 flex items-center gap-2">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Kembali
+                </button>
+                <button onclick="downloadRekapHarian()" class="bg-emerald-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-500/30 flex items-center gap-2">
+                    <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Download Rekap Hari Ini
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="space-y-4">
-                <div class="glass-panel p-5 rounded-2xl">
-                    <p class="text-slate-400 text-xs mb-1">Total Jurnal Masuk</p>
-                    <h2 class="text-4xl font-black text-white" id="stat-total-jurnal">0</h2>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="glass-panel p-4 rounded-2xl border-l-4 border-emerald-500">
-                        <p class="text-slate-400 text-[10px] uppercase">Kelas Aktif</p>
-                        <h2 class="text-2xl font-bold text-emerald-400" id="stat-kelas-aktif">0</h2>
-                    </div>
-                    <div class="glass-panel p-4 rounded-2xl border-l-4 border-slate-600">
-                        <p class="text-slate-400 text-[10px] uppercase">Belum Lapor</p>
-                        <h2 class="text-2xl font-bold text-slate-400" id="stat-kelas-kosong">0</h2>
-                    </div>
+                <div class="bg-indigo-600 text-white p-3 rounded-xl text-center font-black tracking-widest shadow-lg shadow-indigo-500/30">KELAS X</div>
+                <div id="grid-x" class="grid grid-cols-2 gap-3">
+                    <div class="col-span-2 text-center py-4 text-slate-400 italic text-sm">Memuat data...</div>
                 </div>
             </div>
-            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mt-8 mb-4">Timeline Terbaru</h3>
-            <div id="sidebar-timeline" class="space-y-3">
-                <div class="text-center text-slate-600 text-xs italic">Menunggu data...</div>
-            </div>
-        </aside>
 
-        <div class="flex-1 bg-slate-900/50 p-6 overflow-y-auto relative">
-            <div class="mb-6 max-w-md mx-auto">
-                <div class="relative">
-                    <i data-lucide="search" class="absolute left-3 top-3 w-5 h-5 text-slate-500"></i>
-                    <input type="text" id="cari-kelas" onkeyup="filterGrid()" placeholder="Cari Kelas (Contoh: X-1)..." class="w-full bg-slate-800 border border-slate-700 text-white pl-10 pr-4 py-2.5 rounded-xl outline-none focus:border-emerald-500 transition">
+            <div class="space-y-4">
+                <div class="bg-blue-600 text-white p-3 rounded-xl text-center font-black tracking-widest shadow-lg shadow-blue-500/30">KELAS XI</div>
+                <div id="grid-xi" class="grid grid-cols-2 gap-3">
+                    <div class="col-span-2 text-center py-4 text-slate-400 italic text-sm">Memuat data...</div>
                 </div>
             </div>
-            <div id="grid-container" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-20">
-                <div class="col-span-full text-center py-20">
-                    <div class="animate-spin w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                    <p class="text-slate-400 font-mono animate-pulse">Menghubungkan ke Satelit KBM...</p>
+
+            <div class="space-y-4">
+                <div class="bg-rose-600 text-white p-3 rounded-xl text-center font-black tracking-widest shadow-lg shadow-rose-500/30">KELAS XII</div>
+                <div id="grid-xii" class="grid grid-cols-2 gap-3">
+                    <div class="col-span-2 text-center py-4 text-slate-400 italic text-sm">Memuat data...</div>
                 </div>
             </div>
         </div>
-    </main>
 
-    <div id="modal-detail" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm opacity-0 invisible transition-all duration-300">
-        <div class="bg-slate-900 w-full max-w-2xl rounded-3xl border border-slate-700 shadow-2xl flex flex-col max-h-[85vh] transform scale-95 transition-all duration-300" id="modal-content">
-            <div class="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900 rounded-t-3xl">
-                <div>
-                    <h2 class="text-2xl font-black text-white" id="modal-judul">...</h2>
-                    <p class="text-xs text-slate-400 font-mono" id="modal-tanggal">...</p>
+        <div id="modalDetail" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                <div class="p-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+                    <h3 class="font-bold text-lg text-slate-800" id="judulModal">Detail KBM</h3>
+                    <button onclick="tutupModal()" class="p-2 hover:bg-slate-200 rounded-full"><i data-lucide="x" class="w-5 h-5"></i></button>
                 </div>
-                <button onclick="tutupModal()" class="p-2 bg-slate-800 text-slate-400 rounded-full hover:bg-red-500 hover:text-white transition"><i data-lucide="x" class="w-6 h-6"></i></button>
+                <div id="kontenModal" class="p-6 overflow-y-auto space-y-4">
+                    </div>
             </div>
-            <div class="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-950/30" id="modal-list"></div>
         </div>
+
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getFirestore, collection, query, where, getDocs, onSnapshot, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getFirestore, collection, query, where, getDocs, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo",
-            authDomain: "siganteng-absensi.firebaseapp.com",
-            databaseURL: "https://siganteng-absensi-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "siganteng-absensi",
-            storageBucket: "siganteng-absensi.firebasestorage.app",
-            messagingSenderId: "917873420012",
-            appId: "1:917873420012:web:0fe1a9eddc5f94959ba7c9"
-        };
-
+        const firebaseConfig = { apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo", authDomain: "siganteng-absensi.firebaseapp.com", databaseURL: "https://siganteng-absensi-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "siganteng-absensi", storageBucket: "siganteng-absensi.firebasestorage.app", messagingSenderId: "917873420012", appId: "1:917873420012:web:0fe1a9eddc5f94959ba7c9" };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // STATE
-        let allJurnalHarian = [];
-        let allClasses = new Set();
-        let mapJurnalByKelas = {};
+        // VARIABEL GLOBAL
+        let jurnalHariIni = [];
+        const todayStr = new Date().toLocaleDateString('fr-CA'); // YYYY-MM-DD
 
-        // INIT
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
-            const today = new Date().toLocaleDateString('fr-CA');
-            document.getElementById('filter-tanggal').value = today;
-            // Set Default Download Range (Hari ini)
-            document.getElementById('dl-start').value = today;
-            document.getElementById('dl-end').value = today;
-            
-            loadDaftarKelasReal();
-            loadAntenaKurikulum();
+            pantauJurnalHariIni();
         });
 
-        // 1. MONITORING JURNAL HARIAN (GRID UTAMA)
-        window.loadDaftarKelasReal = async function() {
-            allClasses.clear();
-            const grid = document.getElementById('grid-container');
+        function pantauJurnalHariIni() {
+            // Kita ambil jurnal hari ini secara REALTIME
+            // Hemat kuota karena filter by tanggal
+            const q = query(collection(db, "jurnal_guru"), where("tanggal", "==", todayStr));
             
-            // Render Skeleton Loading
-            grid.innerHTML = `<div class="col-span-full text-center py-20"><div class="animate-spin w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full mx-auto mb-4"></div><p class="text-slate-400 font-mono animate-pulse">Memindai Database...</p></div>`;
-
-            // A. Ambil Daftar Kelas dari Cache (kalau ada dari Admin utama) atau Query Ringan
-            // Untuk amannya, kita rely on data jurnal yg masuk hari ini + cache manual
-            pantauJurnalRealtime();
-        }
-
-        function pantauJurnalRealtime() {
-            const tgl = document.getElementById('filter-tanggal').value;
-            // Query Jurnal Hari Ini
-            const q = query(collection(db, "jurnal_guru"), where("tanggal", "==", tgl));
-
             onSnapshot(q, (snap) => {
-                allJurnalHarian = [];
-                mapJurnalByKelas = {};
-                
+                jurnalHariIni = [];
                 snap.forEach(doc => {
                     const d = doc.data();
                     d.id = doc.id;
-                    allJurnalHarian.push(d);
-                    
-                    const k = d.kelas ? d.kelas.toUpperCase().trim() : "LAINNYA";
-                    if (!mapJurnalByKelas[k]) mapJurnalByKelas[k] = [];
-                    mapJurnalByKelas[k].push(d);
-                    allClasses.add(k);
+                    jurnalHariIni.push(d);
                 });
-
-                // Sort Terbaru
-                const sortDesc = (a, b) => (b.waktu?.toMillis() || 0) - (a.waktu?.toMillis() || 0);
-                allJurnalHarian.sort(sortDesc);
-                Object.keys(mapJurnalByKelas).forEach(key => mapJurnalByKelas[key].sort(sortDesc));
-
-                renderStatistik();
-                renderGrid();
-                renderTimelineSidebar();
-                lucide.createIcons();
+                renderGridKelas();
             });
         }
 
-        function renderGrid() {
-            const container = document.getElementById('grid-container');
-            container.innerHTML = '';
-            
-            if (Object.keys(mapJurnalByKelas).length === 0) {
-                container.innerHTML = `<div class="col-span-full text-center py-20 text-slate-500 bg-slate-900/50 rounded-3xl border border-slate-800"><i data-lucide="folder-open" class="w-16 h-16 mx-auto mb-4 opacity-30"></i><h3 class="text-lg font-bold text-slate-400">Belum ada jurnal masuk hari ini.</h3></div>`;
-                lucide.createIcons(); return;
+        async function renderGridKelas() {
+            // 1. Ambil daftar kelas dari Cache (biar hemat) atau Firestore (sekali aja)
+            let daftarKelas = localStorage.getItem('cache_list_kelas');
+            if(!daftarKelas) {
+                // Fallback: Hardcode sementara biar cepat tampil, nanti bisa ambil dari DB
+                // Kamu bisa edit list ini sesuai nama kelas asli di sekolahmu
+                const listManual = [
+                    "X-1","X-2","X-3","X-4","X-5","X-6","X-7","X-8","X-9","X-10",
+                    "XI-1","XI-2","XI-3","XI-4","XI-5","XI-6","XI-7","XI-8","XI-9","XI-10",
+                    "XII-1","XII-2","XII-3","XII-4","XII-5","XII-6","XII-7","XII-8","XII-9","XII-10"
+                ];
+                daftarKelas = JSON.stringify(listManual);
+                localStorage.setItem('cache_list_kelas', daftarKelas);
             }
-
-            const sortedClasses = Array.from(allClasses).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
-
-            sortedClasses.forEach(kls => {
-                const jurnals = mapJurnalByKelas[kls] || [];
-                const count = jurnals.length;
-                let statusClass = "status-aman"; // Karena hanya menampilkan yg ada jurnalnya
-                
-                container.innerHTML += `
-                    <div onclick="bukaDetail('${kls}')" class="glass-panel rounded-xl p-4 cursor-pointer hover:bg-slate-800 transition group relative overflow-hidden ${statusClass}">
-                        <div class="flex justify-between items-start mb-2"><h3 class="text-xl font-black text-white group-hover:text-emerald-400 transition">${kls}</h3><i data-lucide="check-circle" class="w-5 h-5 text-emerald-500"></i></div>
-                        <p class="text-sm font-bold text-slate-400 mb-4"><span class="text-emerald-400 font-bold">${count} Mapel Masuk</span></p>
-                    </div>`;
-            });
-            filterGrid();
-        }
-
-        // 2. MODAL DETAIL + LOAD RESPON SISWA (ON DEMAND)
-        // Kita hanya load respon siswa SAAT modal dibuka (Hemat Kuota)
-        window.bukaDetail = async function(kls) {
-            const list = document.getElementById('modal-list');
-            const tgl = document.getElementById('filter-tanggal').value;
-            document.getElementById('modal-judul').innerText = `Jurnal Kelas ${kls}`;
-            document.getElementById('modal-tanggal').innerText = tgl;
-            list.innerHTML = '<div class="text-center text-slate-400 italic py-10"><i class="animate-spin" data-lucide="loader-2"></i> Mengambil respon siswa...</div>';
             
-            document.getElementById('modal-detail').classList.remove('invisible', 'opacity-0');
-            document.getElementById('modal-detail').classList.add('visible', 'opacity-100');
-            document.getElementById('modal-content').classList.replace('scale-95', 'scale-100');
+            const classes = JSON.parse(daftarKelas);
+            const gridX = document.getElementById('grid-x');
+            const gridXI = document.getElementById('grid-xi');
+            const gridXII = document.getElementById('grid-xii');
+
+            gridX.innerHTML = ''; gridXI.innerHTML = ''; gridXII.innerHTML = '';
+
+            // 2. Mapping Data
+            // Kita urutkan kelas biar rapi
+            classes.sort();
+
+            classes.forEach(kls => {
+                // Cari apakah ada jurnal untuk kelas ini hari ini
+                // Satu kelas bisa punya BANYAK jurnal (Bhs Indo, MTK, dll)
+                const jurnalKelas = jurnalHariIni.filter(j => j.kelas === kls);
+                const countJurnal = jurnalKelas.length;
+                
+                // Tentukan Warna
+                let bgClass = "bg-white border-slate-200 text-slate-500";
+                let statusIcon = `<i data-lucide="minus" class="w-4 h-4 text-slate-300"></i>`;
+                let statusText = "Kosong";
+
+                if (countJurnal > 0) {
+                    bgClass = "bg-emerald-50 border-emerald-200 text-emerald-700";
+                    statusIcon = `<div class="bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">${countJurnal} Mapel</div>`;
+                    // Ambil mapel terakhir
+                    const lastMapel = jurnalKelas[jurnalKelas.length-1].mapel;
+                    statusText = `<span class="truncate block w-full text-[10px] font-normal">Terakhir: ${lastMapel}</span>`;
+                }
+
+                const cardHtml = `
+                    <div onclick="lihatDetail('${kls}')" class="${bgClass} border p-3 rounded-xl grid-box flex flex-col justify-between h-24 relative overflow-hidden">
+                        <div class="flex justify-between items-start">
+                            <h4 class="font-black text-lg tracking-tighter">${kls}</h4>
+                            ${statusIcon}
+                        </div>
+                        <div class="text-xs font-bold mt-1">
+                            ${statusText}
+                        </div>
+                    </div>
+                `;
+
+                // Masukkan ke kolom yang sesuai
+                if (kls.startsWith("X-") || kls.startsWith("10") || kls.includes("X ")) gridX.innerHTML += cardHtml;
+                else if (kls.startsWith("XI") || kls.startsWith("11")) gridXI.innerHTML += cardHtml;
+                else if (kls.startsWith("XII") || kls.startsWith("12")) gridXII.innerHTML += cardHtml;
+            });
             lucide.createIcons();
-
-            const dataJurnal = mapJurnalByKelas[kls] || [];
-            
-            // Disini kita baru fetch respon siswa untuk kelas ini saja
-            const qRefleksi = query(collection(db, "refleksi_siswa"), where("kelas", "==", kls), where("tanggal", "==", tgl));
-            const snapRef = await getDocs(qRefleksi);
-            
-            let statsMap = {}; let commentsMap = {};
-            snapRef.forEach(doc => {
-                const r = doc.data();
-                if(!statsMap[r.id_jurnal]) { statsMap[r.id_jurnal] = {p:0,b:0,s:0}; commentsMap[r.id_jurnal] = []; }
-                
-                let labelEmot = "😐"; let warnaKomen = "text-slate-400";
-                if(r.rating==3) { statsMap[r.id_jurnal].p++; labelEmot="🤩"; warnaKomen="text-emerald-400"; }
-                else if(r.rating==2) { statsMap[r.id_jurnal].b++; labelEmot="🤔"; warnaKomen="text-yellow-400"; }
-                else { statsMap[r.id_jurnal].s++; labelEmot="🤯"; warnaKomen="text-red-400"; }
-
-                commentsMap[r.id_jurnal].push({ nama: r.nama, pesan: r.pesan, emot: labelEmot, warna: warnaKomen });
-            });
-
-            list.innerHTML = '';
-            dataJurnal.forEach(d => {
-                const jam = d.waktu ? new Date(d.waktu.toDate()).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : '-';
-                const st = statsMap[d.id] || {p:0,b:0,s:0};
-                const total = st.p + st.b + st.s;
-                const komenList = commentsMap[d.id] || [];
-                const img = d.foto_bukti ? `<img src="${d.foto_bukti}" class="w-full h-48 object-cover rounded-xl mt-3 border border-slate-700 cursor-pointer" onclick="Swal.fire({imageUrl:'${d.foto_bukti}', showConfirmButton:false, background:'transparent'})">` : '';
-
-                let htmlKomentar = '';
-                if(komenList.length > 0) {
-                    htmlKomentar = `<div class="mt-3 bg-slate-950/30 rounded-xl p-3 max-h-40 overflow-y-auto border border-slate-800 space-y-2"><p class="text-[10px] uppercase font-bold text-slate-500 mb-2 sticky top-0 bg-slate-900/90 p-1">💬 Komentar Siswa (${komenList.length})</p>`;
-                    komenList.forEach(k => { htmlKomentar += `<div class="flex gap-2 text-xs border-b border-slate-800 pb-1 mb-1 last:border-0"><span>${k.emot}</span><div><span class="font-bold text-slate-300">${k.nama}:</span> <span class="${k.warna} italic">"${k.pesan}"</span></div></div>`; });
-                    htmlKomentar += `</div>`;
-                } else { htmlKomentar = `<div class="mt-3 text-center text-[10px] text-slate-600 italic">Belum ada komentar siswa.</div>`; }
-
-                list.innerHTML += `
-                    <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg">
-                        <div class="flex justify-between items-start mb-3"><div><h4 class="text-lg font-bold text-white">${d.mapel}</h4><p class="text-xs text-emerald-400 font-bold">${d.nama_guru}</p></div><span class="bg-slate-800 text-slate-300 text-xs px-3 py-1 rounded-lg font-mono border border-slate-700">${jam}</span></div>
-                        <p class="text-sm text-slate-300 bg-slate-950/50 p-3 rounded-lg border border-slate-800 mb-3">"${d.materi}"</p>
-                        <div class="bg-slate-800 p-3 rounded-xl border border-slate-700 flex justify-around text-center"><div><span class="text-lg">🤩</span><div class="text-xs font-bold text-emerald-400">${st.p}</div></div><div><span class="text-lg">🤔</span><div class="text-xs font-bold text-yellow-400">${st.b}</div></div><div><span class="text-lg">🤯</span><div class="text-xs font-bold text-red-400">${st.s}</div></div><div class="border-l border-slate-600 pl-4 flex flex-col justify-center"><span class="text-[10px] text-slate-400">Total</span><span class="font-bold text-white">${total}</span></div></div>
-                        ${htmlKomentar}
-                        ${img}
-                    </div>`;
-            });
         }
 
-        window.tutupModal = () => { document.getElementById('modal-detail').classList.add('invisible', 'opacity-0'); document.getElementById('modal-content').classList.replace('scale-100', 'scale-95'); }
-        function renderStatistik() { document.getElementById('stat-total-jurnal').innerText = allJurnalHarian.length; document.getElementById('stat-kelas-aktif').innerText = Object.values(mapJurnalByKelas).filter(a=>a.length>0).length; document.getElementById('stat-kelas-kosong').innerText = 0; }
-        function renderTimelineSidebar() { const c = document.getElementById('sidebar-timeline'); c.innerHTML=''; if(allJurnalHarian.length===0){c.innerHTML='<div class="text-center text-slate-600 text-xs italic">Belum ada data.</div>';return;} allJurnalHarian.slice(0,10).forEach(d=>{ const jam=d.waktu?new Date(d.waktu.toDate()).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}):'-'; c.innerHTML+=`<div class="flex gap-3 items-start border-l-2 border-slate-800 pl-3 pb-2 fade-in"><div class="flex-1"><div class="flex justify-between"><span class="text-[10px] font-bold text-emerald-500">${d.kelas}</span><span class="text-[9px] text-slate-500 font-mono">${jam}</span></div><p class="text-xs text-slate-300 font-bold truncate">${d.nama_guru}</p></div></div>`; }); }
-        async function loadAntenaKurikulum() { const c = document.getElementById('antenna-container'); onSnapshot(query(collection(db, "menu_dinamis"), orderBy("created_at", "asc")), (snap) => { c.innerHTML = ''; let has=false; snap.forEach(d => { const dt = d.data(); if (dt.target === 'kurikulum' || dt.target === 'umum' || dt.target === 'admin') { has=true; c.innerHTML += `<a href="${dt.link}" target="_blank" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition shadow-lg"><span>${dt.icon}</span> ${dt.judul}</a>`; } }); if(has) c.classList.remove('hidden'); else c.classList.add('hidden'); }); }
-        window.geserHari = (d) => { const i=document.getElementById('filter-tanggal'); const dt=new Date(i.value); dt.setDate(dt.getDate()+d); i.value=dt.toISOString().split('T')[0]; window.loadDaftarKelasReal(); }
-        window.filterGrid = () => { const k=document.getElementById('cari-kelas').value.toUpperCase(); for(let c of document.getElementById('grid-container').children) { if(c.querySelector('h3')) c.style.display = c.querySelector('h3').innerText.includes(k) ? "block" : "none"; } }
-
-        // 🔥 FITUR UTAMA: DOWNLOAD AMAN (ANTI BOM KUOTA) 🔥
-        window.downloadExcelAman = async () => {
-            const start = document.getElementById('dl-start').value;
-            const end = document.getElementById('dl-end').value;
+        window.lihatDetail = (kelas) => {
+            const modal = document.getElementById('modalDetail');
+            const konten = document.getElementById('kontenModal');
+            document.getElementById('judulModal').innerText = `Detail KBM: ${kelas}`;
             
-            if(!start || !end) return Swal.fire('Tanggal?', 'Pilih rentang tanggal dulu.', 'warning');
+            const data = jurnalHariIni.filter(j => j.kelas === kelas);
             
-            // 1. VALIDASI RENTANG WAKTU (Max 7 Hari)
-            const diffTime = Math.abs(new Date(end) - new Date(start));
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-            
-            if(diffDays > 7) {
-                return Swal.fire({
-                    icon: 'error',
-                    title: 'Bahaya Kuota!',
-                    text: `Anda memilih ${diffDays} hari. Maksimal download adalah 7 hari demi keamanan server. Silakan pecah downloadnya.`
-                });
-            }
-
-            // 2. Konfirmasi User
-            const confirm = await Swal.fire({
-                title: 'Download Excel?',
-                text: `Rentang: ${start} s/d ${end}. Pilih mode download:`,
-                icon: 'question',
-                showCancelButton: true,
-                showDenyButton: true,
-                confirmButtonText: 'Lengkap (Siswa)',
-                denyButtonText: 'Ringkas (Guru Saja)',
-                cancelButtonText: 'Batal',
-                confirmButtonColor: '#059669',
-                denyButtonColor: '#3b82f6'
-            });
-
-            if (confirm.isDismissed) return;
-
-            const modeDetail = confirm.isConfirmed; // True = Lengkap, False = Ringkas (Deny)
-            
-            Swal.fire({ title: 'Sedang Mengunduh...', text: 'Mengambil data dari server...', didOpen: () => Swal.showLoading() });
-
-            try {
-                // Query Jurnal (Wajib)
-                const qJurnal = query(collection(db, "jurnal_guru"), where("tanggal", ">=", start), where("tanggal", "<=", end));
-                const snapJurnal = await getDocs(qJurnal);
-                
-                if (snapJurnal.empty) { Swal.fire('Kosong', 'Tidak ada data jurnal pada periode ini.', 'info'); return; }
-
-                let mapRefleksi = {};
-                
-                // Query Refleksi (Hanya jika mode Lengkap)
-                if (modeDetail) {
-                    const qRefleksi = query(collection(db, "refleksi_siswa"), where("tanggal", ">=", start), where("tanggal", "<=", end));
-                    const snapRef = await getDocs(qRefleksi);
-                    snapRef.forEach(doc => {
-                        const r = doc.data();
-                        if(!mapRefleksi[r.id_jurnal]) mapRefleksi[r.id_jurnal] = [];
-                        let emot = r.rating == 3 ? "🤩" : (r.rating == 2 ? "🤔" : "🤯");
-                        mapRefleksi[r.id_jurnal].push(`${r.nama} (${emot}): ${r.pesan}`);
-                    });
-                }
-
-                // Gabungkan Data
-                let rawData = [];
-                snapJurnal.forEach(doc => {
-                    const d = doc.data();
-                    d.id = doc.id;
-                    rawData.push(d);
-                });
-
-                // Sort
-                rawData.sort((a, b) => {
-                    if (a.tanggal !== b.tanggal) return b.tanggal.localeCompare(a.tanggal);
-                    return (b.waktu?.toMillis() || 0) - (a.waktu?.toMillis() || 0);
-                });
-
-                // Mapping Excel
-                const dataExport = rawData.map(d => ({
-                    Tanggal: d.tanggal,
-                    Jam: d.waktu ? new Date(d.waktu.toDate()).toLocaleTimeString('id-ID') : '-',
-                    Kelas: d.kelas,
-                    Guru: d.nama_guru,
-                    Mapel: d.mapel,
-                    Materi: d.materi,
-                    Respon_Siswa: modeDetail ? (mapRefleksi[d.id] ? mapRefleksi[d.id].join(" | ") : "Belum ada respon") : "Mode Ringkas",
-                    Bukti_Foto: d.foto_bukti
-                }));
-
-                const ws = XLSX.utils.json_to_sheet(dataExport);
-                
-                // Link Cantik
-                if(ws['!ref']) {
-                    const range = XLSX.utils.decode_range(ws['!ref']);
-                    for (let R = range.s.r + 1; R <= range.e.r; ++R) {
-                        const c = ws[XLSX.utils.encode_cell({r: R, c: 7})]; // Kolom H (Bukti Foto)
-                        if (c && c.v && c.v.startsWith('http')) { c.l = { Target: c.v }; c.v = "📸 LIHAT"; }
+            konten.innerHTML = '';
+            if(data.length === 0) {
+                konten.innerHTML = '<div class="text-center py-10 text-slate-400">Belum ada guru yang mengisi jurnal di kelas ini hari ini.</div>';
+            } else {
+                data.sort((a,b) => b.waktu.seconds - a.waktu.seconds); // Urut dari yang terbaru
+                data.forEach(d => {
+                    const jam = new Date(d.waktu.seconds * 1000).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+                    // Hitung Kehadiran di Mapel Ini
+                    let hadirCount = 0;
+                    if(d.absensi_mapel) {
+                        hadirCount = d.absensi_mapel.filter(s => s.status === 'H').length;
                     }
-                }
-
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Rekap KBM");
-                XLSX.writeFile(wb, `REKAP_KBM_${start}_sd_${end}.xlsx`);
-
-                Swal.close();
-                Swal.fire('Selesai', 'File berhasil didownload.', 'success');
-
-            } catch (e) {
-                console.error(e);
-                Swal.fire('Gagal', e.message, 'error');
+                    
+                    konten.innerHTML += `
+                        <div class="bg-white border border-slate-100 p-4 rounded-xl shadow-sm flex gap-4">
+                            <img src="${d.foto_bukti}" class="w-16 h-16 rounded-lg object-cover bg-slate-200 border border-slate-200">
+                            <div class="flex-1">
+                                <div class="flex justify-between items-start mb-1">
+                                    <h4 class="font-bold text-slate-800">${d.mapel}</h4>
+                                    <span class="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-xs font-bold">${jam}</span>
+                                </div>
+                                <p class="text-xs text-slate-500 font-bold mb-2">👨‍🏫 ${d.nama_guru}</p>
+                                <p class="text-xs text-slate-600 bg-slate-50 p-2 rounded mb-2">" ${d.materi} "</p>
+                                <div class="flex gap-2 text-[10px]">
+                                    <span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded font-bold">Hadir: ${hadirCount} Siswa</span>
+                                    <span class="bg-slate-100 text-slate-500 px-2 py-1 rounded">Refleksi belum dihitung</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
             }
+            
+            modal.classList.remove('hidden');
+        }
+
+        window.tutupModal = () => document.getElementById('modalDetail').classList.add('hidden');
+
+        window.downloadRekapHarian = () => {
+            if(jurnalHariIni.length === 0) return Swal.fire('Kosong','Belum ada data hari ini','info');
+            
+            const dataExport = jurnalHariIni.map(d => ({
+                Jam: new Date(d.waktu.seconds * 1000).toLocaleTimeString('id-ID'),
+                Kelas: d.kelas,
+                Mapel: d.mapel,
+                Guru: d.nama_guru,
+                Materi: d.materi,
+                Jml_Siswa_Hadir_Mapel: d.absensi_mapel ? d.absensi_mapel.filter(s=>s.status==='H').length : 'N/A'
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(dataExport);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Rekap Harian");
+            XLSX.writeFile(wb, `Rekap_KBM_${todayStr}.xlsx`);
         }
     </script>
 </body>
