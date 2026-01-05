@@ -188,7 +188,7 @@
         let dataSiswaWali = []; // Data Siswa
         let dataAbsenWali = {}; // Data Absen Hari Ini
 
-        // --- CACHE SYSTEM (Agar Hemat & Cepat) ---
+        // --- CACHE SYSTEM ---
         const setCache = (key, data) => { try { localStorage.setItem(key, JSON.stringify({ timestamp: Date.now(), data: data })); } catch (e) {} };
         const getCache = (key) => { const item = localStorage.getItem(key); if(!item) return null; const p = JSON.parse(item); if((Date.now() - p.timestamp) > 86400000) { localStorage.removeItem(key); return null; } return p.data; };
         window.resetCacheData = () => { localStorage.clear(); location.reload(); };
@@ -200,7 +200,7 @@
                 userGuru = JSON.parse(sess);
                 initDashboard();
                 loadDaftarKelas();
-                loadDaftarMapel();
+                loadDaftarMapel(); // INI SUDAH DIOPTIMASI JADI REALTIME
                 loadRiwayatJurnal();
                 loadMenuDinamis();
                 if(userGuru.wali_kelas && userGuru.wali_kelas !== "-") initWaliKelas(userGuru.wali_kelas);
@@ -310,16 +310,23 @@
                 setCache('list_kelas', arr); renderOptions(sel, arr);
             } catch(e){}
         }
-        async function loadDaftarMapel() {
+
+        // 🔥 PERBAIKAN: JADI REALTIME AGAR MAPEL BARU LANGSUNG MUNCUL 🔥
+        function loadDaftarMapel() {
             const sel = document.getElementById('jurnal-mapel');
-            const cached = getCache('list_mapel');
-            if(cached) { renderOptions(sel, cached); return; }
-            try {
-                const snap = await getDocs(query(collection(db, "mata_pelajaran"), orderBy("nama", "asc")));
-                const arr = []; snap.forEach(d => arr.push(d.data().nama));
-                setCache('list_mapel', arr); renderOptions(sel, arr);
-            } catch(e){}
+            // Menggunakan onSnapshot agar sinkron terus dengan Admin
+            onSnapshot(query(collection(db, "mata_pelajaran"), orderBy("nama", "asc")), (snap) => {
+                const arr = []; 
+                snap.forEach(d => arr.push(d.data().nama));
+                
+                // Update dropdown
+                renderOptions(sel, arr);
+                
+                // Update cache lokal juga (untuk backup)
+                setCache('list_mapel', arr);
+            });
         }
+
         function renderOptions(el, arr) { el.innerHTML = '<option value="">- Pilih -</option>'; arr.forEach(i => el.add(new Option(i, i))); }
         
         function loadMenuDinamis() {
