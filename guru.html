@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Guru - SiGanteng (v13.0 Anti-Ghaib)</title>
+    <title>Guru - SiGanteng (v14.0 Force Show)</title>
     
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="logo.png">
@@ -54,24 +54,24 @@
             <div>
                 <h2 id="nama-guru" class="text-lg font-bold leading-tight">...</h2>
                 <p id="nip-guru" class="text-xs font-mono text-slate-300 mt-1">...</p>
-                <div id="badge-wali" class="mt-2 inline-block bg-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded" style="display: none;">WALI KELAS</div>
+                <div id="badge-wali" class="mt-2 inline-block bg-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded">WALI KELAS</div>
             </div>
         </div>
     </header>
 
     <main class="flex-1 px-5 -mt-16 relative z-20 space-y-6">
 
-        <div id="panel-wali-kelas" style="display: none;" class="bg-orange-50 p-6 rounded-[2rem] shadow-lg border border-orange-100 relative overflow-hidden mb-4">
+        <div id="panel-wali-kelas" class="bg-orange-50 p-6 rounded-[2rem] shadow-lg border border-orange-100 relative overflow-hidden mb-4">
             <div class="absolute -right-5 -top-5 w-24 h-24 bg-orange-200 rounded-full opacity-20 blur-xl"></div>
             
             <h3 class="font-bold text-orange-800 text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
-                <i data-lucide="shield-check" class="w-4 h-4"></i> Kelas Anda: <span id="nama-kelas-wali">...</span>
+                <i data-lucide="shield-check" class="w-4 h-4"></i> Kelas: <span id="nama-kelas-wali" class="bg-white px-2 py-0.5 rounded text-black">...</span>
             </h3>
             
             <button onclick="bukaModalWali()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-black uppercase text-xs shadow-lg shadow-blue-500/30 active:scale-95 transition flex items-center justify-center gap-3">
-                <i data-lucide="eye" class="w-5 h-5"></i> CEK SISWA (REALTIME)
+                <i data-lucide="eye" class="w-6 h-6"></i> CEK ABSEN SISWA
             </button>
-            <p class="text-[10px] text-orange-400 text-center mt-2 italic">*Klik tombol biru di atas untuk absen manual.</p>
+            <p class="text-[10px] text-orange-400 text-center mt-2 italic">*Klik tombol di atas untuk lihat detail.</p>
         </div>
 
         <div class="bg-white p-6 rounded-[2rem] shadow-lg border border-slate-100">
@@ -151,6 +151,7 @@
                 <h3 class="font-bold">Status Kelas <span id="judul-modal-wali"></span></h3>
                 <button onclick="document.getElementById('modal-wali').classList.remove('active')" class="p-1 bg-white/20 rounded-full hover:bg-red-500"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
+            
             <div class="overflow-y-auto p-3 grid grid-cols-2 gap-2 bg-slate-50" id="list-siswa-wali">
                 <div class="text-center py-10 text-slate-400 italic col-span-2">Memuat data...</div>
             </div>
@@ -238,20 +239,15 @@
                 loadRiwayatJurnal();
                 loadMenuDinamis();
                 
-                // --- LOGIKA WALI KELAS "ANTI-GHAIB" ---
-                // Cek langsung datanya, kalau ada, langsung nyalakan elemennya
-                if(userGuru.wali_kelas && userGuru.wali_kelas !== "-" && userGuru.wali_kelas !== "") { 
-                    // Tampilkan Badge
-                    document.getElementById('badge-wali').style.display = 'inline-block';
-                    // Tampilkan Panel Besar
-                    document.getElementById('panel-wali-kelas').style.display = 'block';
-                    // Jalankan fungsi
-                    initWaliKelas(userGuru.wali_kelas); 
-                } else {
-                    // Pastikan sembunyi kalau bukan wali
-                    document.getElementById('badge-wali').style.display = 'none';
-                    document.getElementById('panel-wali-kelas').style.display = 'none';
+                // --- LOGIKA WALI KELAS "FORCE SHOW" ---
+                // Saya ubah logikanya. Panel akan SELALU MUNCUL, tinggal namanya diisi.
+                let namaKelas = "BELUM DISET";
+                if(userGuru.wali_kelas && userGuru.wali_kelas !== "-" && userGuru.wali_kelas !== "") {
+                    namaKelas = userGuru.wali_kelas;
                 }
+                
+                // Jalan terus, walau belum diset (biar tombol kelihatan)
+                initWaliKelas(namaKelas); 
 
             } else { window.location.href = 'index.html'; }
         });
@@ -282,19 +278,22 @@
             });
         }
 
-        // --- WALI KELAS LOGIC ---
         async function initWaliKelas(kelasWali) {
             document.getElementById('nama-kelas-wali').innerText = kelasWali;
             document.getElementById('judul-modal-wali').innerText = kelasWali;
             
-            // Ambil Daftar Siswa (Sekali saja)
+            // Kalau kelas belum diset, gak usah load database
+            if(kelasWali === "BELUM DISET") {
+                 dataSiswaWali = [];
+                 return;
+            }
+
             const qSiswa = query(collection(db, "users"), where("kelas", "==", kelasWali), where("role", "==", "siswa"));
             const snap = await getDocs(qSiswa);
             dataSiswaWali = [];
             snap.forEach(doc => dataSiswaWali.push(doc.data()));
             dataSiswaWali.sort((a,b) => a.nama.localeCompare(b.nama));
             
-            // Listen Data Absen (Realtime) - Disimpan di variable global
             const todayStr = getTodayID();
             const q = query(collection(db, "absensi"), where("tanggal", "==", todayStr), where("kelas", "==", kelasWali));
             onSnapshot(q, (snap) => {
@@ -307,8 +306,14 @@
             const container = document.getElementById('list-siswa-wali'); 
             container.innerHTML = '';
             
+            // Cek Data
+            if(document.getElementById('nama-kelas-wali').innerText === "BELUM DISET") {
+                 Swal.fire('Info', 'Akun Anda belum disetting sebagai Wali Kelas di Database.', 'info');
+                 return;
+            }
+
             if(dataSiswaWali.length === 0) { 
-                container.innerHTML = '<div class="text-center text-slate-400 col-span-2">Belum ada data siswa di database.</div>'; 
+                container.innerHTML = '<div class="text-center text-slate-400 col-span-2">Data siswa kosong.</div>'; 
                 document.getElementById('modal-wali').classList.add('active'); 
                 return; 
             }
@@ -316,7 +321,6 @@
             dataSiswaWali.forEach(s => {
                 const absen = dataAbsenWali[s.username];
                 
-                // Status Default: Belum Absen
                 let bgClass = "bg-white border-slate-200";
                 let statusIcon = `<div class="w-2 h-2 rounded-full bg-slate-300"></div>`;
                 let statusText = `<span class="text-slate-400 text-[9px]">Belum Absen</span>`;
@@ -335,6 +339,7 @@
                     }
                 }
                 
+                // Render Grid Item
                 container.innerHTML += `
                     <div class="flex items-center gap-2 p-2 rounded-lg border ${bgClass} shadow-sm transition hover:scale-[1.02]">
                         <img src="https://ui-avatars.com/api/?name=${s.nama}&background=random&color=fff&size=64" class="w-8 h-8 rounded-full object-cover border border-slate-200">
