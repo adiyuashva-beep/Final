@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rekap Absensi Detail - SiGanteng</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <style>
+        body { font-family: 'Outfit', sans-serif; background-color: #0f172a; color: #e2e8f0; }
+        .table-sticky th { position: sticky; top: 0; z-index: 10; background: #1e293b; }
+        .table-sticky td:first-child, .table-sticky th:first-child { position: sticky; left: 0; z-index: 20; background: #1e293b; }
+        
+        /* Status Colors */
+        .bg-weekend { background-color: #334155; color: #64748b; }
+        .bg-libur { background-color: #7f1d1d; color: #fca5a5; font-weight: bold; }
+        .bg-hadir { background-color: #065f46; color: #6ee7b7; font-weight: bold; }
+        .bg-sakit { background-color: #1e40af; color: #93c5fd; font-weight: bold; }
+        .bg-izin { background-color: #854d0e; color: #fde047; font-weight: bold; }
+        .bg-alpha { background-color: #991b1b; color: #fecaca; font-weight: bold; }
+        
+        .loading-overlay { background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(4px); }
+    </style>
+</head>
+<body class="bg-slate-950 min-h-screen flex flex-col p-4 md:p-8">
+
+    <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+        <div>
+            <h1 class="text-2xl font-black text-white flex items-center gap-2">
+                <i data-lucide="calendar-days" class="text-blue-500"></i> Rekapitulasi Absensi
+            </h1>
+            <p class="text-xs text-slate-500 mt-1">Laporan Detail Bulanan</p>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="window.close()" class="bg-slate-800 text-slate-400 hover:text-white px-4 py-2 rounded-lg font-bold text-xs transition border border-slate-700">
+                <i data-lucide="arrow-left" class="w-4 h-4 inline mr-1"></i> Kembali
+            </button>
+        </div>
+    </div>
+
+    <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 mb-6 flex flex-wrap gap-3 items-end shadow-xl">
+        
+        <div class="bg-slate-950 p-1 rounded-lg border border-slate-800 flex">
+            <button onclick="gantiMode('siswa')" id="btn-siswa" class="px-4 py-2 rounded-md text-xs font-bold bg-blue-600 text-white transition">SISWA</button>
+            <button onclick="gantiMode('guru')" id="btn-guru" class="px-4 py-2 rounded-md text-xs font-bold text-slate-400 hover:text-white transition">GURU</button>
+        </div>
+
+        <div class="flex-1 flex flex-wrap gap-2">
+            <div class="flex flex-col">
+                <label class="text-[10px] text-slate-500 font-bold uppercase mb-1">Bulan</label>
+                <select id="pilih-bulan" class="bg-slate-800 text-white text-xs rounded-lg px-3 py-2.5 outline-none border border-slate-700 min-w-[120px]"></select>
+            </div>
+            <div class="flex flex-col">
+                <label class="text-[10px] text-slate-500 font-bold uppercase mb-1">Tahun</label>
+                <select id="pilih-tahun" class="bg-slate-800 text-white text-xs rounded-lg px-3 py-2.5 outline-none border border-slate-700 min-w-[80px]"></select>
+            </div>
+            <div class="flex flex-col" id="wrapper-kelas">
+                <label class="text-[10px] text-slate-500 font-bold uppercase mb-1">Kelas</label>
+                <select id="pilih-kelas" class="bg-slate-800 text-white text-xs rounded-lg px-3 py-2.5 outline-none border border-slate-700 min-w-[120px]">
+                    <option value="">- Pilih Kelas -</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="flex gap-2">
+            <button onclick="loadRekap()" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-lg text-xs font-bold shadow-lg shadow-blue-900/20 active:scale-95 transition">
+                TAMPILKAN DATA
+            </button>
+            <button onclick="downloadExcel()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-lg text-xs font-bold shadow-lg shadow-emerald-900/20 active:scale-95 transition flex items-center gap-2">
+                <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Excel
+            </button>
+        </div>
+    </div>
+
+    <div class="flex-1 bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden relative shadow-2xl flex flex-col">
+        <div class="overflow-auto h-full hide-scroll">
+            <table id="tabel-rekap" class="w-full text-center text-[11px] border-collapse table-sticky whitespace-nowrap">
+                <thead class="text-slate-300 font-bold uppercase tracking-wider bg-slate-950" id="thead-rekap">
+                    </thead>
+                <tbody id="tbody-rekap" class="text-slate-400 divide-y divide-slate-800">
+                    <tr><td colspan="40" class="p-10 text-center italic text-slate-500">Silakan pilih filter dan klik Tampilkan Data</td></tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="bg-slate-950 p-3 border-t border-slate-800 flex gap-4 text-[10px] font-bold text-slate-400 justify-center">
+            <span class="flex items-center gap-1"><div class="w-3 h-3 bg-[#065f46] rounded"></div> Hadir (H)</span>
+            <span class="flex items-center gap-1"><div class="w-3 h-3 bg-[#1e40af] rounded"></div> Sakit (S)</span>
+            <span class="flex items-center gap-1"><div class="w-3 h-3 bg-[#854d0e] rounded"></div> Izin (I)</span>
+            <span class="flex items-center gap-1"><div class="w-3 h-3 bg-[#991b1b] rounded"></div> Alpha (A)</span>
+            <span class="flex items-center gap-1"><div class="w-3 h-3 bg-[#7f1d1d] rounded"></div> Libur (L)</span>
+        </div>
+    </div>
+
+    <div id="loading" class="fixed inset-0 loading-overlay flex flex-col items-center justify-center z-50 text-white hidden">
+        <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p class="font-bold animate-pulse text-sm">Sedang mengolah data...</p>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo",
+            authDomain: "siganteng-absensi.firebaseapp.com",
+            databaseURL: "https://siganteng-absensi-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "siganteng-absensi",
+            storageBucket: "siganteng-absensi.firebasestorage.app",
+            messagingSenderId: "917873420012",
+            appId: "1:917873420012:web:0fe1a9eddc5f94959ba7c9"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // GLOBAL STATE
+        let mode = 'siswa';
+        let mapKelas = {}; 
+        let cacheLibur = {};
+
+        // INIT
+        document.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
+            
+            // Cek Login Admin (Security Simple)
+            const role = localStorage.getItem('admin_role');
+            if(!role) {
+                alert('Akses ditolak. Silakan login sebagai admin.');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            setupDropdown();
+            await loadDataKelas();
+            await loadHariLibur();
+        });
+
+        // 1. SETUP DROPDOWN & DATA KELAS
+        function setupDropdown() {
+            const d = new Date();
+            const m = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+            const selBulan = document.getElementById('pilih-bulan');
+            m.forEach((b,i)=>{
+                let o = new Option(b, i);
+                if(i === d.getMonth()) o.selected = true;
+                selBulan.add(o);
+            });
+            
+            const selTahun = document.getElementById('pilih-tahun');
+            for(let y = d.getFullYear()-1; y <= d.getFullYear()+1; y++){
+                let o = new Option(y, y);
+                if(y === d.getFullYear()) o.selected = true;
+                selTahun.add(o);
+            }
+        }
+
+        async function loadDataKelas() {
+            // Kita tarik data siswa sekali saja untuk mapping kelas
+            const q = query(collection(db, "users"), where("role", "==", "siswa"));
+            const snap = await getDocs(q);
+            mapKelas = {};
+            
+            snap.forEach(doc => {
+                const d = doc.data();
+                if(d.kelas && d.kelas !== '-') {
+                    const k = d.kelas.toUpperCase().trim();
+                    const n = String(d.username).replace(/[^a-zA-Z0-9]/g, '').trim(); // Bersihkan NISN
+                    
+                    if(!mapKelas[k]) mapKelas[k] = [];
+                    // Simpan data minimalis
+                    mapKelas[k].push({
+                        nama: d.nama,
+                        nisn: n 
+                    });
+                }
+            });
+
+            const sel = document.getElementById('pilih-kelas');
+            sel.innerHTML = '<option value="">- Pilih Kelas -</option>';
+            Object.keys(mapKelas).sort().forEach(k => sel.add(new Option(k, k)));
+        }
+
+        async function loadHariLibur() {
+            const q = query(collection(db, "hari_libur"));
+            const snap = await getDocs(q);
+            cacheLibur = {};
+            snap.forEach(doc => {
+                cacheLibur[doc.data().tanggal] = doc.data().keterangan;
+            });
+        }
+
+        // 2. LOGIC GANTI MODE
+        window.gantiMode = (m) => {
+            mode = m;
+            document.getElementById('tbody-rekap').innerHTML = '<tr><td colspan="40" class="p-10 text-center italic text-slate-500">Mode berubah. Silakan klik Tampilkan Data.</td></tr>';
+            
+            if(mode === 'siswa') {
+                document.getElementById('btn-siswa').className = "px-4 py-2 rounded-md text-xs font-bold bg-blue-600 text-white transition";
+                document.getElementById('btn-guru').className = "px-4 py-2 rounded-md text-xs font-bold text-slate-400 hover:text-white transition";
+                document.getElementById('wrapper-kelas').classList.remove('hidden');
+            } else {
+                document.getElementById('btn-siswa').className = "px-4 py-2 rounded-md text-xs font-bold text-slate-400 hover:text-white transition";
+                document.getElementById('btn-guru').className = "px-4 py-2 rounded-md text-xs font-bold bg-orange-600 text-white transition";
+                document.getElementById('wrapper-kelas').classList.add('hidden');
+            }
+        }
+
+        // 3. CORE LOGIC: REKAP ABSENSI (Fix Blank Cells)
+        window.loadRekap = async () => {
+            const bln = parseInt(document.getElementById('pilih-bulan').value) + 1;
+            const thn = document.getElementById('pilih-tahun').value;
+            const kls = document.getElementById('pilih-kelas').value;
+
+            if(mode === 'siswa' && !kls) return Swal.fire('Pilih Kelas', 'Silakan pilih kelas terlebih dahulu.', 'warning');
+
+            document.getElementById('loading').classList.remove('hidden');
+
+            // --- A. SIAPKAN TARGET USER ---
+            let targetUsers = [];
+            if(mode === 'siswa') {
+                targetUsers = mapKelas[kls] || [];
+            } else {
+                // Tarik data guru dadakan
+                const qGuru = query(collection(db, "users"), where("role", "==", "guru"));
+                const snapGuru = await getDocs(qGuru);
+                snapGuru.forEach(doc => {
+                    const d = doc.data();
+                    targetUsers.push({ nama: d.nama, nisn: d.username }); // Pakai field nisn untuk simpan username/NIP
+                });
+            }
+
+            if(targetUsers.length === 0) {
+                document.getElementById('loading').classList.add('hidden');
+                return Swal.fire('Kosong', 'Tidak ada data user.', 'info');
+            }
+
+            // --- B. BUILD HEADER TABEL ---
+            const blnStr = bln < 10 ? '0' + bln : bln;
+            const daysInMonth = new Date(thn, bln, 0).getDate();
+            let headerHTML = `<tr>
+                <th class="p-3 border-b border-r border-slate-700 w-10 bg-slate-900">No</th>
+                <th class="p-3 border-b border-r border-slate-700 min-w-[250px] text-left bg-slate-900">Nama Lengkap</th>`;
+            
+            for(let d=1; d<=daysInMonth; d++) {
+                const dateObj = new Date(thn, bln-1, d);
+                const dStr = d < 10 ? '0' + d : d;
+                const dateFull = `${thn}-${blnStr}-${dStr}`;
+                const isLibur = cacheLibur[dateFull];
+                const dayOfWeek = dateObj.getDay(); // 0=Minggu, 6=Sabtu
+                
+                let bgClass = "bg-slate-900";
+                let textClass = "text-slate-300";
+
+                if(dayOfWeek === 0 || dayOfWeek === 6) { bgClass = "bg-slate-800"; textClass="text-red-400"; }
+                if(isLibur) { bgClass = "bg-red-900/50"; textClass = "text-red-200"; }
+
+                headerHTML += `<th class="p-2 border border-slate-700 ${bgClass} ${textClass} w-8 text-center">${d}</th>`;
+            }
+            headerHTML += '<th class="p-2 border border-slate-700 bg-emerald-900 text-emerald-100">H</th><th class="p-2 border border-slate-700 bg-blue-900 text-blue-100">S</th><th class="p-2 border border-slate-700 bg-yellow-900 text-yellow-100">I</th><th class="p-2 border border-slate-700 bg-red-900 text-red-100">A</th></tr>';
+            document.getElementById('thead-rekap').innerHTML = headerHTML;
+
+            // --- C. TARIK DATA ABSENSI ---
+            const start = `${thn}-${blnStr}-01`;
+            const end = `${thn}-${blnStr}-${daysInMonth}`;
+            
+            // Query Absensi (Tanpa filter kelas di query biar aman, filter di JS aja)
+            // Kenapa? Kadang field 'kelas' di absensi beda format spasi
+            const qAbsen = query(collection(db, "absensi"), where("tanggal", ">=", start), where("tanggal", "<=", end));
+            const snapAbsen = await getDocs(qAbsen);
+
+            // Mapping Data Absen: { "NISN": { "5": "H", "6": "S" } }
+            let absensiMap = {};
+            snapAbsen.forEach(doc => {
+                const d = doc.data();
+                const u = String(d.nisn).replace(/[^a-zA-Z0-9]/g, '').trim(); // KUNCI UTAMA: BERSIHKAN ID
+                const tgl = parseInt(d.tanggal.split('-')[2]); // Ambil tanggal hari (1-31)
+                
+                if(!absensiMap[u]) absensiMap[u] = {};
+                
+                // Tentukan Kode
+                let kode = 'A';
+                const st = d.status_terakhir || "";
+                if(st.includes("Masuk") || st.includes("Hadir") || st.includes("Pulang")) kode = 'H';
+                else if(st.includes("Sakit")) kode = 'S';
+                else if(st.includes("Izin")) kode = 'I';
+                
+                absensiMap[u][tgl] = kode;
+            });
+
+            // --- D. RENDER BARIS ---
+            const tbody = document.getElementById('tbody-rekap');
+            tbody.innerHTML = '';
+            
+            // Sort nama
+            targetUsers.sort((a,b) => a.nama.localeCompare(b.nama));
+
+            // Hari ini untuk perbandingan Alpha
+            const today = new Date(); 
+            today.setHours(0,0,0,0); // Reset jam jadi 00:00
+
+            targetUsers.forEach((u, idx) => {
+                const cleanID = String(u.nisn).replace(/[^a-zA-Z0-9]/g, '').trim();
+                let rowHTML = `<tr class="hover:bg-slate-800 border-b border-slate-800 transition">
+                    <td class="p-2 border border-slate-700 text-center text-slate-500">${idx+1}</td>
+                    <td class="p-2 border border-slate-700 text-left font-bold text-slate-300 sticky left-0 bg-slate-900 border-r shadow-lg">${u.nama}</td>`;
+                
+                let h=0, s=0, i=0, a=0;
+
+                for(let d=1; d<=daysInMonth; d++) {
+                    const dStr = d < 10 ? '0' + d : d;
+                    const dateFull = `${thn}-${blnStr}-${dStr}`;
+                    const currentDate = new Date(thn, bln-1, d);
+                    const dayOfWeek = currentDate.getDay();
+                    const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+                    const isLibur = cacheLibur[dateFull];
+
+                    // Cek Data Absen
+                    let status = absensiMap[cleanID] ? absensiMap[cleanID][d] : null;
+                    
+                    let cellClass = "";
+                    let cellText = "";
+
+                    // --- LOGIKA UTAMA PEWARNAAN ---
+                    if(status) {
+                        // ADA DATA ABSEN
+                        if(status === 'H') { cellClass = "bg-hadir"; cellText = "•"; h++; }
+                        else if(status === 'S') { cellClass = "bg-sakit"; cellText = "S"; s++; }
+                        else if(status === 'I') { cellClass = "bg-izin"; cellText = "I"; i++; }
+                        else { cellClass = "bg-alpha"; cellText = "A"; a++; } // Fallback
+                    } else {
+                        // TIDAK ADA DATA (KOSONG)
+                        if(isLibur) {
+                            cellClass = "bg-libur"; cellText = "L";
+                        } else if(isWeekend) {
+                            cellClass = "bg-weekend"; cellText = "";
+                        } else {
+                            // Cek Masa Lalu vs Masa Depan
+                            if(currentDate < today) {
+                                // Tanggal sudah lewat + Bukan Libur + Bukan Weekend + Tidak Absen = ALPHA
+                                cellClass = "bg-alpha"; cellText = "A"; a++;
+                            } else {
+                                // Hari ini atau masa depan
+                                cellText = "-";
+                            }
+                        }
+                    }
+
+                    rowHTML += `<td class="p-2 border border-slate-700 text-center ${cellClass}">${cellText}</td>`;
+                }
+
+                rowHTML += `<td class="p-2 border border-slate-700 font-bold text-emerald-400 bg-slate-900">${h}</td>
+                            <td class="p-2 border border-slate-700 font-bold text-blue-400 bg-slate-900">${s}</td>
+                            <td class="p-2 border border-slate-700 font-bold text-yellow-400 bg-slate-900">${i}</td>
+                            <td class="p-2 border border-slate-700 font-bold text-red-400 bg-slate-900">${a}</td>
+                        </tr>`;
+                
+                tbody.innerHTML += rowHTML;
+            });
+
+            document.getElementById('loading').classList.add('hidden');
+        }
+
+        window.downloadExcel = () => {
+            const t = document.getElementById('tabel-rekap');
+            const l = document.createElement("a");
+            l.href = 'data:application/vnd.ms-excel;charset=utf-8,' + encodeURIComponent(t.outerHTML.replace(/<table/g, '<table border="1"'));
+            l.download = `REKAP_ABSENSI_${document.getElementById('pilih-kelas').value || 'ALL'}.xls`;
+            l.click();
+        }
+
+    </script>
+</body>
+</html>
