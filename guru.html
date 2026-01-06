@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Guru - SiGanteng (v16.1 Fix)</title>
+    <title>Guru - SiGanteng (Panel Akademik)</title>
     
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="logo.png">
@@ -20,8 +20,6 @@
         .glass-header { background: linear-gradient(135deg, #0f172a 0%, #334155 100%); }
         .modal { opacity: 0; visibility: hidden; transition: all 0.3s ease-in-out; }
         .modal.active { opacity: 1; visibility: visible; }
-        .fade-in { animation: fadeIn 0.5s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
         /* Custom Radio Button untuk Absen Mapel */
         .radio-label input { display: none; }
@@ -30,8 +28,6 @@
         .radio-label input:checked + span.opt-s { background-color: #dbeafe; color: #2563eb; border-color: #3b82f6; }
         .radio-label input:checked + span.opt-i { background-color: #ffedd5; color: #ea580c; border-color: #f97316; }
         .radio-label input:checked + span.opt-a { background-color: #fee2e2; color: #dc2626; border-color: #ef4444; }
-        
-        button:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(100%); }
     </style>
 </head>
 <body class="text-slate-800 min-h-screen flex flex-col pb-24">
@@ -39,9 +35,9 @@
     <header class="glass-header p-6 pb-24 rounded-b-[2.5rem] shadow-xl relative z-10 text-white">
         <div class="flex justify-between items-start mb-6">
             <div>
-                <p class="text-slate-300 text-[10px] font-bold uppercase tracking-[0.2em]">Panel Pendidik</p>
+                <p class="text-slate-300 text-[10px] font-bold uppercase tracking-[0.2em]">Panel Akademik</p>
                 <h1 class="text-2xl font-black">SiGanteng <span class="text-emerald-400">Guru</span></h1>
-                <p id="infoWaktuServer" class="text-[9px] text-emerald-300 mt-1 hidden">✓ Terkoneksi Jam Server</p>
+                <p class="text-[9px] text-slate-400 mt-1">Terintegrasi Presensi Siswa</p>
             </div>
             <button onclick="logout()" class="bg-white/10 p-2 rounded-full hover:bg-red-500 transition"><i data-lucide="log-out" class="w-5 h-5"></i></button>
         </div>
@@ -65,88 +61,86 @@
 
     <main class="flex-1 px-5 -mt-16 relative z-20 space-y-6">
 
-        <div class="bg-white p-6 rounded-[2rem] shadow-lg border border-slate-100">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="font-bold text-slate-700 text-sm uppercase tracking-widest">Presensi Harian</h3>
-                <div id="status-absen" class="text-[10px] font-bold bg-slate-100 text-slate-500 px-3 py-1 rounded-full">Belum Absen</div>
-            </div>
+        <div id="panel-wali-kelas" class="hidden bg-orange-50 p-6 rounded-[2rem] shadow-lg border border-orange-100 relative overflow-hidden">
+            <div class="absolute -right-5 -top-5 w-24 h-24 bg-orange-200 rounded-full opacity-20 blur-xl"></div>
             
-            <div class="grid grid-cols-2 gap-4">
-                <button onclick="prosesAbsen('Masuk')" class="bg-emerald-50 border border-emerald-100 p-4 rounded-2xl flex flex-col items-center gap-2 active:scale-95 transition hover:bg-emerald-100">
-                    <div class="bg-emerald-500 text-white p-2 rounded-full"><i data-lucide="log-in" class="w-5 h-5"></i></div>
-                    <span class="text-xs font-bold text-emerald-700">DATANG</span>
-                </button>
-                <button onclick="prosesAbsen('Pulang')" class="bg-slate-50 border border-slate-200 p-4 rounded-2xl flex flex-col items-center gap-2 active:scale-95 transition hover:bg-slate-100">
-                    <div class="bg-slate-700 text-white p-2 rounded-full"><i data-lucide="log-out" class="w-5 h-5"></i></div>
-                    <span class="text-xs font-bold text-slate-700">PULANG</span>
+            <div class="relative z-10">
+                <h3 class="font-bold text-orange-800 text-sm uppercase tracking-widest mb-1 flex items-center gap-2">
+                    <i data-lucide="shield-check" class="w-4 h-4"></i> Panel Wali Kelas
+                </h3>
+                <h2 class="text-2xl font-black text-slate-800 mb-4">Kelas <span id="nama-kelas-wali">...</span></h2>
+                
+                <p class="text-xs text-slate-500 mb-4 leading-relaxed">
+                    Pantau kehadiran siswa perwalian Anda hari ini secara realtime.
+                </p>
+
+                <button onclick="bukaModalWali()" class="w-full bg-white text-orange-600 border-2 border-orange-200 py-4 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-orange-600 hover:text-white transition shadow-sm flex items-center justify-center gap-2 active:scale-95">
+                    <i data-lucide="users" class="w-4 h-4"></i> LIHAT ABSENSI KELAS
                 </button>
             </div>
-            <div id="jarakBox" class="mt-4 text-center text-[10px] font-mono text-slate-400">Menunggu GPS...</div>
         </div>
 
         <div id="section-menu-dinamis" class="hidden">
             <h3 class="font-bold text-slate-700 text-sm mb-2 ml-1 flex items-center gap-2">
-                <i data-lucide="grid" class="w-4 h-4 text-blue-500"></i> Layanan Guru & Staf
+                <i data-lucide="grid" class="w-4 h-4 text-blue-500"></i> Layanan Sekolah
             </h3>
             <div id="grid-menu-dinamis" class="grid grid-cols-2 gap-3"></div>
         </div>
 
-        <div id="panel-wali-kelas" class="hidden bg-orange-50 p-6 rounded-[2rem] shadow-lg border border-orange-100 relative overflow-hidden">
-            <div class="absolute -right-5 -top-5 w-24 h-24 bg-orange-200 rounded-full opacity-20 blur-xl"></div>
-            <h3 class="font-bold text-orange-800 text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
-                <i data-lucide="shield-check" class="w-4 h-4"></i> Kelas Anda: <span id="nama-kelas-wali">...</span>
-            </h3>
-            
-            <button onclick="bukaModalWali()" class="w-full bg-white text-orange-600 border-2 border-orange-100 py-4 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-orange-100 transition shadow-sm flex items-center justify-center gap-2 active:scale-95">
-                <i data-lucide="users" class="w-4 h-4"></i> CEK STATUS SISWA
-            </button>
-        </div>
-
         <div class="bg-white p-6 rounded-[2rem] shadow-lg border border-slate-100">
             <h3 class="font-bold text-slate-700 text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
-                <i data-lucide="book-open" class="w-4 h-4 text-blue-500"></i> Jurnal Mengajar
+                <i data-lucide="book-open" class="w-4 h-4 text-blue-500"></i> Input Jurnal KBM
             </h3>
             
             <div class="space-y-3">
-                <select id="jurnal-kelas" onchange="loadSiswaUntukAbsen()" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs font-bold text-slate-600 outline-none transition focus:border-blue-500">
-                    <option value="">- Pilih Kelas -</option>
-                </select>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 ml-1">KELAS</label>
+                    <select id="jurnal-kelas" onchange="loadSiswaUntukAbsen()" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs font-bold text-slate-600 outline-none transition focus:border-blue-500">
+                        <option value="">- Pilih Kelas Ajar -</option>
+                    </select>
+                </div>
                 
-                <select id="jurnal-mapel" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs font-bold text-slate-600 outline-none transition focus:border-blue-500">
-                    <option value="">- Memuat Mapel... -</option>
-                </select>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 ml-1">MATA PELAJARAN</label>
+                    <select id="jurnal-mapel" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs font-bold text-slate-600 outline-none transition focus:border-blue-500">
+                        <option value="">- Memuat Mapel... -</option>
+                    </select>
+                </div>
 
-                <div id="area-absen-mapel" class="hidden bg-slate-50 p-4 rounded-xl border border-slate-200 max-h-60 overflow-y-auto">
-                    <h4 class="text-xs font-bold text-slate-500 mb-3 flex justify-between items-center">
-                        <span>Absensi Mapel (Default: Hadir)</span>
-                        <span id="jml-siswa-mapel" class="bg-slate-200 px-2 py-0.5 rounded text-[9px]">0 Siswa</span>
+                <div id="area-absen-mapel" class="hidden bg-slate-50 p-4 rounded-xl border border-slate-200 max-h-80 overflow-y-auto">
+                    <h4 class="text-xs font-bold text-slate-500 mb-3 flex justify-between items-center sticky top-0 bg-slate-50 pb-2 border-b border-slate-200">
+                        <span>Absensi Jam Ini</span>
+                        <span id="jml-siswa-mapel" class="bg-blue-100 text-blue-600 px-2 py-0.5 rounded text-[9px]">0 Siswa</span>
                     </h4>
+                    <p class="text-[9px] text-slate-400 mb-2 italic">*Otomatis Hadir (H). Ubah jika siswa tidak ada.</p>
                     <div id="list-absen-mapel" class="space-y-2"></div>
                 </div>
 
-                <textarea id="jurnal-materi" rows="2" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs font-bold text-slate-600 outline-none transition focus:border-blue-500" placeholder="Materi / Bahasan Hari Ini..."></textarea>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 ml-1">MATERI / BAHASAN</label>
+                    <textarea id="jurnal-materi" rows="2" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs font-bold text-slate-600 outline-none transition focus:border-blue-500" placeholder="Contoh: Bab 3 - Persamaan Kuadrat..."></textarea>
+                </div>
                 
-                <div class="flex items-center gap-3">
-                    <button onclick="bukaKameraJurnal()" class="bg-slate-100 p-3 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-200 transition">
+                <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <button onclick="bukaKameraJurnal()" class="bg-white p-2 rounded-lg border border-slate-200 text-slate-500 hover:text-blue-500 transition shadow-sm">
                         <i data-lucide="camera" class="w-5 h-5"></i>
                     </button>
-                    <div id="preview-foto-jurnal" class="text-xs text-slate-400 italic">Wajib foto bukti KBM.</div>
+                    <div class="flex-1">
+                        <div id="preview-foto-jurnal" class="text-xs text-slate-400 italic">Bukti Foto KBM (Wajib)</div>
+                    </div>
                 </div>
 
-                <button onclick="kirimJurnal()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold text-xs shadow-lg shadow-blue-500/30 active:scale-95 transition">SIMPAN JURNAL & ABSENSI</button>
+                <button onclick="kirimJurnal()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold text-xs shadow-lg shadow-blue-500/30 active:scale-95 transition mt-4">SIMPAN JURNAL</button>
             </div>
 
-            <div class="mt-4 pt-4 border-t border-slate-100">
+            <div class="mt-6 pt-4 border-t border-slate-100">
                 <button onclick="downloadRekapJurnal()" class="w-full bg-emerald-50 text-emerald-700 py-3 rounded-xl font-bold text-xs border border-emerald-100 hover:bg-emerald-100 transition flex items-center justify-center gap-2">
-                    <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> DOWNLOAD JURNAL + REFLEKSI
+                    <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> REKAP JURNAL & REFLEKSI
                 </button>
             </div>
 
-            <div class="mt-4 pt-4 border-t border-slate-100">
-                <div class="flex justify-between items-center mb-3">
-                    <h4 class="font-bold text-xs text-slate-400 uppercase">Riwayat Hari Ini</h4>
-                    <span id="badge-refleksi" class="hidden text-[9px] bg-purple-100 text-purple-600 px-2 py-0.5 rounded font-bold">Evaluasi ON</span>
-                </div>
+            <div class="mt-6 pt-4 border-t border-slate-100">
+                <h4 class="font-bold text-xs text-slate-400 uppercase mb-3">Riwayat Mengajar Hari Ini</h4>
                 <div id="list-riwayat-jurnal" class="space-y-2">
                     <div class="text-center text-slate-300 text-xs italic py-2">Belum ada jurnal hari ini.</div>
                 </div>
@@ -156,17 +150,26 @@
     </main>
 
     <div id="modal-wali" class="modal fixed inset-0 z-50 flex items-center justify-center bg-slate-900/90 backdrop-blur-sm p-4">
-        <div class="modal-content bg-white w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[80vh]">
-            <div class="bg-orange-50 p-4 border-b border-orange-100 flex justify-between items-center">
-                <h3 class="font-bold text-orange-800">Status Siswa: <span id="judul-modal-wali"></span></h3>
+        <div class="modal-content bg-white w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="bg-orange-50 p-4 border-b border-orange-100 flex justify-between items-center shrink-0">
+                <div>
+                    <h3 class="font-bold text-orange-900">Monitoring Kelas</h3>
+                    <p class="text-[10px] text-orange-600" id="info-kelas-modal">...</p>
+                </div>
                 <button onclick="document.getElementById('modal-wali').classList.remove('active')" class="p-2 bg-white rounded-full text-slate-400 hover:text-red-500"><i data-lucide="x" class="w-4 h-4"></i></button>
             </div>
-            <div class="bg-slate-50 px-4 py-2 text-[10px] text-slate-500 font-bold flex justify-between">
-                <span>Total: <span id="total-siswa-wali">0</span> Siswa</span>
-                <span id="tanggal-wali">...</span>
+            
+            <div class="bg-white p-2 border-b border-slate-100 flex justify-between text-[10px] font-bold text-slate-500 px-4 shrink-0">
+                <span>SISWA</span>
+                <span>STATUS KEHADIRAN</span>
             </div>
-            <div class="overflow-y-auto p-4 space-y-3" id="list-siswa-wali">
-                <div class="text-center py-10 text-slate-400 italic">Memuat data...</div>
+
+            <div class="overflow-y-auto p-4 space-y-2 bg-slate-50 flex-1" id="list-siswa-wali">
+                <div class="text-center py-10 text-slate-400 italic">Memuat data absensi...</div>
+            </div>
+            
+            <div class="p-3 bg-white border-t border-slate-100 shrink-0 text-center">
+                <p class="text-[9px] text-slate-400 italic">Data diperbarui secara realtime saat dibuka.</p>
             </div>
         </div>
     </div>
@@ -192,7 +195,6 @@
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
-        // CONFIG FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo",
             authDomain: "siganteng-absensi.firebaseapp.com",
@@ -206,26 +208,14 @@
         const db = getFirestore(app);
         const storage = getStorage(app);
 
-        // GLOBAL VARIABLES
         let userGuru = null;
-        let lokasiUser = null;
-        let configSekolah = { validasi_gps_aktif: true, radius_meter: 50 };
-        let configFitur = { refleksi_guru_aktif: false };
         let streamKamera = null;
         let tipeAbsenAktif = "";
         let fotoBuktiJurnal = null;
-        let dataSiswaWali = [];
-        let dataAbsenWali = {};
-        let SEKOLAH_LAT = -7.6739830;
-        let SEKOLAH_LNG = 109.6319560;
-
-        // SECURITY & TIME SYNC
-        let serverTimeOffset = 0;
-        let isTimeValidated = false;
-        let isSubmitting = false; 
-
+        let lokasiUser = null; // Masih dipakai untuk geotagging Jurnal (optional)
+        
         const getTodayID = () => {
-            const now = new Date(new Date().getTime() + serverTimeOffset);
+            const now = new Date();
             const year = now.getFullYear();
             const month = String(now.getMonth() + 1).padStart(2, '0');
             const day = String(now.getDate()).padStart(2, '0');
@@ -234,49 +224,35 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
-            syncWaktuServer(); 
-
             const sess = sessionStorage.getItem('user_siganteng');
-            const local = localStorage.getItem('userSiswa');
             
-            let dataUser = sess ? JSON.parse(sess) : (local ? JSON.parse(local) : null);
-
-            if (dataUser) {
-                userGuru = dataUser;
+            if (sess) {
+                userGuru = JSON.parse(sess);
                 if(userGuru.role === 'siswa') { window.location.href = 'siswa.html'; return; }
-
+                
                 initDashboard();
-                syncAdmin();
-                cekGPS(); 
+                refreshUserData(); // Cek Wali Kelas Disini
+                
                 loadDaftarKelas();
-                loadDaftarMapel(); 
+                loadDaftarMapel();
                 loadRiwayatJurnal();
                 loadMenuDinamis();
                 
-                // AUTO-SYNC DATA GURU (Wali Kelas check happens here)
-                refreshUserData(); 
-
+                // Cek GPS untuk Metadata Jurnal (Bukan untuk Absen Masuk)
+                if(navigator.geolocation) {
+                    navigator.geolocation.watchPosition(p => {
+                        lokasiUser = { lat: p.coords.latitude, lng: p.coords.longitude };
+                    });
+                }
             } else { window.location.href = 'index.html'; }
         });
-
-        async function syncWaktuServer() {
-            try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 5000);
-                const response = await fetch('https://worldtimeapi.org/api/timezone/Asia/Jakarta', { signal: controller.signal });
-                clearTimeout(timeoutId);
-                const data = await response.json();
-                serverTimeOffset = new Date(data.datetime).getTime() - new Date().getTime();
-                isTimeValidated = true;
-                document.getElementById('infoWaktuServer').classList.remove('hidden');
-            } catch (e) { isTimeValidated = false; }
-        }
 
         function initDashboard() { 
             document.getElementById('nama-guru').innerText = userGuru.nama; 
             document.getElementById('nip-guru').innerText = "NIP: " + userGuru.username; 
         }
 
+        // --- CEK STATUS WALI KELAS (DIPERBAIKI) ---
         async function refreshUserData() {
             try {
                 const docRef = doc(db, "guru", userGuru.username);
@@ -285,22 +261,104 @@
                     const freshData = docSnap.data();
                     if(freshData.foto_profil) document.getElementById('foto-guru').src = freshData.foto_profil;
                     
-                    // PERBAIKAN: Selalu update session dan UI jika data wali kelas ada di DB
+                    // Logika WALI KELAS
                     if(freshData.wali_kelas && freshData.wali_kelas !== "-") {
                         userGuru.wali_kelas = freshData.wali_kelas;
                         sessionStorage.setItem('user_siganteng', JSON.stringify(userGuru));
                         
+                        // Tampilkan Elemen Wali Kelas
                         document.getElementById('badge-wali').classList.remove('hidden');
-                        document.getElementById('panel-wali-kelas').classList.remove('hidden'); // Force Show
+                        document.getElementById('panel-wali-kelas').classList.remove('hidden');
                         document.getElementById('nama-kelas-wali').innerText = freshData.wali_kelas;
-                        
-                        // Siapkan data wali
-                        initWaliKelas(freshData.wali_kelas);
+                        document.getElementById('info-kelas-modal').innerText = `Kelas: ${freshData.wali_kelas} | Tgl: ${getTodayID()}`;
                     }
                 }
             } catch (e) { console.error("Gagal refresh profil:", e); }
         }
 
+        // --- MODAL WALI KELAS: LOGIKA YANG HILANG DIKEMBALIKAN ---
+        window.bukaModalWali = async () => {
+            const container = document.getElementById('list-siswa-wali');
+            const kelas = userGuru.wali_kelas;
+            const todayStr = getTodayID();
+            
+            container.innerHTML = '<div class="text-center py-10 text-slate-400 italic">Mengambil data siswa & absensi...</div>';
+            document.getElementById('modal-wali').classList.add('active');
+
+            try {
+                // 1. Ambil Semua Siswa di Kelas Ini
+                const qSiswa = query(collection(db, "users"), where("kelas", "==", kelas), where("role", "==", "siswa"));
+                const snapSiswa = await getDocs(qSiswa);
+                
+                if(snapSiswa.empty) {
+                    container.innerHTML = '<div class="text-center text-red-500 font-bold py-10">Data siswa tidak ditemukan di database.</div>';
+                    return;
+                }
+
+                let listSiswa = [];
+                snapSiswa.forEach(d => listSiswa.push(d.data()));
+                listSiswa.sort((a,b) => a.nama.localeCompare(b.nama));
+
+                // 2. Ambil Data Absensi HARI INI
+                const qAbsen = query(collection(db, "absensi"), where("kelas", "==", kelas), where("tanggal", "==", todayStr));
+                const snapAbsen = await getDocs(qAbsen);
+                let mapAbsen = {};
+                snapAbsen.forEach(d => {
+                    const dt = d.data();
+                    mapAbsen[dt.nisn] = dt; // Mapping by NISN/Username
+                });
+
+                // 3. Render Gabungan
+                container.innerHTML = '';
+                let hadirCount = 0;
+                
+                listSiswa.forEach(s => {
+                    const dataAbsen = mapAbsen[s.username]; // Username siswa adalah NISN
+                    let statusBadge = '';
+                    let borderColor = 'border-slate-100';
+
+                    if (!dataAbsen) {
+                        // BELUM ABSEN (ALPHA)
+                        statusBadge = `<span class="bg-slate-200 text-slate-500 px-2 py-1 rounded text-[9px] font-bold">BELUM ABSEN</span>`;
+                    } else {
+                        // SUDAH ADA DATA
+                        const st = dataAbsen.status_terakhir || "";
+                        if (st.includes("Masuk") || st.includes("Hadir") || dataAbsen.jam_masuk) {
+                            hadirCount++;
+                            const jam = dataAbsen.jam_masuk ? new Date(dataAbsen.jam_masuk.seconds * 1000).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : "Hadir";
+                            statusBadge = `<span class="bg-emerald-100 text-emerald-600 px-2 py-1 rounded text-[9px] font-bold">MASUK: ${jam}</span>`;
+                            borderColor = 'border-emerald-200 bg-emerald-50/30';
+                        } else if (st.includes("Sakit")) {
+                            statusBadge = `<span class="bg-rose-100 text-rose-600 px-2 py-1 rounded text-[9px] font-bold">SAKIT</span>`;
+                            borderColor = 'border-rose-200 bg-rose-50/30';
+                        } else if (st.includes("Izin")) {
+                            statusBadge = `<span class="bg-blue-100 text-blue-600 px-2 py-1 rounded text-[9px] font-bold">IZIN</span>`;
+                            borderColor = 'border-blue-200 bg-blue-50/30';
+                        } else {
+                            statusBadge = `<span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-[9px] font-bold">${st}</span>`;
+                        }
+                    }
+
+                    const foto = `https://ui-avatars.com/api/?name=${s.nama}&background=random&color=fff`;
+                    
+                    container.innerHTML += `
+                        <div class="flex items-center justify-between p-3 rounded-xl border ${borderColor} bg-white shadow-sm mb-2">
+                            <div class="flex items-center gap-3">
+                                <img src="${foto}" class="w-8 h-8 rounded-full bg-slate-200 object-cover">
+                                <span class="text-xs font-bold text-slate-700 truncate w-32">${s.nama}</span>
+                            </div>
+                            <div>${statusBadge}</div>
+                        </div>
+                    `;
+                });
+                
+            } catch (e) {
+                console.error(e);
+                container.innerHTML = '<div class="text-center text-red-500">Gagal memuat data.</div>';
+            }
+        }
+
+        // --- JURNAL MENGAJAR (LOAD SISWA DI KELAS) ---
         window.loadSiswaUntukAbsen = async () => {
             const kls = document.getElementById('jurnal-kelas').value;
             const container = document.getElementById('list-absen-mapel');
@@ -339,105 +397,40 @@
             });
         }
 
-        // --- WALI KELAS LOGIC ---
-        async function initWaliKelas(kelasWali) {
-            const qSiswa = query(collection(db, "users"), where("kelas", "==", kelasWali), where("role", "==", "siswa"));
-            const snap = await getDocs(qSiswa);
-            dataSiswaWali = [];
-            snap.forEach(doc => dataSiswaWali.push(doc.data()));
-            dataSiswaWali.sort((a,b) => a.nama.localeCompare(b.nama));
-            pantauAbsenWali(kelasWali);
-        }
-
-        function pantauAbsenWali(kelasWali) {
-            const todayStr = getTodayID();
-            const q = query(collection(db, "absensi"), where("tanggal", "==", todayStr), where("kelas", "==", kelasWali));
-            onSnapshot(q, (snap) => {
-                dataAbsenWali = {};
-                snap.forEach(doc => { const d = doc.data(); dataAbsenWali[d.nisn] = d; });
-            });
-        }
-
-        window.bukaModalWali = async () => {
-            const container = document.getElementById('list-siswa-wali'); 
-            container.innerHTML = '';
-            document.getElementById('judul-modal-wali').innerText = userGuru.wali_kelas;
-            document.getElementById('total-siswa-wali').innerText = dataSiswaWali.length;
-            document.getElementById('tanggal-wali').innerText = new Date().toLocaleDateString('id-ID');
-
-            if(dataSiswaWali.length === 0) { 
-                container.innerHTML = '<div class="text-center text-slate-400">Data siswa kosong.</div>'; 
-                document.getElementById('modal-wali').classList.add('active'); 
-                return; 
-            }
-
-            dataSiswaWali.forEach(s => {
-                const absen = dataAbsenWali[s.username]; // Username is NISN
-                
-                // LOGIKA BARU: Jika tidak ada data absen -> "Belum Absen" (Abu-abu)
-                // Jika ada -> Cek Jam Masuk / Status
-                
-                let statusHtml = `<span class="text-[10px] font-bold bg-slate-200 text-slate-500 px-2 py-1 rounded">Belum Absen</span>`;
-                
-                if(absen) {
-                    if (absen.jam_masuk) {
-                        const date = absen.jam_masuk.toDate();
-                        const jamStr = date.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
-                        statusHtml = `<span class="text-[10px] font-bold bg-emerald-100 text-emerald-600 px-2 py-1 rounded">Masuk: ${jamStr}</span>`;
-                    } else if (absen.status_terakhir) {
-                        // Handle Izin/Sakit/AlphaManual
-                        let warna = "bg-blue-100 text-blue-600";
-                        if(absen.status_terakhir.includes('Sakit')) warna = "bg-pink-100 text-pink-600";
-                        statusHtml = `<span class="text-[10px] font-bold ${warna} px-2 py-1 rounded">${absen.status_terakhir}</span>`;
-                    }
-                }
-
-                const fotoSrc = `https://ui-avatars.com/api/?name=${s.nama}&background=random&color=fff`;
-                
-                container.innerHTML += `
-                    <div class="flex items-center justify-between bg-white p-3 mb-2 rounded-xl border border-slate-100 shadow-sm">
-                        <div class="flex items-center gap-3">
-                            <img src="${fotoSrc}" class="w-8 h-8 rounded-full object-cover bg-slate-100 border border-slate-200">
-                            <div>
-                                <div class="font-bold text-xs text-slate-700 leading-tight mb-0.5">${s.nama}</div>
-                                <div>${statusHtml}</div>
-                            </div>
-                        </div>
-                    </div>`;
-            });
-            document.getElementById('modal-wali').classList.add('active');
-        }
-
+        // --- FUNGSI PENDUKUNG ---
         async function loadDaftarKelas() { const sel = document.getElementById('jurnal-kelas'); const cachedKelas = localStorage.getItem('cache_list_kelas'); if(cachedKelas) { renderOptions(sel, JSON.parse(cachedKelas)); return; } try { const q = query(collection(db, "users"), where("role", "==", "siswa")); const snap = await getDocs(q); const kelasUnik = new Set(); snap.forEach(doc => { const d = doc.data(); if(d.kelas && d.kelas !== "-") kelasUnik.add(d.kelas.toUpperCase().trim()); }); const listArr = Array.from(kelasUnik).sort(); localStorage.setItem('cache_list_kelas', JSON.stringify(listArr)); renderOptions(sel, listArr); } catch (e) { console.error(e); } }
         async function loadDaftarMapel() { const sel = document.getElementById('jurnal-mapel'); const cachedMapel = localStorage.getItem('cache_list_mapel'); if(cachedMapel) { renderOptions(sel, JSON.parse(cachedMapel)); return; } try { const q = query(collection(db, "mata_pelajaran"), orderBy("nama", "asc")); const snap = await getDocs(q); const listArr = []; snap.forEach(doc => listArr.push(doc.data().nama)); localStorage.setItem('cache_list_mapel', JSON.stringify(listArr)); renderOptions(sel, listArr); } catch (e) { console.error(e); } }
         function renderOptions(selectEl, arrayData) { selectEl.innerHTML = '<option value="">- Pilih -</option>'; arrayData.forEach(item => selectEl.add(new Option(item, item))); }
         function loadMenuDinamis() { const container = document.getElementById('grid-menu-dinamis'); const sec = document.getElementById('section-menu-dinamis'); onSnapshot(query(collection(db, "menu_dinamis"), orderBy("created_at", "asc")), (snap) => { container.innerHTML = ''; let ada = false; snap.forEach(d => { const dt = d.data(); if (dt.target === 'guru' || dt.target === 'umum') { ada = true; const style = dt.highlight ? "bg-indigo-50 text-indigo-700 border-indigo-200" : "bg-white text-slate-700 border-slate-100"; container.innerHTML += `<a href="${dt.link}" target="_blank" class="${style} p-4 border rounded-2xl flex flex-col items-center gap-2 shadow-sm active:scale-95 transition"><div class="text-xl">${dt.icon}</div><span class="text-[10px] font-bold uppercase">${dt.judul}</span></a>`; } }); if(ada) sec.classList.remove('hidden'); else sec.classList.add('hidden'); }); }
 
-        function cekGPS() { if(navigator.geolocation) { navigator.geolocation.watchPosition((p) => { lokasiUser = { lat: p.coords.latitude, lng: p.coords.longitude }; const d = hitungJarak(lokasiUser.lat, lokasiUser.lng, SEKOLAH_LAT, SEKOLAH_LNG); const box = document.getElementById('jarakBox'); const limit = configSekolah.radius_meter || 50; if(configSekolah.validasi_gps_aktif && d > limit) { box.innerHTML = `<span class="text-red-500 font-bold">Lokasi: ${Math.round(d)}m (Luar Area)</span>`; } else { box.innerHTML = `<span class="text-emerald-500 font-bold">Lokasi Valid: ${Math.round(d)}m</span>`; } }, null, { enableHighAccuracy: true }); } }
-        function hitungJarak(lat1, lon1, lat2, lon2) { const R = 6371e3; const φ1 = lat1 * Math.PI/180; const φ2 = lat2 * Math.PI/180; const Δφ = (lat2-lat1) * Math.PI/180; const Δλ = (lon2-lon1) * Math.PI/180; const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) * Math.sin(Δλ/2); return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); }
-        function syncAdmin() { onSnapshot(doc(db, "pengaturan", "sekolah"), (snap) => { if(snap.exists()) { configSekolah = snap.data(); if(configSekolah.lokasi_lat) SEKOLAH_LAT = configSekolah.lokasi_lat; if(configSekolah.lokasi_lng) SEKOLAH_LNG = configSekolah.lokasi_lng; } }); onSnapshot(doc(db, "pengaturan", "fitur"), (snap) => { if(snap.exists()) { configFitur = snap.data(); if(configFitur.refleksi_guru_aktif) { document.getElementById('badge-refleksi').classList.remove('hidden'); } else { document.getElementById('badge-refleksi').classList.add('hidden'); } } }); }
-
-        window.bukaKameraProfil = () => { if(isSubmitting) return; tipeAbsenAktif = "ProfilGuru"; document.getElementById('judul-kamera').innerText = "SELFIE PROFIL"; document.getElementById('modalKamera').classList.remove('hidden'); navigator.mediaDevices.getUserMedia({video: {facingMode: 'user', aspectRatio: 1}}).then(s => { streamKamera = s; document.getElementById('videoStream').srcObject = s; }); }
-        window.bukaKameraJurnal = () => { if(isSubmitting) return; tipeAbsenAktif = "Jurnal"; document.getElementById('judul-kamera').innerText = "FOTO BUKTI KBM"; document.getElementById('modalKamera').classList.remove('hidden'); navigator.mediaDevices.getUserMedia({video: {facingMode: 'environment'}}).then(s => { streamKamera = s; document.getElementById('videoStream').srcObject = s; }); }
+        window.bukaKameraProfil = () => { tipeAbsenAktif = "ProfilGuru"; document.getElementById('judul-kamera').innerText = "SELFIE PROFIL"; document.getElementById('modalKamera').classList.remove('hidden'); navigator.mediaDevices.getUserMedia({video: {facingMode: 'user', aspectRatio: 1}}).then(s => { streamKamera = s; document.getElementById('videoStream').srcObject = s; }); }
+        window.bukaKameraJurnal = () => { tipeAbsenAktif = "Jurnal"; document.getElementById('judul-kamera').innerText = "FOTO BUKTI KBM"; document.getElementById('modalKamera').classList.remove('hidden'); navigator.mediaDevices.getUserMedia({video: {facingMode: 'environment'}}).then(s => { streamKamera = s; document.getElementById('videoStream').srcObject = s; }); }
         window.tutupKamera = () => { document.getElementById('modalKamera').classList.add('hidden'); if(streamKamera) streamKamera.getTracks().forEach(t=>t.stop()); }
-        window.prosesAbsen = (tipe) => { if(!lokasiUser) return Swal.fire('GPS','Sedang mencari lokasi...','info'); const d = hitungJarak(lokasiUser.lat, lokasiUser.lng, SEKOLAH_LAT, SEKOLAH_LNG); if(configSekolah.validasi_gps_aktif && d > (configSekolah.radius_meter || 50)) { return Swal.fire('Kejauhan!', 'Bapak/Ibu belum di area sekolah.', 'error'); } tipeAbsenAktif = tipe; document.getElementById('judul-kamera').innerText = "ABSEN " + tipe.toUpperCase(); document.getElementById('modalKamera').classList.remove('hidden'); navigator.mediaDevices.getUserMedia({video: {facingMode: 'user'}}).then(s => { streamKamera = s; document.getElementById('videoStream').srcObject = s; }); }
         
         window.jepret = async () => { 
             const vid = document.getElementById('videoStream'); const can = document.getElementById('canvasFoto'); can.width = 480; can.height = 480; can.getContext('2d').drawImage(vid,0,0,480,480); const foto = can.toDataURL('image/jpeg', 0.7); 
-            if(tipeAbsenAktif === 'ProfilGuru') { try { tutupKamera(); Swal.fire({title:'Mengupdate...', didOpen:()=>Swal.showLoading()}); const snap = await uploadString(ref(storage, `profil_guru/${userGuru.username}.jpg`), foto, 'data_url'); const url = await getDownloadURL(snap.ref); await setDoc(doc(db, "guru", userGuru.username), { foto_profil: url, updated_at: serverTimestamp() }, { merge: true }); Swal.fire('Cakep!', 'Foto berhasil.', 'success'); } catch(e) { Swal.fire('Error', e.message, 'error'); } return; } 
-            if(tipeAbsenAktif === 'Jurnal') { fotoBuktiJurnal = foto; document.getElementById('preview-foto-jurnal').innerText = "Foto Terlampir ✔"; document.getElementById('preview-foto-jurnal').className = "text-xs text-green-600 font-bold italic"; tutupKamera(); return; } 
-            const todayStr = getTodayID(); const idDoc = `${todayStr}_${userGuru.username}`; 
-            try { tutupKamera(); Swal.fire({title:'Menyimpan...', didOpen:()=>Swal.showLoading()}); const snap = await uploadString(ref(storage, `absen_guru/${todayStr}/${userGuru.username}_${tipeAbsenAktif}.jpg`), foto, 'data_url'); const url = await getDownloadURL(snap.ref); let data = { nisn: userGuru.username, nama: userGuru.nama, kelas: 'GURU', role: 'guru', tanggal: todayStr, status_terakhir: tipeAbsenAktif + " (Guru)", koordinat_kirim: `${lokasiUser.lat},${lokasiUser.lng}` }; if(tipeAbsenAktif === 'Masuk') { data.jam_masuk = serverTimestamp(); data.foto_masuk = url; } else { data.jam_pulang = serverTimestamp(); data.foto_pulang = url; } await setDoc(doc(db, "absensi", idDoc), data, {merge: true}); document.getElementById('status-absen').innerText = "Sudah " + tipeAbsenAktif; document.getElementById('status-absen').className = "text-[10px] font-bold bg-emerald-100 text-emerald-600 px-3 py-1 rounded-full"; Swal.fire('Berhasil', 'Presensi terekam.', 'success'); } catch(e) { Swal.fire('Error', e.message, 'error'); } 
+            
+            if(tipeAbsenAktif === 'ProfilGuru') { 
+                try { tutupKamera(); Swal.fire({title:'Mengupdate...', didOpen:()=>Swal.showLoading()}); const snap = await uploadString(ref(storage, `profil_guru/${userGuru.username}.jpg`), foto, 'data_url'); const url = await getDownloadURL(snap.ref); await setDoc(doc(db, "guru", userGuru.username), { foto_profil: url, updated_at: serverTimestamp() }, { merge: true }); Swal.fire('Cakep!', 'Foto berhasil.', 'success'); } catch(e) { Swal.fire('Error', e.message, 'error'); } 
+                return; 
+            } 
+            
+            if(tipeAbsenAktif === 'Jurnal') { 
+                fotoBuktiJurnal = foto; 
+                document.getElementById('preview-foto-jurnal').innerText = "Foto Terlampir ✔"; 
+                document.getElementById('preview-foto-jurnal').className = "text-xs text-green-600 font-bold italic"; 
+                tutupKamera(); 
+            } 
         }
 
         window.kirimJurnal = async () => { 
-            if(isSubmitting) return;
             const kls = document.getElementById('jurnal-kelas').value; 
             const mapel = document.getElementById('jurnal-mapel').value; 
             const materi = document.getElementById('jurnal-materi').value; 
             if(!kls || !mapel || !materi) return Swal.fire('Lengkapi','Kelas, Mapel, dan Materi wajib diisi','warning'); 
             if(!fotoBuktiJurnal) return Swal.fire('Wajib Foto','Lampirkan foto bukti KBM','warning'); 
             
+            // Ambil data absensi mapel
             let absensiSiswa = [];
             document.querySelectorAll('.siswa-item').forEach(el => {
                 const nisn = el.getAttribute('data-nisn');
@@ -446,23 +439,26 @@
                 absensiSiswa.push({ nisn, nama, status });
             });
 
-            isSubmitting = true;
             document.getElementById('loading').classList.remove('hidden'); 
             try { 
                 const todayStr = getTodayID(); 
                 const snap = await uploadString(ref(storage, `jurnal_guru/${todayStr}/${userGuru.username}_${Date.now()}.jpg`), fotoBuktiJurnal, 'data_url'); 
                 const urlFoto = await getDownloadURL(snap.ref); 
                 
-                await addDoc(collection(db, "jurnal_guru"), { 
+                let dataJurnal = { 
                     nip: userGuru.username, nama_guru: userGuru.nama, kelas: kls, mapel: mapel, materi: materi, 
                     foto_bukti: urlFoto, waktu: serverTimestamp(), tanggal: todayStr,
                     absensi_mapel: absensiSiswa 
-                }); 
+                };
+                if(lokasiUser) dataJurnal.koordinat = `${lokasiUser.lat},${lokasiUser.lng}`;
+
+                await addDoc(collection(db, "jurnal_guru"), dataJurnal); 
                 
                 Swal.fire('Tersimpan', 'Jurnal & Absensi berhasil diupload.', 'success'); 
-                document.getElementById('jurnal-materi').value = ''; fotoBuktiJurnal = null; document.getElementById('preview-foto-jurnal').innerText = "Belum ada foto bukti."; document.getElementById('preview-foto-jurnal').className = "text-xs text-slate-400 italic"; 
+                document.getElementById('jurnal-materi').value = ''; fotoBuktiJurnal = null; document.getElementById('preview-foto-jurnal').innerText = "Bukti Foto KBM (Wajib)"; document.getElementById('preview-foto-jurnal').className = "text-xs text-slate-400 italic"; 
+                // Reset Radio Button ke H
                 document.querySelectorAll('input[value="H"]').forEach(r => r.checked = true);
-            } catch(e) { Swal.fire('Gagal', e.message, 'error'); } finally { document.getElementById('loading').classList.add('hidden'); isSubmitting = false; } 
+            } catch(e) { Swal.fire('Gagal', e.message, 'error'); } finally { document.getElementById('loading').classList.add('hidden'); } 
         }
 
         window.downloadRekapJurnal = async () => { 
@@ -495,7 +491,6 @@
                 });
 
                 await Promise.all(promises);
-
                 rawData.sort((a, b) => (b.waktu?.toMillis() || 0) - (a.waktu?.toMillis() || 0)); 
                 
                 const dataExport = rawData.map(d => ({ 
