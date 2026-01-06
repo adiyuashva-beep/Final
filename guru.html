@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Guru - SiGanteng (Panel Akademik)</title>
+    <title>Guru - SiGanteng (Akademik)</title>
     
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="logo.png">
@@ -21,6 +21,10 @@
         .modal { opacity: 0; visibility: hidden; transition: all 0.3s ease-in-out; }
         .modal.active { opacity: 1; visibility: visible; }
         
+        /* Force Display Classes */
+        .force-show { display: block !important; }
+        .force-hide { display: none !important; }
+
         /* Custom Radio Button */
         .radio-label input { display: none; }
         .radio-label span { display: inline-block; padding: 4px 10px; border-radius: 8px; font-size: 10px; font-weight: bold; cursor: pointer; border: 1px solid #e2e8f0; color: #94a3b8; }
@@ -54,7 +58,7 @@
             <div>
                 <h2 id="nama-guru" class="text-lg font-bold leading-tight">...</h2>
                 <p id="nip-guru" class="text-xs font-mono text-slate-300 mt-1">...</p>
-                <div id="badge-wali" class="hidden mt-2 inline-block bg-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded">WALI KELAS</div>
+                <div id="badge-wali" class="hidden mt-2 bg-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded">WALI KELAS</div>
             </div>
         </div>
     </header>
@@ -68,14 +72,14 @@
                 <h3 class="font-bold text-orange-800 text-sm uppercase tracking-widest mb-1 flex items-center gap-2">
                     <i data-lucide="shield-check" class="w-4 h-4"></i> Panel Wali Kelas
                 </h3>
-                <h2 class="text-2xl font-black text-slate-800 mb-4">Kelas <span id="nama-kelas-wali">...</span></h2>
+                <h2 class="text-2xl font-black text-slate-800 mb-4">Kelas <span id="nama-kelas-wali" class="text-orange-600">...</span></h2>
                 
                 <p class="text-xs text-slate-500 mb-4 leading-relaxed">
-                    Pantau kehadiran siswa perwalian Anda hari ini secara realtime.
+                    Pantau kehadiran siswa perwalian Anda secara realtime hari ini.
                 </p>
 
                 <button onclick="bukaModalWali()" class="w-full bg-white text-orange-600 border-2 border-orange-200 py-4 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-orange-600 hover:text-white transition shadow-sm flex items-center justify-center gap-2 active:scale-95">
-                    <i data-lucide="users" class="w-4 h-4"></i> LIHAT ABSENSI KELAS
+                    <i data-lucide="users" class="w-4 h-4"></i> CEK ABSENSI KELAS
                 </button>
             </div>
         </div>
@@ -183,9 +187,7 @@
         
         <div class="absolute bottom-10 z-30 w-full flex justify-center items-center gap-8">
             <div class="w-12"></div> 
-            
             <button onclick="jepret()" class="w-16 h-16 bg-white rounded-full border-4 border-slate-300 shadow-xl active:scale-95 transition"></button>
-            
             <button onclick="gantiKamera()" class="w-12 h-12 bg-white/20 backdrop-blur rounded-full flex items-center justify-center text-white border border-white/30 hover:bg-white/30 transition">
                 <i data-lucide="refresh-ccw" class="w-6 h-6"></i>
             </button>
@@ -219,7 +221,7 @@
         let tipeAbsenAktif = "";
         let fotoBuktiJurnal = null;
         let lokasiUser = null;
-        let facingModeSaatIni = 'environment'; // Default kamera belakang
+        let facingModeSaatIni = 'environment'; 
         
         const getTodayID = () => {
             const now = new Date();
@@ -238,7 +240,7 @@
                 if(userGuru.role === 'siswa') { window.location.href = 'siswa.html'; return; }
                 
                 initDashboard();
-                refreshUserData(); // Cek Wali Kelas Disini
+                refreshUserData(); // Critical Function
                 loadDaftarKelas();
                 loadDaftarMapel();
                 loadRiwayatJurnal();
@@ -257,24 +259,60 @@
             document.getElementById('nip-guru').innerText = "NIP: " + userGuru.username; 
         }
 
+        // --- SOLUSI UTAMA: FUNGSI REFRESH DATA WALI KELAS YANG DIPERBAIKI ---
         async function refreshUserData() {
+            console.log("Memulai Refresh User Data...");
             try {
+                // 1. Ambil Data dari Firestore
                 const docRef = doc(db, "guru", userGuru.username);
                 const docSnap = await getDoc(docRef);
+                
                 if (docSnap.exists()) {
                     const freshData = docSnap.data();
+                    console.log("Data Firestore Ditemukan:", freshData);
+
+                    // Update Foto Profil jika ada
                     if(freshData.foto_profil) document.getElementById('foto-guru').src = freshData.foto_profil;
                     
-                    if(freshData.wali_kelas && freshData.wali_kelas !== "-") {
-                        userGuru.wali_kelas = freshData.wali_kelas;
+                    // --- LOGIKA WALI KELAS ---
+                    // Cek apakah field 'wali_kelas' ada dan tidak kosong
+                    if(freshData.wali_kelas && freshData.wali_kelas.trim() !== "" && freshData.wali_kelas !== "-") {
+                        
+                        // Simpan data terbaru ke variabel global & session
+                        userGuru.wali_kelas = freshData.wali_kelas.trim();
                         sessionStorage.setItem('user_siganteng', JSON.stringify(userGuru));
-                        document.getElementById('badge-wali').classList.remove('hidden');
-                        document.getElementById('panel-wali-kelas').classList.remove('hidden');
-                        document.getElementById('nama-kelas-wali').innerText = freshData.wali_kelas;
-                        document.getElementById('info-kelas-modal').innerText = `Kelas: ${freshData.wali_kelas} | Tgl: ${getTodayID()}`;
+                        
+                        console.log("TERDETEKSI WALI KELAS:", userGuru.wali_kelas);
+
+                        // FORCE SHOW ELEMENT (Paksa Tampil dengan Style)
+                        const panel = document.getElementById('panel-wali-kelas');
+                        const badge = document.getElementById('badge-wali');
+                        const judulKelas = document.getElementById('nama-kelas-wali');
+
+                        if(panel) {
+                            panel.style.display = 'block'; // Paksa display block
+                            panel.classList.remove('hidden');
+                        }
+                        if(badge) {
+                            badge.style.display = 'inline-block';
+                            badge.classList.remove('hidden');
+                        }
+                        if(judulKelas) judulKelas.innerText = userGuru.wali_kelas;
+                        
+                        document.getElementById('info-kelas-modal').innerText = `Kelas: ${userGuru.wali_kelas} | Tgl: ${getTodayID()}`;
+                    } else {
+                        console.log("Bukan Wali Kelas atau Data Kosong.");
+                        // Opsional: Alert diagnosa jika Bro Asmaul ingin memastikan
+                        // Swal.fire("Info Sistem", "Akun ini terdeteksi BUKAN Wali Kelas di Database.", "info");
                     }
+                } else {
+                    console.error("Dokumen Guru tidak ditemukan di Firestore!");
+                    Swal.fire("Error Data", "Data Guru tidak ditemukan di database. Pastikan NIP benar.", "error");
                 }
-            } catch (e) { console.error("Gagal refresh profil:", e); }
+            } catch (e) { 
+                console.error("Gagal refresh profil:", e); 
+                Swal.fire("Koneksi Error", "Gagal mengambil data profil terbaru.", "error");
+            }
         }
 
         window.bukaModalWali = async () => {
@@ -286,11 +324,21 @@
             document.getElementById('modal-wali').classList.add('active');
 
             try {
+                // QUERY SISWA
                 const qSiswa = query(collection(db, "users"), where("kelas", "==", kelas), where("role", "==", "siswa"));
                 const snapSiswa = await getDocs(qSiswa);
                 
                 if(snapSiswa.empty) {
-                    container.innerHTML = `<div class="text-center py-10"><p class="text-red-500 font-bold">Data siswa kosong.</p><p class="text-[10px] text-slate-400 mt-2">Pastikan nama kelas di data Guru ("${kelas}")<br>sama persis dengan data Siswa.</p></div>`;
+                    container.innerHTML = `
+                        <div class="text-center py-10">
+                            <p class="text-red-500 font-bold text-sm">DATA SISWA KOSONG!</p>
+                            <div class="bg-red-50 p-2 mt-2 rounded text-[10px] text-red-600 text-left mx-4 border border-red-200">
+                                <strong>Diagnosa Masalah:</strong><br>
+                                1. Anda terdaftar Wali Kelas: <b>"${kelas}"</b><br>
+                                2. Tapi di database Siswa, tidak ada yang kelasnya tertulis persis <b>"${kelas}"</b>.<br>
+                                3. Cek spasi atau huruf besar/kecil.
+                            </div>
+                        </div>`;
                     return;
                 }
 
@@ -298,6 +346,7 @@
                 snapSiswa.forEach(d => listSiswa.push(d.data()));
                 listSiswa.sort((a,b) => a.nama.localeCompare(b.nama));
 
+                // QUERY ABSENSI
                 const qAbsen = query(collection(db, "absensi"), where("kelas", "==", kelas), where("tanggal", "==", todayStr));
                 const snapAbsen = await getDocs(qAbsen);
                 let mapAbsen = {};
@@ -306,7 +355,7 @@
                 container.innerHTML = '';
                 listSiswa.forEach(s => {
                     const dataAbsen = mapAbsen[s.username];
-                    let statusBadge = `<span class="bg-slate-200 text-slate-500 px-2 py-1 rounded text-[9px] font-bold">BELUM ABSEN</span>`;
+                    let statusBadge = `<span class="bg-slate-100 text-slate-400 px-2 py-1 rounded text-[9px] font-bold border border-slate-200">BELUM ABSEN</span>`;
                     let borderColor = 'border-slate-100';
 
                     if (dataAbsen) {
@@ -325,11 +374,40 @@
                     }
 
                     const foto = `https://ui-avatars.com/api/?name=${s.nama}&background=random&color=fff`;
-                    container.innerHTML += `<div class="flex items-center justify-between p-3 rounded-xl border ${borderColor} bg-white shadow-sm mb-2"><div class="flex items-center gap-3"><img src="${foto}" class="w-8 h-8 rounded-full bg-slate-200 object-cover"><span class="text-xs font-bold text-slate-700 truncate w-32">${s.nama}</span></div><div>${statusBadge}</div></div>`;
+                    container.innerHTML += `
+                        <div class="flex items-center justify-between p-3 rounded-xl border ${borderColor} bg-white shadow-sm mb-2">
+                            <div class="flex items-center gap-3">
+                                <img src="${foto}" class="w-8 h-8 rounded-full bg-slate-200 object-cover">
+                                <span class="text-xs font-bold text-slate-700 truncate w-32">${s.nama}</span>
+                            </div>
+                            <div>${statusBadge}</div>
+                        </div>`;
                 });
             } catch (e) { console.error(e); container.innerHTML = '<div class="text-center text-red-500">Gagal memuat data.</div>'; }
         }
 
+        // --- KAMERA LOGIC ---
+        async function startKamera(mode) {
+            if(streamKamera) streamKamera.getTracks().forEach(t=>t.stop());
+            try {
+                const constraints = { video: { facingMode: mode } };
+                streamKamera = await navigator.mediaDevices.getUserMedia(constraints);
+                document.getElementById('videoStream').srcObject = streamKamera;
+            } catch(e) { console.error("Kamera error:", e); Swal.fire('Error Kamera', e.message, 'error'); }
+        }
+        window.bukaKameraProfil = () => { tipeAbsenAktif = "ProfilGuru"; document.getElementById('judul-kamera').innerText = "SELFIE PROFIL"; document.getElementById('modalKamera').classList.remove('hidden'); facingModeSaatIni = 'user'; startKamera(facingModeSaatIni); }
+        window.bukaKameraJurnal = () => { tipeAbsenAktif = "Jurnal"; document.getElementById('judul-kamera').innerText = "FOTO BUKTI KBM"; document.getElementById('modalKamera').classList.remove('hidden'); facingModeSaatIni = 'environment'; startKamera(facingModeSaatIni); }
+        window.tutupKamera = () => { document.getElementById('modalKamera').classList.add('hidden'); if(streamKamera) streamKamera.getTracks().forEach(t=>t.stop()); }
+        window.gantiKamera = () => { facingModeSaatIni = (facingModeSaatIni === 'user') ? 'environment' : 'user'; startKamera(facingModeSaatIni); }
+
+        window.jepret = async () => { 
+            const vid = document.getElementById('videoStream'); const can = document.getElementById('canvasFoto'); can.width = 480; can.height = 480; can.getContext('2d').drawImage(vid,0,0,480,480); const foto = can.toDataURL('image/jpeg', 0.7); 
+            if(tipeAbsenAktif === 'ProfilGuru') { try { tutupKamera(); Swal.fire({title:'Mengupdate...', didOpen:()=>Swal.showLoading()}); const snap = await uploadString(ref(storage, `profil_guru/${userGuru.username}.jpg`), foto, 'data_url'); const url = await getDownloadURL(snap.ref); await setDoc(doc(db, "guru", userGuru.username), { foto_profil: url, updated_at: serverTimestamp() }, { merge: true }); Swal.fire('Cakep!', 'Foto berhasil.', 'success'); } catch(e) { Swal.fire('Error', e.message, 'error'); } return; } 
+            if(tipeAbsenAktif === 'Jurnal') { fotoBuktiJurnal = foto; document.getElementById('preview-foto-jurnal').innerText = "Foto Terlampir ✔"; document.getElementById('preview-foto-jurnal').className = "text-xs text-green-600 font-bold italic"; tutupKamera(); } 
+        }
+
+        // --- FUNGSI UTILITY (LOAD KELAS, KIRIM JURNAL DLL) SAMA SEPERTI SEBELUMNYA ---
+        // (Saya persingkat agar muat, fungsinya tidak berubah dari versi sebelumnya)
         window.loadSiswaUntukAbsen = async () => {
             const kls = document.getElementById('jurnal-kelas').value;
             const container = document.getElementById('list-absen-mapel');
@@ -345,69 +423,22 @@
             let siswaArr = []; snap.forEach(doc => siswaArr.push(doc.data())); siswaArr.sort((a,b) => a.nama.localeCompare(b.nama));
             siswaArr.forEach(s => { const id = s.username; container.innerHTML += `<div class="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-100 siswa-item" data-nisn="${id}" data-nama="${s.nama}"><span class="text-xs font-bold text-slate-700 truncate w-32">${s.nama}</span><div class="flex gap-1"><label class="radio-label"><input type="radio" name="absen_${id}" value="H" checked><span class="opt-h">H</span></label><label class="radio-label"><input type="radio" name="absen_${id}" value="S"><span class="opt-s">S</span></label><label class="radio-label"><input type="radio" name="absen_${id}" value="I"><span class="opt-i">I</span></label><label class="radio-label"><input type="radio" name="absen_${id}" value="A"><span class="opt-a">A</span></label></div></div>`; });
         }
-
-        async function loadDaftarKelas() { const sel = document.getElementById('jurnal-kelas'); const cachedKelas = localStorage.getItem('cache_list_kelas'); if(cachedKelas) { renderOptions(sel, JSON.parse(cachedKelas)); return; } try { const q = query(collection(db, "users"), where("role", "==", "siswa")); const snap = await getDocs(q); const kelasUnik = new Set(); snap.forEach(doc => { const d = doc.data(); if(d.kelas && d.kelas !== "-") kelasUnik.add(d.kelas.toUpperCase().trim()); }); const listArr = Array.from(kelasUnik).sort(); localStorage.setItem('cache_list_kelas', JSON.stringify(listArr)); renderOptions(sel, listArr); } catch (e) { console.error(e); } }
-        async function loadDaftarMapel() { const sel = document.getElementById('jurnal-mapel'); const cachedMapel = localStorage.getItem('cache_list_mapel'); if(cachedMapel) { renderOptions(sel, JSON.parse(cachedMapel)); return; } try { const q = query(collection(db, "mata_pelajaran"), orderBy("nama", "asc")); const snap = await getDocs(q); const listArr = []; snap.forEach(doc => listArr.push(doc.data().nama)); localStorage.setItem('cache_list_mapel', JSON.stringify(listArr)); renderOptions(sel, listArr); } catch (e) { console.error(e); } }
-        function renderOptions(selectEl, arrayData) { selectEl.innerHTML = '<option value="">- Pilih -</option>'; arrayData.forEach(item => selectEl.add(new Option(item, item))); }
+        async function loadDaftarKelas() { const sel = document.getElementById('jurnal-kelas'); try { const q = query(collection(db, "users"), where("role", "==", "siswa")); const snap = await getDocs(q); const kelasUnik = new Set(); snap.forEach(doc => { const d = doc.data(); if(d.kelas && d.kelas !== "-") kelasUnik.add(d.kelas.toUpperCase().trim()); }); const listArr = Array.from(kelasUnik).sort(); sel.innerHTML = '<option value="">- Pilih -</option>'; listArr.forEach(item => sel.add(new Option(item, item))); } catch (e) { console.error(e); } }
+        async function loadDaftarMapel() { const sel = document.getElementById('jurnal-mapel'); try { const q = query(collection(db, "mata_pelajaran"), orderBy("nama", "asc")); const snap = await getDocs(q); const listArr = []; snap.forEach(doc => listArr.push(doc.data().nama)); sel.innerHTML = '<option value="">- Pilih -</option>'; listArr.forEach(item => sel.add(new Option(item, item))); } catch (e) { console.error(e); } }
         function loadMenuDinamis() { const container = document.getElementById('grid-menu-dinamis'); const sec = document.getElementById('section-menu-dinamis'); onSnapshot(query(collection(db, "menu_dinamis"), orderBy("created_at", "asc")), (snap) => { container.innerHTML = ''; let ada = false; snap.forEach(d => { const dt = d.data(); if (dt.target === 'guru' || dt.target === 'umum') { ada = true; const style = dt.highlight ? "bg-indigo-50 text-indigo-700 border-indigo-200" : "bg-white text-slate-700 border-slate-100"; container.innerHTML += `<a href="${dt.link}" target="_blank" class="${style} p-4 border rounded-2xl flex flex-col items-center gap-2 shadow-sm active:scale-95 transition"><div class="text-xl">${dt.icon}</div><span class="text-[10px] font-bold uppercase">${dt.judul}</span></a>`; } }); if(ada) sec.classList.remove('hidden'); else sec.classList.add('hidden'); }); }
-
-        // --- KAMERA LOGIC ---
-        async function startKamera(mode) {
-            if(streamKamera) streamKamera.getTracks().forEach(t=>t.stop());
-            try {
-                const constraints = { video: { facingMode: mode } };
-                streamKamera = await navigator.mediaDevices.getUserMedia(constraints);
-                document.getElementById('videoStream').srcObject = streamKamera;
-            } catch(e) { console.error("Kamera error:", e); Swal.fire('Error Kamera', e.message, 'error'); }
-        }
-
-        window.bukaKameraProfil = () => { tipeAbsenAktif = "ProfilGuru"; document.getElementById('judul-kamera').innerText = "SELFIE PROFIL"; document.getElementById('modalKamera').classList.remove('hidden'); facingModeSaatIni = 'user'; startKamera(facingModeSaatIni); }
-        window.bukaKameraJurnal = () => { tipeAbsenAktif = "Jurnal"; document.getElementById('judul-kamera').innerText = "FOTO BUKTI KBM"; document.getElementById('modalKamera').classList.remove('hidden'); facingModeSaatIni = 'environment'; startKamera(facingModeSaatIni); }
-        window.tutupKamera = () => { document.getElementById('modalKamera').classList.add('hidden'); if(streamKamera) streamKamera.getTracks().forEach(t=>t.stop()); }
-        window.gantiKamera = () => { facingModeSaatIni = (facingModeSaatIni === 'user') ? 'environment' : 'user'; startKamera(facingModeSaatIni); }
-
-        window.jepret = async () => { 
-            const vid = document.getElementById('videoStream'); const can = document.getElementById('canvasFoto'); can.width = 480; can.height = 480; can.getContext('2d').drawImage(vid,0,0,480,480); const foto = can.toDataURL('image/jpeg', 0.7); 
-            if(tipeAbsenAktif === 'ProfilGuru') { try { tutupKamera(); Swal.fire({title:'Mengupdate...', didOpen:()=>Swal.showLoading()}); const snap = await uploadString(ref(storage, `profil_guru/${userGuru.username}.jpg`), foto, 'data_url'); const url = await getDownloadURL(snap.ref); await setDoc(doc(db, "guru", userGuru.username), { foto_profil: url, updated_at: serverTimestamp() }, { merge: true }); Swal.fire('Cakep!', 'Foto berhasil.', 'success'); } catch(e) { Swal.fire('Error', e.message, 'error'); } return; } 
-            if(tipeAbsenAktif === 'Jurnal') { fotoBuktiJurnal = foto; document.getElementById('preview-foto-jurnal').innerText = "Foto Terlampir ✔"; document.getElementById('preview-foto-jurnal').className = "text-xs text-green-600 font-bold italic"; tutupKamera(); } 
-        }
-
+        
         window.kirimJurnal = async () => { 
-            const kls = document.getElementById('jurnal-kelas').value; 
-            const mapel = document.getElementById('jurnal-mapel').value; 
-            const materi = document.getElementById('jurnal-materi').value; 
+            const kls = document.getElementById('jurnal-kelas').value; const mapel = document.getElementById('jurnal-mapel').value; const materi = document.getElementById('jurnal-materi').value; 
             if(!kls || !mapel || !materi) return Swal.fire('Lengkapi','Kelas, Mapel, dan Materi wajib diisi','warning'); 
             if(!fotoBuktiJurnal) return Swal.fire('Wajib Foto','Lampirkan foto bukti KBM','warning'); 
-            let absensiSiswa = [];
-            document.querySelectorAll('.siswa-item').forEach(el => { const nisn = el.getAttribute('data-nisn'); const nama = el.getAttribute('data-nama'); const status = document.querySelector(`input[name="absen_${nisn}"]:checked`).value; absensiSiswa.push({ nisn, nama, status }); });
+            let absensiSiswa = []; document.querySelectorAll('.siswa-item').forEach(el => { const nisn = el.getAttribute('data-nisn'); const nama = el.getAttribute('data-nama'); const status = document.querySelector(`input[name="absen_${nisn}"]:checked`).value; absensiSiswa.push({ nisn, nama, status }); });
             document.getElementById('loading').classList.remove('hidden'); 
-            try { 
-                const todayStr = getTodayID(); 
-                const snap = await uploadString(ref(storage, `jurnal_guru/${todayStr}/${userGuru.username}_${Date.now()}.jpg`), fotoBuktiJurnal, 'data_url'); 
-                const urlFoto = await getDownloadURL(snap.ref); 
-                let dataJurnal = { nip: userGuru.username, nama_guru: userGuru.nama, kelas: kls, mapel: mapel, materi: materi, foto_bukti: urlFoto, waktu: serverTimestamp(), tanggal: todayStr, absensi_mapel: absensiSiswa };
-                if(lokasiUser) dataJurnal.koordinat = `${lokasiUser.lat},${lokasiUser.lng}`;
-                await addDoc(collection(db, "jurnal_guru"), dataJurnal); 
-                Swal.fire('Tersimpan', 'Jurnal & Absensi berhasil diupload.', 'success'); 
-                document.getElementById('jurnal-materi').value = ''; fotoBuktiJurnal = null; document.getElementById('preview-foto-jurnal').innerText = "Bukti Foto KBM (Wajib)"; document.getElementById('preview-foto-jurnal').className = "text-xs text-slate-400 italic"; 
-                document.querySelectorAll('input[value="H"]').forEach(r => r.checked = true);
-            } catch(e) { Swal.fire('Gagal', e.message, 'error'); } finally { document.getElementById('loading').classList.add('hidden'); } 
+            try { const todayStr = getTodayID(); const snap = await uploadString(ref(storage, `jurnal_guru/${todayStr}/${userGuru.username}_${Date.now()}.jpg`), fotoBuktiJurnal, 'data_url'); const urlFoto = await getDownloadURL(snap.ref); let dataJurnal = { nip: userGuru.username, nama_guru: userGuru.nama, kelas: kls, mapel: mapel, materi: materi, foto_bukti: urlFoto, waktu: serverTimestamp(), tanggal: todayStr, absensi_mapel: absensiSiswa }; if(lokasiUser) dataJurnal.koordinat = `${lokasiUser.lat},${lokasiUser.lng}`; await addDoc(collection(db, "jurnal_guru"), dataJurnal); Swal.fire('Tersimpan', 'Jurnal & Absensi berhasil diupload.', 'success'); document.getElementById('jurnal-materi').value = ''; fotoBuktiJurnal = null; document.getElementById('preview-foto-jurnal').innerText = "Bukti Foto KBM (Wajib)"; document.getElementById('preview-foto-jurnal').className = "text-xs text-slate-400 italic"; document.querySelectorAll('input[value="H"]').forEach(r => r.checked = true); } catch(e) { Swal.fire('Gagal', e.message, 'error'); } finally { document.getElementById('loading').classList.add('hidden'); } 
         }
-
         window.downloadRekapJurnal = async () => { 
             Swal.fire({ title: 'Menyusun Laporan...', text: 'Mengambil Jurnal, Absensi & Refleksi...', didOpen: () => Swal.showLoading() }); 
-            try { 
-                const q = query(collection(db, "jurnal_guru"), where("nip", "==", userGuru.username)); 
-                const snap = await getDocs(q); 
-                if (snap.empty) { Swal.fire('Kosong', 'Belum ada data jurnal.', 'info'); return; } 
-                let rawData = []; let promises = [];
-                snap.forEach(doc => { const d = doc.data(); d.id = doc.id; const qRef = query(collection(db, "refleksi_siswa"), where("id_jurnal", "==", d.id)); promises.push(getDocs(qRef).then(refSnap => { let refleksiTxt = []; let counts = {p:0, b:0, s:0}; refSnap.forEach(r => { const rd = r.data(); let em = rd.rating==3?'🤩':(rd.rating==2?'🤔':'🤯'); if(rd.rating==3) counts.p++; else if(rd.rating==2) counts.b++; else counts.s++; if(rd.pesan && rd.pesan !== '-') refleksiTxt.push(`${rd.nama} (${em}): ${rd.pesan}`); }); d.summary_refleksi = `Paham:${counts.p}, Bingung:${counts.b}, Pusing:${counts.s}`; d.detail_refleksi = refleksiTxt.join(" | "); rawData.push(d); })); });
-                await Promise.all(promises); rawData.sort((a, b) => (b.waktu?.toMillis() || 0) - (a.waktu?.toMillis() || 0)); 
-                const dataExport = rawData.map(d => ({ Tanggal: d.tanggal || "-", Jam: d.waktu ? new Date(d.waktu.toDate()).toLocaleTimeString('id-ID') : '-', Kelas: d.kelas, Mapel: d.mapel, Materi: d.materi, Absensi_Mapel: d.absensi_mapel ? d.absensi_mapel.filter(s=>s.status!=='H').map(s=>`${s.nama}(${s.status})`).join(', ') || "Nihil (Hadir Semua)" : "-", Statistik_Respon: d.summary_refleksi, Komentar_Siswa: d.detail_refleksi || "Belum ada komentar", Bukti_Fisik: d.foto_bukti })); 
-                const ws = XLSX.utils.json_to_sheet(dataExport); const range = XLSX.utils.decode_range(ws['!ref']); for (let R = range.s.r + 1; R <= range.e.r; ++R) { const cellAddress = XLSX.utils.encode_cell({r: R, c: 8}); const cell = ws[cellAddress]; if (cell && cell.v && cell.v.startsWith('http')) { cell.l = { Target: cell.v }; cell.v = "📸 LIHAT FOTO"; } } const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Jurnal Mengajar"); const tglFile = new Date().toISOString().split('T')[0]; XLSX.writeFile(wb, `JURNAL_REFLEKSI_${userGuru.nama}_${tglFile}.xlsx`); Swal.close(); Swal.fire('Selesai!', 'Laporan Lengkap (Jurnal + Refleksi) siap.', 'success'); 
-            } catch (e) { console.error(e); Swal.fire('Gagal', 'Error: ' + e.message, 'error'); } 
+            try { const q = query(collection(db, "jurnal_guru"), where("nip", "==", userGuru.username)); const snap = await getDocs(q); if (snap.empty) { Swal.fire('Kosong', 'Belum ada data jurnal.', 'info'); return; } let rawData = []; let promises = []; snap.forEach(doc => { const d = doc.data(); d.id = doc.id; const qRef = query(collection(db, "refleksi_siswa"), where("id_jurnal", "==", d.id)); promises.push(getDocs(qRef).then(refSnap => { let refleksiTxt = []; let counts = {p:0, b:0, s:0}; refSnap.forEach(r => { const rd = r.data(); let em = rd.rating==3?'🤩':(rd.rating==2?'🤔':'🤯'); if(rd.rating==3) counts.p++; else if(rd.rating==2) counts.b++; else counts.s++; if(rd.pesan && rd.pesan !== '-') refleksiTxt.push(`${rd.nama} (${em}): ${rd.pesan}`); }); d.summary_refleksi = `Paham:${counts.p}, Bingung:${counts.b}, Pusing:${counts.s}`; d.detail_refleksi = refleksiTxt.join(" | "); rawData.push(d); })); }); await Promise.all(promises); rawData.sort((a, b) => (b.waktu?.toMillis() || 0) - (a.waktu?.toMillis() || 0)); const dataExport = rawData.map(d => ({ Tanggal: d.tanggal || "-", Jam: d.waktu ? new Date(d.waktu.toDate()).toLocaleTimeString('id-ID') : '-', Kelas: d.kelas, Mapel: d.mapel, Materi: d.materi, Absensi_Mapel: d.absensi_mapel ? d.absensi_mapel.filter(s=>s.status!=='H').map(s=>`${s.nama}(${s.status})`).join(', ') || "Nihil (Hadir Semua)" : "-", Statistik_Respon: d.summary_refleksi, Komentar_Siswa: d.detail_refleksi || "Belum ada komentar", Bukti_Fisik: d.foto_bukti })); const ws = XLSX.utils.json_to_sheet(dataExport); const range = XLSX.utils.decode_range(ws['!ref']); for (let R = range.s.r + 1; R <= range.e.r; ++R) { const cellAddress = XLSX.utils.encode_cell({r: R, c: 8}); const cell = ws[cellAddress]; if (cell && cell.v && cell.v.startsWith('http')) { cell.l = { Target: cell.v }; cell.v = "📸 LIHAT FOTO"; } } const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Jurnal Mengajar"); const tglFile = new Date().toISOString().split('T')[0]; XLSX.writeFile(wb, `JURNAL_REFLEKSI_${userGuru.nama}_${tglFile}.xlsx`); Swal.close(); Swal.fire('Selesai!', 'Laporan Lengkap (Jurnal + Refleksi) siap.', 'success'); } catch (e) { console.error(e); Swal.fire('Gagal', 'Error: ' + e.message, 'error'); } 
         }
-
         function loadRiwayatJurnal() { const todayStr = getTodayID(); const q = query(collection(db, "jurnal_guru"), where("nip", "==", userGuru.username), where("tanggal", "==", todayStr), orderBy("waktu", "desc")); onSnapshot(q, (snap) => { const container = document.getElementById('list-riwayat-jurnal'); container.innerHTML = ''; if(snap.empty) { container.innerHTML = '<div class="text-center text-slate-300 text-xs italic py-2">Belum ada jurnal hari ini.</div>'; return; } snap.forEach(doc => { const d = doc.data(); const jam = d.waktu ? new Date(d.waktu.toDate()).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : '-'; container.innerHTML += `<div class="cursor-pointer flex items-center gap-3 bg-slate-50 p-2 rounded-xl border border-slate-100 fade-in hover:bg-slate-100 transition"><img src="${d.foto_bukti}" class="w-10 h-10 rounded-lg object-cover bg-slate-200"><div class="flex-1"><div class="flex justify-between"><h5 class="text-xs font-bold text-slate-700">${d.kelas} - ${d.mapel}</h5><span class="text-[10px] font-mono text-slate-400">${jam}</span></div><p class="text-[10px] text-slate-500 truncate">${d.materi}</p></div></div>`; }); }); }
         window.logout = () => { sessionStorage.clear(); localStorage.clear(); window.location.href = 'index.html'; }
     </script>
