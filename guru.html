@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Guru - SiGanteng (v16.0 Komplit)</title>
+    <title>Guru - SiGanteng (v16.1 Fix)</title>
     
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="logo.png">
@@ -93,12 +93,12 @@
 
         <div id="panel-wali-kelas" class="hidden bg-orange-50 p-6 rounded-[2rem] shadow-lg border border-orange-100 relative overflow-hidden">
             <div class="absolute -right-5 -top-5 w-24 h-24 bg-orange-200 rounded-full opacity-20 blur-xl"></div>
-            <h3 class="font-bold text-orange-800 text-sm uppercase tracking-widest mb-2 flex items-center gap-2">
+            <h3 class="font-bold text-orange-800 text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
                 <i data-lucide="shield-check" class="w-4 h-4"></i> Kelas Anda: <span id="nama-kelas-wali">...</span>
             </h3>
             
-            <button onclick="bukaModalWali()" class="w-full bg-white text-orange-600 border border-orange-200 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-orange-50 transition shadow-sm flex items-center justify-center gap-2">
-                <i data-lucide="eye" class="w-3 h-3"></i> CEK STATUS SISWA (REALTIME)
+            <button onclick="bukaModalWali()" class="w-full bg-white text-orange-600 border-2 border-orange-100 py-4 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-orange-100 transition shadow-sm flex items-center justify-center gap-2 active:scale-95">
+                <i data-lucide="users" class="w-4 h-4"></i> CEK STATUS SISWA
             </button>
         </div>
 
@@ -158,8 +158,12 @@
     <div id="modal-wali" class="modal fixed inset-0 z-50 flex items-center justify-center bg-slate-900/90 backdrop-blur-sm p-4">
         <div class="modal-content bg-white w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[80vh]">
             <div class="bg-orange-50 p-4 border-b border-orange-100 flex justify-between items-center">
-                <h3 class="font-bold text-orange-800">Detail Kelas <span id="judul-modal-wali"></span></h3>
+                <h3 class="font-bold text-orange-800">Status Siswa: <span id="judul-modal-wali"></span></h3>
                 <button onclick="document.getElementById('modal-wali').classList.remove('active')" class="p-2 bg-white rounded-full text-slate-400 hover:text-red-500"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <div class="bg-slate-50 px-4 py-2 text-[10px] text-slate-500 font-bold flex justify-between">
+                <span>Total: <span id="total-siswa-wali">0</span> Siswa</span>
+                <span id="tanggal-wali">...</span>
             </div>
             <div class="overflow-y-auto p-4 space-y-3" id="list-siswa-wali">
                 <div class="text-center py-10 text-slate-400 italic">Memuat data...</div>
@@ -249,7 +253,7 @@
                 loadRiwayatJurnal();
                 loadMenuDinamis();
                 
-                // AUTO-SYNC DATA GURU
+                // AUTO-SYNC DATA GURU (Wali Kelas check happens here)
                 refreshUserData(); 
 
             } else { window.location.href = 'index.html'; }
@@ -281,18 +285,22 @@
                     const freshData = docSnap.data();
                     if(freshData.foto_profil) document.getElementById('foto-guru').src = freshData.foto_profil;
                     
+                    // PERBAIKAN: Selalu update session dan UI jika data wali kelas ada di DB
                     if(freshData.wali_kelas && freshData.wali_kelas !== "-") {
                         userGuru.wali_kelas = freshData.wali_kelas;
                         sessionStorage.setItem('user_siganteng', JSON.stringify(userGuru));
                         
                         document.getElementById('badge-wali').classList.remove('hidden');
+                        document.getElementById('panel-wali-kelas').classList.remove('hidden'); // Force Show
+                        document.getElementById('nama-kelas-wali').innerText = freshData.wali_kelas;
+                        
+                        // Siapkan data wali
                         initWaliKelas(freshData.wali_kelas);
                     }
                 }
             } catch (e) { console.error("Gagal refresh profil:", e); }
         }
 
-        // 🔥 FITUR BARU: LOAD SISWA UNTUK ABSEN MAPEL 🔥
         window.loadSiswaUntukAbsen = async () => {
             const kls = document.getElementById('jurnal-kelas').value;
             const container = document.getElementById('list-absen-mapel');
@@ -317,8 +325,6 @@
 
             siswaArr.forEach(s => {
                 const id = s.username; 
-                // Layout: Nama di kiri, Pilihan (H/S/I/A) di kanan
-                // Default CHECKED di H (Hadir)
                 container.innerHTML += `
                     <div class="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-100 siswa-item" data-nisn="${id}" data-nama="${s.nama}">
                         <span class="text-xs font-bold text-slate-700 truncate w-32">${s.nama}</span>
@@ -333,11 +339,8 @@
             });
         }
 
-        // --- WALI KELAS ---
+        // --- WALI KELAS LOGIC ---
         async function initWaliKelas(kelasWali) {
-            document.getElementById('panel-wali-kelas').classList.remove('hidden');
-            document.getElementById('nama-kelas-wali').innerText = kelasWali;
-            document.getElementById('judul-modal-wali').innerText = kelasWali;
             const qSiswa = query(collection(db, "users"), where("kelas", "==", kelasWali), where("role", "==", "siswa"));
             const snap = await getDocs(qSiswa);
             dataSiswaWali = [];
@@ -356,22 +359,51 @@
         }
 
         window.bukaModalWali = async () => {
-            const container = document.getElementById('list-siswa-wali'); container.innerHTML = '';
-            if(dataSiswaWali.length === 0) { container.innerHTML = '<div class="text-center text-slate-400">Data kosong.</div>'; document.getElementById('modal-wali').classList.add('active'); return; }
+            const container = document.getElementById('list-siswa-wali'); 
+            container.innerHTML = '';
+            document.getElementById('judul-modal-wali').innerText = userGuru.wali_kelas;
+            document.getElementById('total-siswa-wali').innerText = dataSiswaWali.length;
+            document.getElementById('tanggal-wali').innerText = new Date().toLocaleDateString('id-ID');
+
+            if(dataSiswaWali.length === 0) { 
+                container.innerHTML = '<div class="text-center text-slate-400">Data siswa kosong.</div>'; 
+                document.getElementById('modal-wali').classList.add('active'); 
+                return; 
+            }
+
             dataSiswaWali.forEach(s => {
-                const absen = dataAbsenWali[s.username];
-                let statusHtml = `<span class="text-[10px] font-bold bg-slate-100 text-slate-500 px-2 py-0.5 rounded border border-slate-200">Belum Absen</span>`;
+                const absen = dataAbsenWali[s.username]; // Username is NISN
+                
+                // LOGIKA BARU: Jika tidak ada data absen -> "Belum Absen" (Abu-abu)
+                // Jika ada -> Cek Jam Masuk / Status
+                
+                let statusHtml = `<span class="text-[10px] font-bold bg-slate-200 text-slate-500 px-2 py-1 rounded">Belum Absen</span>`;
+                
                 if(absen) {
                     if (absen.jam_masuk) {
                         const date = absen.jam_masuk.toDate();
                         const jamStr = date.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
-                        statusHtml = `<span class="text-[10px] font-bold bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded">Masuk: ${jamStr}</span>`;
-                    } else if (absen.status_terakhir.includes("Izin") || absen.status_terakhir.includes("Sakit")) {
-                        statusHtml = `<span class="text-[10px] font-bold bg-blue-100 text-blue-600 px-2 py-0.5 rounded">${absen.status_terakhir}</span>`;
+                        statusHtml = `<span class="text-[10px] font-bold bg-emerald-100 text-emerald-600 px-2 py-1 rounded">Masuk: ${jamStr}</span>`;
+                    } else if (absen.status_terakhir) {
+                        // Handle Izin/Sakit/AlphaManual
+                        let warna = "bg-blue-100 text-blue-600";
+                        if(absen.status_terakhir.includes('Sakit')) warna = "bg-pink-100 text-pink-600";
+                        statusHtml = `<span class="text-[10px] font-bold ${warna} px-2 py-1 rounded">${absen.status_terakhir}</span>`;
                     }
                 }
+
                 const fotoSrc = `https://ui-avatars.com/api/?name=${s.nama}&background=random&color=fff`;
-                container.innerHTML += `<div class="flex items-center justify-between bg-white p-3 mb-2 rounded-xl border border-slate-100 shadow-sm"><div class="flex items-center gap-3"><img src="${fotoSrc}" class="w-10 h-10 rounded-full object-cover bg-slate-100 border border-slate-200"><div><div class="font-bold text-xs text-slate-700 leading-tight mb-1">${s.nama}</div><div>${statusHtml}</div></div></div></div>`;
+                
+                container.innerHTML += `
+                    <div class="flex items-center justify-between bg-white p-3 mb-2 rounded-xl border border-slate-100 shadow-sm">
+                        <div class="flex items-center gap-3">
+                            <img src="${fotoSrc}" class="w-8 h-8 rounded-full object-cover bg-slate-100 border border-slate-200">
+                            <div>
+                                <div class="font-bold text-xs text-slate-700 leading-tight mb-0.5">${s.nama}</div>
+                                <div>${statusHtml}</div>
+                            </div>
+                        </div>
+                    </div>`;
             });
             document.getElementById('modal-wali').classList.add('active');
         }
@@ -398,7 +430,6 @@
             try { tutupKamera(); Swal.fire({title:'Menyimpan...', didOpen:()=>Swal.showLoading()}); const snap = await uploadString(ref(storage, `absen_guru/${todayStr}/${userGuru.username}_${tipeAbsenAktif}.jpg`), foto, 'data_url'); const url = await getDownloadURL(snap.ref); let data = { nisn: userGuru.username, nama: userGuru.nama, kelas: 'GURU', role: 'guru', tanggal: todayStr, status_terakhir: tipeAbsenAktif + " (Guru)", koordinat_kirim: `${lokasiUser.lat},${lokasiUser.lng}` }; if(tipeAbsenAktif === 'Masuk') { data.jam_masuk = serverTimestamp(); data.foto_masuk = url; } else { data.jam_pulang = serverTimestamp(); data.foto_pulang = url; } await setDoc(doc(db, "absensi", idDoc), data, {merge: true}); document.getElementById('status-absen').innerText = "Sudah " + tipeAbsenAktif; document.getElementById('status-absen').className = "text-[10px] font-bold bg-emerald-100 text-emerald-600 px-3 py-1 rounded-full"; Swal.fire('Berhasil', 'Presensi terekam.', 'success'); } catch(e) { Swal.fire('Error', e.message, 'error'); } 
         }
 
-        // 🔥 JURNAL + SIMPAN ABSEN MAPEL 🔥
         window.kirimJurnal = async () => { 
             if(isSubmitting) return;
             const kls = document.getElementById('jurnal-kelas').value; 
@@ -407,7 +438,6 @@
             if(!kls || !mapel || !materi) return Swal.fire('Lengkapi','Kelas, Mapel, dan Materi wajib diisi','warning'); 
             if(!fotoBuktiJurnal) return Swal.fire('Wajib Foto','Lampirkan foto bukti KBM','warning'); 
             
-            // 1. Ambil Data Absensi Mapel dari UI
             let absensiSiswa = [];
             document.querySelectorAll('.siswa-item').forEach(el => {
                 const nisn = el.getAttribute('data-nisn');
@@ -426,17 +456,15 @@
                 await addDoc(collection(db, "jurnal_guru"), { 
                     nip: userGuru.username, nama_guru: userGuru.nama, kelas: kls, mapel: mapel, materi: materi, 
                     foto_bukti: urlFoto, waktu: serverTimestamp(), tanggal: todayStr,
-                    absensi_mapel: absensiSiswa // <-- DATA ABSEN SISWA DISIMPAN DISINI
+                    absensi_mapel: absensiSiswa 
                 }); 
                 
                 Swal.fire('Tersimpan', 'Jurnal & Absensi berhasil diupload.', 'success'); 
                 document.getElementById('jurnal-materi').value = ''; fotoBuktiJurnal = null; document.getElementById('preview-foto-jurnal').innerText = "Belum ada foto bukti."; document.getElementById('preview-foto-jurnal').className = "text-xs text-slate-400 italic"; 
-                // Reset Absensi ke Hadir Semua
                 document.querySelectorAll('input[value="H"]').forEach(r => r.checked = true);
             } catch(e) { Swal.fire('Gagal', e.message, 'error'); } finally { document.getElementById('loading').classList.add('hidden'); isSubmitting = false; } 
         }
 
-        // 🔥 DOWNLOAD DENGAN REFLEKSI & ABSEN MAPEL 🔥
         window.downloadRekapJurnal = async () => { 
             Swal.fire({ title: 'Menyusun Laporan...', text: 'Mengambil Jurnal, Absensi & Refleksi...', didOpen: () => Swal.showLoading() }); 
             try { 
@@ -474,7 +502,6 @@
                     Tanggal: d.tanggal || "-", 
                     Jam: d.waktu ? new Date(d.waktu.toDate()).toLocaleTimeString('id-ID') : '-', 
                     Kelas: d.kelas, Mapel: d.mapel, Materi: d.materi, 
-                    // Absensi Mapel (Hanya tampilkan yang TIDAK Hadir biar ringkas)
                     Absensi_Mapel: d.absensi_mapel ? d.absensi_mapel.filter(s=>s.status!=='H').map(s=>`${s.nama}(${s.status})`).join(', ') || "Nihil (Hadir Semua)" : "-",
                     Statistik_Respon: d.summary_refleksi,
                     Komentar_Siswa: d.detail_refleksi || "Belum ada komentar",
@@ -484,7 +511,7 @@
                 const ws = XLSX.utils.json_to_sheet(dataExport); 
                 const range = XLSX.utils.decode_range(ws['!ref']);
                 for (let R = range.s.r + 1; R <= range.e.r; ++R) {
-                    const cellAddress = XLSX.utils.encode_cell({r: R, c: 8}); // Kolom Bukti Fisik
+                    const cellAddress = XLSX.utils.encode_cell({r: R, c: 8}); 
                     const cell = ws[cellAddress]; 
                     if (cell && cell.v && cell.v.startsWith('http')) { cell.l = { Target: cell.v }; cell.v = "📸 LIHAT FOTO"; } 
                 } 
