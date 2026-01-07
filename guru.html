@@ -23,7 +23,7 @@
         .fade-in { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Custom Radio Button */
+        /* Custom Radio Button untuk Absen Mapel */
         .radio-label input { display: none; }
         .radio-label span { display: inline-block; padding: 4px 10px; border-radius: 8px; font-size: 10px; font-weight: bold; cursor: pointer; border: 1px solid #e2e8f0; color: #94a3b8; }
         .radio-label input:checked + span.opt-h { background-color: #d1fae5; color: #059669; border-color: #10b981; }
@@ -92,6 +92,26 @@
             </h3>
             
             <div class="space-y-3">
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 ml-1">MULAI JAM KE-</label>
+                        <select id="jam-mulai" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs font-bold text-slate-600 outline-none transition focus:border-blue-500">
+                            <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+                            <option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option>
+                            <option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 ml-1">SAMPAI JAM KE-</label>
+                        <select id="jam-selesai" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs font-bold text-slate-600 outline-none transition focus:border-blue-500">
+                            <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+                            <option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option>
+                            <option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option>
+                        </select>
+                    </div>
+                </div>
+
                 <select id="jurnal-kelas" onchange="loadSiswaUntukAbsen()" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs font-bold text-slate-600 outline-none transition focus:border-blue-500">
                     <option value="">- Pilih Kelas -</option>
                 </select>
@@ -352,14 +372,14 @@
 
         window.kirimJurnal = async () => { 
             const kls = document.getElementById('jurnal-kelas').value; const mapel = document.getElementById('jurnal-mapel').value; const materi = document.getElementById('jurnal-materi').value; 
+            const jamMulai = document.getElementById('jam-mulai').value; const jamSelesai = document.getElementById('jam-selesai').value;
+            
             if(!kls || !mapel || !materi) return Swal.fire('Lengkapi','Kelas, Mapel, dan Materi wajib diisi','warning'); 
             if(!fotoBuktiJurnal) return Swal.fire('Wajib Foto','Lampirkan foto bukti KBM','warning'); 
             
-            // SIMPAN ABSEN MAPEL
             let absensiSiswa = [];
             document.querySelectorAll('.siswa-item').forEach(el => {
-                const nisn = el.getAttribute('data-nisn');
-                const nama = el.getAttribute('data-nama');
+                const nisn = el.getAttribute('data-nisn'); const nama = el.getAttribute('data-nama');
                 const status = document.querySelector(`input[name="absen_${nisn}"]:checked`).value;
                 absensiSiswa.push({ nisn, nama, status });
             });
@@ -372,15 +392,15 @@
                 await addDoc(collection(db, "jurnal_guru"), { 
                     nip: userGuru.username, nama_guru: userGuru.nama, kelas: kls, mapel: mapel, materi: materi, 
                     foto_bukti: urlFoto, waktu: serverTimestamp(), tanggal: todayStr,
-                    absensi_mapel: absensiSiswa // <-- DATA ABSEN
+                    absensi_mapel: absensiSiswa,
+                    jam_ke: `${jamMulai} - ${jamSelesai}`
                 }); 
                 Swal.fire('Tersimpan', 'Jurnal berhasil diupload.', 'success'); 
                 document.getElementById('jurnal-materi').value = ''; fotoBuktiJurnal = null; document.getElementById('preview-foto-jurnal').innerText = "Belum ada foto bukti."; document.getElementById('preview-foto-jurnal').className = "text-xs text-slate-400 italic"; 
-                document.querySelectorAll('input[value="H"]').forEach(r => r.checked = true); // Reset
+                document.querySelectorAll('input[value="H"]').forEach(r => r.checked = true); 
             } catch(e) { Swal.fire('Gagal', e.message, 'error'); } finally { document.getElementById('loading').classList.add('hidden'); } 
         }
         
-        // --- UPGRADE: DOWNLOAD TERMASUK REFLEKSI ---
         window.downloadRekapJurnal = async () => { 
             Swal.fire({ title: 'Menyusun Laporan...', text: 'Menggabungkan Jurnal & Refleksi Siswa...', didOpen: () => Swal.showLoading() }); 
             try { 
@@ -388,25 +408,18 @@
                 const snap = await getDocs(q); 
                 if (snap.empty) { Swal.fire('Kosong', 'Belum ada data jurnal.', 'info'); return; } 
                 
-                let rawData = [];
-                let promises = [];
-
+                let rawData = []; let promises = [];
                 snap.forEach(doc => {
-                    const d = doc.data();
-                    d.id = doc.id;
-                    // Format Absensi
+                    const d = doc.data(); d.id = doc.id;
                     let absenTxt = "-";
                     if(d.absensi_mapel) {
                         const tidakHadir = d.absensi_mapel.filter(s => s.status !== 'H');
                         absenTxt = tidakHadir.length > 0 ? tidakHadir.map(s => `${s.nama} (${s.status})`).join(", ") : "NIHIL (Hadir Semua)";
                     }
                     d.rekap_absen = absenTxt;
-
-                    // Ambil Refleksi Siswa
                     const qRef = query(collection(db, "refleksi_siswa"), where("id_jurnal", "==", d.id));
                     const promise = getDocs(qRef).then(refSnap => {
-                        let refleksiTxt = [];
-                        let counts = {p:0, b:0, s:0};
+                        let refleksiTxt = []; let counts = {p:0, b:0, s:0};
                         refSnap.forEach(r => {
                             const rd = r.data();
                             if(rd.rating==3) counts.p++; else if(rd.rating==2) counts.b++; else counts.s++;
@@ -424,7 +437,8 @@
                 
                 const dataExport = rawData.map(d => ({ 
                     Tanggal: d.tanggal || "-", 
-                    Jam: d.waktu ? new Date(d.waktu.toDate()).toLocaleTimeString('id-ID') : '-', 
+                    Jam_Input: d.waktu ? new Date(d.waktu.toDate()).toLocaleTimeString('id-ID') : '-', 
+                    Jam_Pelajaran: d.jam_ke || "-", // KOLOM BARU JAM KE
                     Kelas: d.kelas, Mapel: d.mapel, Materi: d.materi, 
                     Ket_Tidak_Hadir: d.rekap_absen, 
                     Statistik_Respon: d.stats_respon,
@@ -435,7 +449,7 @@
                 const ws = XLSX.utils.json_to_sheet(dataExport); 
                 const range = XLSX.utils.decode_range(ws['!ref']); 
                 for (let R = range.s.r + 1; R <= range.e.r; ++R) { 
-                    const cellAddress = XLSX.utils.encode_cell({r: R, c: 8}); // Kolom Bukti
+                    const cellAddress = XLSX.utils.encode_cell({r: R, c: 9}); // UPDATE KOLOM KE-9
                     const cell = ws[cellAddress]; 
                     if (cell && cell.v && cell.v.startsWith('http')) { cell.l = { Target: cell.v }; cell.v = "📸 LIHAT FOTO"; } 
                 } 
