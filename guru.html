@@ -23,13 +23,18 @@
         .fade-in { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Custom Radio Button untuk Absen Mapel */
+        /* Custom Radio Button Absensi */
         .radio-label input { display: none; }
         .radio-label span { display: inline-block; padding: 4px 10px; border-radius: 8px; font-size: 10px; font-weight: bold; cursor: pointer; border: 1px solid #e2e8f0; color: #94a3b8; }
-        .radio-label input:checked + span.opt-h { background-color: #d1fae5; color: #059669; border-color: #10b981; }
-        .radio-label input:checked + span.opt-s { background-color: #dbeafe; color: #2563eb; border-color: #3b82f6; }
-        .radio-label input:checked + span.opt-i { background-color: #ffedd5; color: #ea580c; border-color: #f97316; }
-        .radio-label input:checked + span.opt-a { background-color: #fee2e2; color: #dc2626; border-color: #ef4444; }
+        
+        /* WARNA TOMBOL */
+        .radio-label input:checked + span.opt-h { background-color: #d1fae5; color: #059669; border-color: #10b981; } /* Hijau - Hadir */
+        .radio-label input:checked + span.opt-s { background-color: #dbeafe; color: #2563eb; border-color: #3b82f6; } /* Biru - Sakit */
+        .radio-label input:checked + span.opt-i { background-color: #ffedd5; color: #ea580c; border-color: #f97316; } /* Oranye - Izin */
+        .radio-label input:checked + span.opt-a { background-color: #fee2e2; color: #dc2626; border-color: #ef4444; } /* Merah - Alpha */
+        
+        /* TOMBOL BARU: DISPEN (UNGU) */
+        .radio-label input:checked + span.opt-d { background-color: #f3e8ff; color: #7e22ce; border-color: #a855f7; } 
     </style>
 </head>
 <body class="text-slate-800 min-h-screen flex flex-col pb-24">
@@ -125,7 +130,7 @@
                         <span>Absensi Jam Ini</span>
                         <span id="jml-siswa-mapel" class="bg-blue-100 text-blue-600 px-2 py-0.5 rounded text-[9px]">0 Siswa</span>
                     </h4>
-                    <p class="text-[9px] text-slate-400 mb-2 italic">*Otomatis Hadir (H). Klik jika siswa Sakit/Izin/Alpha.</p>
+                    <p class="text-[9px] text-slate-400 mb-2 italic">*Klik D untuk Dispensasi.</p>
                     <div id="list-absen-mapel" class="space-y-2"></div>
                 </div>
 
@@ -142,8 +147,20 @@
             </div>
 
             <div class="mt-4 pt-4 border-t border-slate-100">
+                
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 ml-1">DARI TANGGAL</label>
+                        <input type="date" id="filter-mulai" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs font-bold text-slate-600 outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 ml-1">SAMPAI TANGGAL</label>
+                        <input type="date" id="filter-selesai" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs font-bold text-slate-600 outline-none focus:border-blue-500">
+                    </div>
+                </div>
+
                 <button onclick="downloadRekapJurnal()" class="w-full bg-emerald-50 text-emerald-700 py-3 rounded-xl font-bold text-xs border border-emerald-100 hover:bg-emerald-100 transition flex items-center justify-center gap-2">
-                    <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> DOWNLOAD JURNAL + REFLEKSI SISWA
+                    <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> DOWNLOAD JURNAL
                 </button>
             </div>
 
@@ -335,6 +352,8 @@
             document.getElementById('jml-siswa-mapel').innerText = snap.size + ' Siswa';
             if(snap.empty) { container.innerHTML = '<div class="text-center text-xs text-slate-400">Tidak ada siswa.</div>'; return; }
             let siswaArr = []; snap.forEach(doc => siswaArr.push(doc.data())); siswaArr.sort((a,b) => a.nama.localeCompare(b.nama));
+            
+            // MENAMPILKAN TOMBOL D (DISPEN) DI SINI
             siswaArr.forEach(s => {
                 const id = s.username; 
                 container.innerHTML += `
@@ -345,6 +364,7 @@
                             <label class="radio-label"><input type="radio" name="absen_${id}" value="S"><span class="opt-s">S</span></label>
                             <label class="radio-label"><input type="radio" name="absen_${id}" value="I"><span class="opt-i">I</span></label>
                             <label class="radio-label"><input type="radio" name="absen_${id}" value="A"><span class="opt-a">A</span></label>
+                            <label class="radio-label"><input type="radio" name="absen_${id}" value="D"><span class="opt-d">D</span></label>
                         </div>
                     </div>`;
             });
@@ -401,9 +421,19 @@
             } catch(e) { Swal.fire('Gagal', e.message, 'error'); } finally { document.getElementById('loading').classList.add('hidden'); } 
         }
         
+        // --- UPGRADE: FILTER TANGGAL ---
         window.downloadRekapJurnal = async () => { 
             Swal.fire({ title: 'Menyusun Laporan...', text: 'Menggabungkan Jurnal & Refleksi Siswa...', didOpen: () => Swal.showLoading() }); 
             try { 
+                // 1. AMBIL NILAI TANGGAL DARI HTML
+                const tglMulai = document.getElementById('filter-mulai').value;
+                const tglSelesai = document.getElementById('filter-selesai').value;
+
+                // 2. CEK: JIKA KOSONG, MARAHIN GURUNYA
+                if(!tglMulai || !tglSelesai) {
+                    return Swal.fire('Pilih Tanggal', 'Tentukan tanggal mulai dan selesai dulu.', 'warning');
+                }
+
                 const q = query(collection(db, "jurnal_guru"), where("nip", "==", userGuru.username)); 
                 const snap = await getDocs(q); 
                 if (snap.empty) { Swal.fire('Kosong', 'Belum ada data jurnal.', 'info'); return; } 
@@ -411,21 +441,42 @@
                 let rawData = []; let promises = [];
                 snap.forEach(doc => {
                     const d = doc.data(); d.id = doc.id;
+                    
+                    // --- FILTER TANGGAL ---
+                    if (d.tanggal < tglMulai || d.tanggal > tglSelesai) { return; }
+
+                    // Format Absensi (Dispen Masuk List)
                     let absenTxt = "-";
                     if(d.absensi_mapel) {
                         const tidakHadir = d.absensi_mapel.filter(s => s.status !== 'H');
-                        absenTxt = tidakHadir.length > 0 ? tidakHadir.map(s => `${s.nama} (${s.status})`).join(", ") : "NIHIL (Hadir Semua)";
+                        if(tidakHadir.length > 0) {
+                            absenTxt = tidakHadir.map(s => {
+                                if(s.status === 'D') return `${s.nama} (Dispen)`;
+                                return `${s.nama} (${s.status})`;
+                            }).join(", ");
+                        } else {
+                            absenTxt = "NIHIL (Hadir Semua)";
+                        }
                     }
                     d.rekap_absen = absenTxt;
+
+                    // Statistik 4 Emoticon
                     const qRef = query(collection(db, "refleksi_siswa"), where("id_jurnal", "==", d.id));
                     const promise = getDocs(qRef).then(refSnap => {
-                        let refleksiTxt = []; let counts = {p:0, b:0, s:0};
+                        let refleksiTxt = []; 
+                        let counts = { sen:0, ins:0, kpa:0, nga:0 }; 
+                        
                         refSnap.forEach(r => {
                             const rd = r.data();
-                            if(rd.rating==3) counts.p++; else if(rd.rating==2) counts.b++; else counts.s++;
+                            if(rd.rating==4) counts.sen++; 
+                            else if(rd.rating==3) counts.ins++; 
+                            else if(rd.rating==2) counts.kpa++; 
+                            else counts.nga++;
+
                             if(rd.pesan && rd.pesan !== '-') refleksiTxt.push(`${rd.nama}: ${rd.pesan}`);
                         });
-                        d.stats_respon = `Paham:${counts.p}, Bingung:${counts.b}, Pusing:${counts.s}`;
+                        
+                        d.stats_respon = `🥰:${counts.sen}, 💡:${counts.ins}, 😵‍💫:${counts.kpa}, 😴:${counts.nga}`;
                         d.komentar_siswa = refleksiTxt.join(" | ") || "Belum ada komentar";
                         rawData.push(d);
                     });
@@ -435,10 +486,12 @@
                 await Promise.all(promises);
                 rawData.sort((a, b) => (b.waktu?.toMillis() || 0) - (a.waktu?.toMillis() || 0)); 
                 
+                if(rawData.length === 0) { return Swal.fire('Kosong', 'Tidak ada jurnal di tanggal yang dipilih.', 'info'); }
+
                 const dataExport = rawData.map(d => ({ 
                     Tanggal: d.tanggal || "-", 
                     Jam_Input: d.waktu ? new Date(d.waktu.toDate()).toLocaleTimeString('id-ID') : '-', 
-                    Jam_Pelajaran: d.jam_ke || "-", // KOLOM BARU JAM KE
+                    Jam_Pelajaran: d.jam_ke || "-", 
                     Kelas: d.kelas, Mapel: d.mapel, Materi: d.materi, 
                     Ket_Tidak_Hadir: d.rekap_absen, 
                     Statistik_Respon: d.stats_respon,
@@ -449,14 +502,14 @@
                 const ws = XLSX.utils.json_to_sheet(dataExport); 
                 const range = XLSX.utils.decode_range(ws['!ref']); 
                 for (let R = range.s.r + 1; R <= range.e.r; ++R) { 
-                    const cellAddress = XLSX.utils.encode_cell({r: R, c: 9}); // UPDATE KOLOM KE-9
+                    const cellAddress = XLSX.utils.encode_cell({r: R, c: 9}); 
                     const cell = ws[cellAddress]; 
                     if (cell && cell.v && cell.v.startsWith('http')) { cell.l = { Target: cell.v }; cell.v = "📸 LIHAT FOTO"; } 
                 } 
                 const wb = XLSX.utils.book_new(); 
                 XLSX.utils.book_append_sheet(wb, ws, "Jurnal Mengajar"); 
-                const tglFile = new Date().toISOString().split('T')[0]; 
-                XLSX.writeFile(wb, `JURNAL_${userGuru.nama}_${tglFile}.xlsx`); 
+                
+                XLSX.writeFile(wb, `JURNAL_${userGuru.nama}_${tglMulai}_sd_${tglSelesai}.xlsx`); 
                 Swal.close(); Swal.fire('Selesai!', 'Laporan Excel LENGKAP (Jurnal + Absen + Refleksi).', 'success'); 
             } catch (e) { console.error(e); Swal.fire('Gagal', 'Error: ' + e.message, 'error'); } 
         }
