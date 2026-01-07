@@ -37,14 +37,6 @@
         .flash-effect { position: absolute; inset: 0; background: white; opacity: 0; pointer-events: none; z-index: 50; }
         .flash-active { animation: flashAnim 0.4s ease-out; }
         @keyframes flashAnim { 0% { opacity: 1; } 100% { opacity: 0; } }
-        
-        /* Animasi Terbang */
-        .fly-to-server { animation: flyAnim 0.8s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards; }
-        @keyframes flyAnim {
-            0% { transform: scale(1); opacity: 1; border-radius: 24px; }
-            20% { transform: scale(0.9); } 
-            100% { transform: scale(0.1) translateY(-800px); opacity: 0; border-radius: 50%; }
-        }
         .focus-grid {
             position: absolute; inset: 0; pointer-events: none; z-index: 10;
             background-image: linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px);
@@ -307,7 +299,7 @@
 
         window.renderMenu = () => {
             const menu = [
-                { id: 'btnAbsen', label: 'Presensi', icon: 'scan-face', color: 'text-blue-500', bg: 'bg-blue-50', action: "bukaHalaman('page-absen'); setTimeout(initMap, 500);" },
+                { id: 'btnAbsen', label: 'Absensi', icon: 'scan-face', color: 'text-blue-500', bg: 'bg-blue-50', action: "bukaHalaman('page-absen'); setTimeout(initMap, 500);" },
                 { id: 'btnSakit', label: 'Izin/Sakit', icon: 'thermometer', color: 'text-rose-500', bg: 'bg-rose-50', action: "bukaHalaman('page-sakit')" },
                 { id: 'btnRefleksi', label: 'Jurnal KBM', icon: 'book-open', color: 'text-pink-500', bg: 'bg-pink-50', action: "bukaHalaman('page-refleksi')" },
                 { id: 'btnProfil', label: 'Profil', icon: 'user', color: 'text-indigo-500', bg: 'bg-indigo-50', action: "bukaHalaman('page-profil')" },
@@ -338,13 +330,11 @@
             });
         }
 
-        // UPDATE: LOAD FOTO & COUNT
         window.loadFotoProfil = async () => {
             try {
                 const docSnap = await getDoc(doc(db, "siswa", userSiswa.nisn));
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    // Simpan data live ke userSiswa
                     userSiswa.foto_profil = data.foto_profil;
                     userSiswa.update_foto_count = data.update_foto_count || 0;
                     
@@ -369,7 +359,6 @@
             } catch (e) { console.log(e); }
         }
 
-        // UPDATE: CEK LIMIT SEBELUM BUKA GALERI
         window.pilihFotoGaleri = (tipe) => {
             if(tipe === 'profil') {
                 if(userSiswa.update_foto_count >= 2) {
@@ -397,7 +386,7 @@
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
                         
-                        // --- KOMPRESI SADIS (300px) ---
+                        // KOMPRESI SADIS (300px)
                         const MAX_WIDTH = 300; 
                         const scaleSize = MAX_WIDTH / img.width;
                         canvas.width = MAX_WIDTH;
@@ -444,6 +433,7 @@
             }); 
         }
 
+        // --- UPDATE: LIMIT KARAKTER REFLEKSI ---
         function loadTimelineKBM() {
             const container = document.getElementById('timeline-kbm');
             const todayStr = getTodayID();
@@ -458,7 +448,38 @@
                     const docIdJurnal = doc.id;
                     const isRated = localStorage.getItem(`rated_${docIdJurnal}`);
                     const mapelSafe = (d.mapel || "Mapel").replace(/'/g, "\\'"); 
-                    const ratingArea = isRated ? `<div class="mt-3 text-[10px] text-emerald-600 font-bold bg-emerald-50 p-2 rounded-lg text-center flex items-center justify-center gap-2"><i data-lucide="check-circle" class="w-3 h-3"></i> Refleksi Terkirim</div>` : `<div class="mt-3 pt-3 border-t border-slate-100"><textarea id="pesan-${docIdJurnal}" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-bold text-slate-700 outline-none focus:border-blue-500 mb-3 transition" rows="2" placeholder="Tulis catatan / refleksi kamu disini..."></textarea><p class="text-[9px] text-slate-400 mb-2 text-center uppercase font-bold tracking-widest">Bagaimana pelajaran ini?</p><div class="flex justify-center gap-3"><button onclick="kirimRefleksi('${docIdJurnal}', '${mapelSafe}', 3)" class="flex flex-col items-center gap-1 active:scale-90 transition transform hover:-translate-y-1"><span class="text-2xl filter drop-shadow-sm">🤩</span><span class="text-[9px] font-bold text-slate-500">Paham</span></button><button onclick="kirimRefleksi('${docIdJurnal}', '${mapelSafe}', 2)" class="flex flex-col items-center gap-1 active:scale-90 transition transform hover:-translate-y-1"><span class="text-2xl filter drop-shadow-sm">🤔</span><span class="text-[9px] font-bold text-slate-500">Bingung</span></button><button onclick="kirimRefleksi('${docIdJurnal}', '${mapelSafe}', 1)" class="flex flex-col items-center gap-1 active:scale-90 transition transform hover:-translate-y-1"><span class="text-2xl filter drop-shadow-sm">🤯</span><span class="text-[9px] font-bold text-slate-500">Pusing</span></button></div></div>`;
+                    
+                    // UPDATE DI SINI: maxlength="150" dan placeholder
+                    const ratingArea = isRated 
+                        ? `<div class="mt-3 text-[10px] text-emerald-600 font-bold bg-emerald-50 p-2 rounded-lg text-center flex items-center justify-center gap-2"><i data-lucide="check-circle" class="w-3 h-3"></i> Refleksi Terkirim</div>` 
+                        : `<div class="mt-3 pt-3 border-t border-slate-100">
+                            <textarea id="pesan-${docIdJurnal}" maxlength="150" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-bold text-slate-700 outline-none focus:border-blue-500 mb-3 transition" rows="2" placeholder="Tulis catatan (Maks 150 huruf)..."></textarea>
+                            <p class="text-[9px] text-slate-400 mb-2 text-center uppercase font-bold tracking-widest">Bagaimana pelajaran ini?</p>
+                            <div class="grid grid-cols-4 gap-2 mt-3">
+    
+    <button onclick="kirimRefleksi('${docIdJurnal}', '${mapelSafe}', 4)" class="group bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 rounded-xl p-2 transition active:scale-95 flex flex-col items-center">
+        <span class="text-2xl group-hover:scale-125 transition transform">🥰</span>
+        <span class="text-[8px] font-black text-emerald-600 uppercase mt-1">Senang</span>
+    </button>
+
+    <button onclick="kirimRefleksi('${docIdJurnal}', '${mapelSafe}', 3)" class="group bg-amber-50 hover:bg-amber-100 border border-amber-100 rounded-xl p-2 transition active:scale-95 flex flex-col items-center">
+        <span class="text-2xl group-hover:scale-125 transition transform">💡</span>
+        <span class="text-[8px] font-black text-amber-600 uppercase mt-1">Terinspirasi</span>
+    </button>
+
+    <button onclick="kirimRefleksi('${docIdJurnal}', '${mapelSafe}', 2)" class="group bg-orange-50 hover:bg-orange-100 border border-orange-100 rounded-xl p-2 transition active:scale-95 flex flex-col items-center">
+        <span class="text-2xl group-hover:scale-125 transition transform">😵‍💫</span>
+        <span class="text-[8px] font-black text-orange-600 uppercase mt-1">Krg Paham</span>
+    </button>
+
+    <button onclick="kirimRefleksi('${docIdJurnal}', '${mapelSafe}', 1)" class="group bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl p-2 transition active:scale-95 flex flex-col items-center">
+        <span class="text-2xl group-hover:scale-125 transition transform">😴</span>
+        <span class="text-[8px] font-black text-slate-500 uppercase mt-1">Ngantuk</span>
+    </button>
+
+</div>
+                           </div>`;
+                    
                     container.innerHTML += `<div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm mb-4"><div class="flex justify-between items-start mb-2"><span class="bg-indigo-50 text-indigo-600 text-[10px] font-bold px-2 py-1 rounded shadow-sm">${jam}</span><span class="text-[10px] text-slate-400 font-bold uppercase tracking-wide">${d.nama_guru || 'Guru'}</span></div><h4 class="font-bold text-slate-800 text-sm leading-tight">${d.mapel}</h4><p class="text-xs text-slate-500 mt-1 line-clamp-2">${d.materi || '-'}</p>${ratingArea}</div>`;
                 });
                 lucide.createIcons();
@@ -478,7 +499,6 @@
             finally { document.getElementById('loadingOverlay').classList.add('hidden'); }
         }
 
-        // UPDATE: TAMBAH INCREMENT
         async function prosesUpdateProfil(fotoData) { 
             document.getElementById('loadingOverlay').classList.remove('hidden'); 
             try { 
@@ -492,9 +512,8 @@
                     update_foto_count: increment(1) 
                 }, { merge: true }); 
 
-                // Update lokal biar langsung kerasa
                 userSiswa.update_foto_count = (userSiswa.update_foto_count || 0) + 1;
-                loadFotoProfil(); // Refresh UI sisa jatah
+                loadFotoProfil(); 
 
                 Swal.fire({ title: 'Ganteng Maksimal!', text: 'Foto profil baru terpasang.', icon: 'success', timer: 1500, showConfirmButton: false }); 
             } catch (error) { Swal.fire('Gagal', error.message, 'error'); } finally { document.getElementById('loadingOverlay').classList.add('hidden'); } 
@@ -528,4 +547,3 @@
     </script>
 </body>
 </html>
-
