@@ -27,14 +27,12 @@
         .radio-label input { display: none; }
         .radio-label span { display: inline-block; padding: 4px 10px; border-radius: 8px; font-size: 10px; font-weight: bold; cursor: pointer; border: 1px solid #e2e8f0; color: #94a3b8; }
         
-        /* WARNA TOMBOL */
-        .radio-label input:checked + span.opt-h { background-color: #d1fae5; color: #059669; border-color: #10b981; } /* Hijau - Hadir */
-        .radio-label input:checked + span.opt-s { background-color: #dbeafe; color: #2563eb; border-color: #3b82f6; } /* Biru - Sakit */
-        .radio-label input:checked + span.opt-i { background-color: #ffedd5; color: #ea580c; border-color: #f97316; } /* Oranye - Izin */
-        .radio-label input:checked + span.opt-a { background-color: #fee2e2; color: #dc2626; border-color: #ef4444; } /* Merah - Alpha */
-        
-        /* TOMBOL BARU: DISPEN (UNGU) */
-        .radio-label input:checked + span.opt-d { background-color: #f3e8ff; color: #7e22ce; border-color: #a855f7; } 
+        /* WARNA TOMBOL STATUS */
+        .radio-label input:checked + span.opt-h { background-color: #d1fae5; color: #059669; border-color: #10b981; } /* Hijau */
+        .radio-label input:checked + span.opt-s { background-color: #dbeafe; color: #2563eb; border-color: #3b82f6; } /* Biru */
+        .radio-label input:checked + span.opt-i { background-color: #ffedd5; color: #ea580c; border-color: #f97316; } /* Oranye */
+        .radio-label input:checked + span.opt-a { background-color: #fee2e2; color: #dc2626; border-color: #ef4444; } /* Merah */
+        .radio-label input:checked + span.opt-d { background-color: #f3e8ff; color: #7e22ce; border-color: #a855f7; } /* Ungu (Dispen) */
     </style>
 </head>
 <body class="text-slate-800 min-h-screen flex flex-col pb-24">
@@ -97,7 +95,6 @@
             </h3>
             
             <div class="space-y-3">
-                
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="text-[10px] font-bold text-slate-400 ml-1">MULAI JAM KE-</label>
@@ -147,7 +144,6 @@
             </div>
 
             <div class="mt-4 pt-4 border-t border-slate-100">
-                
                 <div class="grid grid-cols-2 gap-3 mb-3">
                     <div>
                         <label class="text-[10px] font-bold text-slate-400 ml-1">DARI TANGGAL</label>
@@ -158,7 +154,6 @@
                         <input type="date" id="filter-selesai" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs font-bold text-slate-600 outline-none focus:border-blue-500">
                     </div>
                 </div>
-
                 <button onclick="downloadRekapJurnal()" class="w-full bg-emerald-50 text-emerald-700 py-3 rounded-xl font-bold text-xs border border-emerald-100 hover:bg-emerald-100 transition flex items-center justify-center gap-2">
                     <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> DOWNLOAD JURNAL
                 </button>
@@ -263,6 +258,26 @@
                         }
                     });
                 }
+                
+                // --- ANTI-BANTING (PREVENT BACK BUTTON EXIT) ---
+                history.pushState(null, null, location.href); 
+                window.onpopstate = function () {
+                    // Kalau modal Kamera terbuka
+                    if(!document.getElementById('modalKamera').classList.contains('hidden')) { 
+                        tutupKamera(); 
+                        history.pushState(null, null, location.href); 
+                        return; 
+                    }
+                    // Kalau modal Wali Kelas terbuka
+                    if(document.getElementById('modal-wali').classList.contains('active')) { 
+                        document.getElementById('modal-wali').classList.remove('active'); 
+                        history.pushState(null, null, location.href); 
+                        return; 
+                    }
+                    // Default: Paksa diam di halaman (Trap)
+                    history.pushState(null, null, location.href);
+                };
+
             } else { window.location.href = 'index.html'; }
         });
 
@@ -353,7 +368,7 @@
             if(snap.empty) { container.innerHTML = '<div class="text-center text-xs text-slate-400">Tidak ada siswa.</div>'; return; }
             let siswaArr = []; snap.forEach(doc => siswaArr.push(doc.data())); siswaArr.sort((a,b) => a.nama.localeCompare(b.nama));
             
-            // MENAMPILKAN TOMBOL D (DISPEN) DI SINI
+            // TOMBOL ABSENSI + DISPEN
             siswaArr.forEach(s => {
                 const id = s.username; 
                 container.innerHTML += `
@@ -370,10 +385,64 @@
             });
         }
 
-        async function loadDaftarKelas() { const sel = document.getElementById('jurnal-kelas'); const cachedKelas = localStorage.getItem('cache_list_kelas'); if(cachedKelas) { renderOptions(sel, JSON.parse(cachedKelas)); return; } try { const q = query(collection(db, "users"), where("role", "==", "siswa")); const snap = await getDocs(q); const kelasUnik = new Set(); snap.forEach(doc => { const d = doc.data(); if(d.kelas && d.kelas !== "-") kelasUnik.add(d.kelas.toUpperCase().trim()); }); const listArr = Array.from(kelasUnik).sort(); localStorage.setItem('cache_list_kelas', JSON.stringify(listArr)); renderOptions(sel, listArr); } catch (e) { console.error(e); } }
-        async function loadDaftarMapel() { const sel = document.getElementById('jurnal-mapel'); const cachedMapel = localStorage.getItem('cache_list_mapel'); if(cachedMapel) { renderOptions(sel, JSON.parse(cachedMapel)); return; } try { const q = query(collection(db, "mata_pelajaran"), orderBy("nama", "asc")); const snap = await getDocs(q); const listArr = []; snap.forEach(doc => listArr.push(doc.data().nama)); localStorage.setItem('cache_list_mapel', JSON.stringify(listArr)); renderOptions(sel, listArr); } catch (e) { console.error(e); } }
-        function renderOptions(selectEl, arrayData) { selectEl.innerHTML = '<option value="">- Pilih -</option>'; arrayData.forEach(item => selectEl.add(new Option(item, item))); }
-        function loadMenuDinamis() { const container = document.getElementById('grid-menu-dinamis'); const sec = document.getElementById('section-menu-dinamis'); onSnapshot(query(collection(db, "menu_dinamis"), orderBy("created_at", "asc")), (snap) => { container.innerHTML = ''; let ada = false; snap.forEach(d => { const dt = d.data(); if (dt.target === 'guru' || dt.target === 'umum') { ada = true; const style = dt.highlight ? "bg-indigo-50 text-indigo-700 border-indigo-200" : "bg-white text-slate-700 border-slate-100"; container.innerHTML += `<a href="${dt.link}" target="_blank" class="${style} p-4 border rounded-2xl flex flex-col items-center gap-2 shadow-sm active:scale-95 transition"><div class="text-xl">${dt.icon}</div><span class="text-[10px] font-bold uppercase">${dt.judul}</span></a>`; } }); if(ada) sec.classList.remove('hidden'); else sec.classList.add('hidden'); }); }
+        async function loadDaftarKelas() { 
+            const sel = document.getElementById('jurnal-kelas'); 
+            const cachedKelas = localStorage.getItem('cache_list_kelas'); 
+            
+            // CEK CACHE
+            if(cachedKelas) { renderOptions(sel, JSON.parse(cachedKelas)); return; } 
+            
+            try { 
+                const q = query(collection(db, "users"), where("role", "==", "siswa")); 
+                const snap = await getDocs(q); 
+                const kelasUnik = new Set(); 
+                snap.forEach(doc => { 
+                    const d = doc.data(); 
+                    if(d.kelas && d.kelas !== "-") kelasUnik.add(d.kelas.toUpperCase().trim()); 
+                }); 
+                const listArr = Array.from(kelasUnik).sort(); 
+                localStorage.setItem('cache_list_kelas', JSON.stringify(listArr)); 
+                renderOptions(sel, listArr); 
+            } catch (e) { console.error(e); } 
+        }
+
+        async function loadDaftarMapel() { 
+            const sel = document.getElementById('jurnal-mapel'); 
+            const cachedMapel = localStorage.getItem('cache_list_mapel'); 
+            if(cachedMapel) { renderOptions(sel, JSON.parse(cachedMapel)); return; } 
+            try { 
+                const q = query(collection(db, "mata_pelajaran"), orderBy("nama", "asc")); 
+                const snap = await getDocs(q); 
+                const listArr = []; 
+                snap.forEach(doc => listArr.push(doc.data().nama)); 
+                localStorage.setItem('cache_list_mapel', JSON.stringify(listArr)); 
+                renderOptions(sel, listArr); 
+            } catch (e) { console.error(e); } 
+        }
+
+        function renderOptions(selectEl, arrayData) { 
+            selectEl.innerHTML = '<option value="">- Pilih -</option>'; 
+            arrayData.forEach(item => selectEl.add(new Option(item, item))); 
+        }
+
+        function loadMenuDinamis() { 
+            const container = document.getElementById('grid-menu-dinamis'); 
+            const sec = document.getElementById('section-menu-dinamis'); 
+            // PENTING: Gunakan Cache kalau bisa di sini nanti, untuk sekarang snapshot
+            onSnapshot(query(collection(db, "menu_dinamis"), orderBy("created_at", "asc")), (snap) => { 
+                container.innerHTML = ''; 
+                let ada = false; 
+                snap.forEach(d => { 
+                    const dt = d.data(); 
+                    if (dt.target === 'guru' || dt.target === 'umum') { 
+                        ada = true; 
+                        const style = dt.highlight ? "bg-indigo-50 text-indigo-700 border-indigo-200" : "bg-white text-slate-700 border-slate-100"; 
+                        container.innerHTML += `<a href="${dt.link}" target="_blank" class="${style} p-4 border rounded-2xl flex flex-col items-center gap-2 shadow-sm active:scale-95 transition"><div class="text-xl">${dt.icon}</div><span class="text-[10px] font-bold uppercase">${dt.judul}</span></a>`; 
+                    } 
+                }); 
+                if(ada) sec.classList.remove('hidden'); else sec.classList.add('hidden'); 
+            }); 
+        }
 
         async function initKamera(mode) {
             if(streamKamera) streamKamera.getTracks().forEach(t=>t.stop());
@@ -383,12 +452,7 @@
         window.bukaKameraJurnal = () => { tipeAbsenAktif = "Jurnal"; document.getElementById('judul-kamera').innerText = "FOTO BUKTI KBM"; document.getElementById('modalKamera').classList.remove('hidden'); currentFacingMode='environment'; initKamera(currentFacingMode); }
         window.tutupKamera = () => { document.getElementById('modalKamera').classList.add('hidden'); if(streamKamera) streamKamera.getTracks().forEach(t=>t.stop()); }
         window.gantiKamera = () => { currentFacingMode = (currentFacingMode === 'user') ? 'environment' : 'user'; initKamera(currentFacingMode); }
-        
-        window.jepret = async () => { 
-            const vid = document.getElementById('videoStream'); const can = document.getElementById('canvasFoto'); can.width = 480; can.height = 480; can.getContext('2d').drawImage(vid,0,0,480,480); const foto = can.toDataURL('image/jpeg', 0.7); 
-            if(tipeAbsenAktif === 'ProfilGuru') { try { tutupKamera(); Swal.fire({title:'Mengupdate Profil...', didOpen:()=>Swal.showLoading()}); const snap = await uploadString(ref(storage, `profil_guru/${userGuru.username}.jpg`), foto, 'data_url'); const url = await getDownloadURL(snap.ref); await setDoc(doc(db, "guru", userGuru.username), { foto_profil: url, updated_at: serverTimestamp() }, { merge: true }); Swal.fire('Cakep!', 'Foto profil berhasil diperbarui.', 'success'); } catch(e) { Swal.fire('Gagal', e.message, 'error'); } return; } 
-            if(tipeAbsenAktif === 'Jurnal') { fotoBuktiJurnal = foto; document.getElementById('preview-foto-jurnal').innerText = "Foto Terlampir ✔"; document.getElementById('preview-foto-jurnal').className = "text-xs text-green-600 font-bold italic"; tutupKamera(); return; } 
-        }
+        window.jepret = async () => { const vid = document.getElementById('videoStream'); const can = document.getElementById('canvasFoto'); can.width = 480; can.height = 480; can.getContext('2d').drawImage(vid,0,0,480,480); const foto = can.toDataURL('image/jpeg', 0.7); if(tipeAbsenAktif === 'ProfilGuru') { try { tutupKamera(); Swal.fire({title:'Mengupdate Profil...', didOpen:()=>Swal.showLoading()}); const snap = await uploadString(ref(storage, `profil_guru/${userGuru.username}.jpg`), foto, 'data_url'); const url = await getDownloadURL(snap.ref); await setDoc(doc(db, "guru", userGuru.username), { foto_profil: url, updated_at: serverTimestamp() }, { merge: true }); Swal.fire('Cakep!', 'Foto profil berhasil diperbarui.', 'success'); } catch(e) { Swal.fire('Gagal', e.message, 'error'); } return; } if(tipeAbsenAktif === 'Jurnal') { fotoBuktiJurnal = foto; document.getElementById('preview-foto-jurnal').innerText = "Foto Terlampir ✔"; document.getElementById('preview-foto-jurnal').className = "text-xs text-green-600 font-bold italic"; tutupKamera(); return; } }
 
         window.kirimJurnal = async () => { 
             const kls = document.getElementById('jurnal-kelas').value; const mapel = document.getElementById('jurnal-mapel').value; const materi = document.getElementById('jurnal-materi').value; 
@@ -421,15 +485,12 @@
             } catch(e) { Swal.fire('Gagal', e.message, 'error'); } finally { document.getElementById('loading').classList.add('hidden'); } 
         }
         
-        // --- UPGRADE: FILTER TANGGAL ---
         window.downloadRekapJurnal = async () => { 
             Swal.fire({ title: 'Menyusun Laporan...', text: 'Menggabungkan Jurnal & Refleksi Siswa...', didOpen: () => Swal.showLoading() }); 
             try { 
-                // 1. AMBIL NILAI TANGGAL DARI HTML
                 const tglMulai = document.getElementById('filter-mulai').value;
                 const tglSelesai = document.getElementById('filter-selesai').value;
 
-                // 2. CEK: JIKA KOSONG, MARAHIN GURUNYA
                 if(!tglMulai || !tglSelesai) {
                     return Swal.fire('Pilih Tanggal', 'Tentukan tanggal mulai dan selesai dulu.', 'warning');
                 }
@@ -442,10 +503,8 @@
                 snap.forEach(doc => {
                     const d = doc.data(); d.id = doc.id;
                     
-                    // --- FILTER TANGGAL ---
                     if (d.tanggal < tglMulai || d.tanggal > tglSelesai) { return; }
 
-                    // Format Absensi (Dispen Masuk List)
                     let absenTxt = "-";
                     if(d.absensi_mapel) {
                         const tidakHadir = d.absensi_mapel.filter(s => s.status !== 'H');
@@ -460,7 +519,6 @@
                     }
                     d.rekap_absen = absenTxt;
 
-                    // Statistik 4 Emoticon
                     const qRef = query(collection(db, "refleksi_siswa"), where("id_jurnal", "==", d.id));
                     const promise = getDocs(qRef).then(refSnap => {
                         let refleksiTxt = []; 
