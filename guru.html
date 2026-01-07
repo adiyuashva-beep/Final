@@ -23,7 +23,7 @@
         .fade-in { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Custom Radio Button untuk Absen Mapel */
+        /* Custom Radio Button */
         .radio-label input { display: none; }
         .radio-label span { display: inline-block; padding: 4px 10px; border-radius: 8px; font-size: 10px; font-weight: bold; cursor: pointer; border: 1px solid #e2e8f0; color: #94a3b8; }
         .radio-label input:checked + span.opt-h { background-color: #d1fae5; color: #059669; border-color: #10b981; }
@@ -123,7 +123,7 @@
 
             <div class="mt-4 pt-4 border-t border-slate-100">
                 <button onclick="downloadRekapJurnal()" class="w-full bg-emerald-50 text-emerald-700 py-3 rounded-xl font-bold text-xs border border-emerald-100 hover:bg-emerald-100 transition flex items-center justify-center gap-2">
-                    <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> DOWNLOAD ARSIP JURNAL
+                    <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> DOWNLOAD JURNAL + REFLEKSI SISWA
                 </button>
             </div>
 
@@ -302,32 +302,21 @@
             document.getElementById('modal-wali').classList.add('active');
         }
 
-        // --- FITUR BARU: LOAD SISWA UNTUK ABSEN MAPEL ---
         window.loadSiswaUntukAbsen = async () => {
             const kls = document.getElementById('jurnal-kelas').value;
             const container = document.getElementById('list-absen-mapel');
             const area = document.getElementById('area-absen-mapel');
-            
             if (!kls) { area.classList.add('hidden'); return; }
-            
             area.classList.remove('hidden');
             container.innerHTML = '<div class="text-center text-xs text-slate-400 italic">Memuat siswa...</div>';
-            
             const q = query(collection(db, "users"), where("kelas", "==", kls), where("role", "==", "siswa"));
             const snap = await getDocs(q);
-            
             container.innerHTML = '';
             document.getElementById('jml-siswa-mapel').innerText = snap.size + ' Siswa';
-            
             if(snap.empty) { container.innerHTML = '<div class="text-center text-xs text-slate-400">Tidak ada siswa.</div>'; return; }
-
-            let siswaArr = [];
-            snap.forEach(doc => siswaArr.push(doc.data()));
-            siswaArr.sort((a,b) => a.nama.localeCompare(b.nama));
-
+            let siswaArr = []; snap.forEach(doc => siswaArr.push(doc.data())); siswaArr.sort((a,b) => a.nama.localeCompare(b.nama));
             siswaArr.forEach(s => {
                 const id = s.username; 
-                // Default Checked = H (Hadir)
                 container.innerHTML += `
                     <div class="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-100 siswa-item" data-nisn="${id}" data-nama="${s.nama}">
                         <span class="text-xs font-bold text-slate-700 truncate w-32">${s.nama}</span>
@@ -337,8 +326,7 @@
                             <label class="radio-label"><input type="radio" name="absen_${id}" value="I"><span class="opt-i">I</span></label>
                             <label class="radio-label"><input type="radio" name="absen_${id}" value="A"><span class="opt-a">A</span></label>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             });
         }
 
@@ -363,13 +351,11 @@
         }
 
         window.kirimJurnal = async () => { 
-            const kls = document.getElementById('jurnal-kelas').value; 
-            const mapel = document.getElementById('jurnal-mapel').value; 
-            const materi = document.getElementById('jurnal-materi').value; 
+            const kls = document.getElementById('jurnal-kelas').value; const mapel = document.getElementById('jurnal-mapel').value; const materi = document.getElementById('jurnal-materi').value; 
             if(!kls || !mapel || !materi) return Swal.fire('Lengkapi','Kelas, Mapel, dan Materi wajib diisi','warning'); 
             if(!fotoBuktiJurnal) return Swal.fire('Wajib Foto','Lampirkan foto bukti KBM','warning'); 
             
-            // AMBIL DATA ABSENSI MAPEL
+            // SIMPAN ABSEN MAPEL
             let absensiSiswa = [];
             document.querySelectorAll('.siswa-item').forEach(el => {
                 const nisn = el.getAttribute('data-nisn');
@@ -386,50 +372,70 @@
                 await addDoc(collection(db, "jurnal_guru"), { 
                     nip: userGuru.username, nama_guru: userGuru.nama, kelas: kls, mapel: mapel, materi: materi, 
                     foto_bukti: urlFoto, waktu: serverTimestamp(), tanggal: todayStr,
-                    absensi_mapel: absensiSiswa // SIMPAN DATA ABSEN
+                    absensi_mapel: absensiSiswa // <-- DATA ABSEN
                 }); 
-                Swal.fire('Tersimpan', 'Jurnal & Absensi berhasil diupload.', 'success'); 
+                Swal.fire('Tersimpan', 'Jurnal berhasil diupload.', 'success'); 
                 document.getElementById('jurnal-materi').value = ''; fotoBuktiJurnal = null; document.getElementById('preview-foto-jurnal').innerText = "Belum ada foto bukti."; document.getElementById('preview-foto-jurnal').className = "text-xs text-slate-400 italic"; 
-                document.querySelectorAll('input[value="H"]').forEach(r => r.checked = true); // Reset ke Hadir
+                document.querySelectorAll('input[value="H"]').forEach(r => r.checked = true); // Reset
             } catch(e) { Swal.fire('Gagal', e.message, 'error'); } finally { document.getElementById('loading').classList.add('hidden'); } 
         }
         
+        // --- UPGRADE: DOWNLOAD TERMASUK REFLEKSI ---
         window.downloadRekapJurnal = async () => { 
-            Swal.fire({ title: 'Menyusun Laporan...', text: 'Mengambil data...', didOpen: () => Swal.showLoading() }); 
+            Swal.fire({ title: 'Menyusun Laporan...', text: 'Menggabungkan Jurnal & Refleksi Siswa...', didOpen: () => Swal.showLoading() }); 
             try { 
                 const q = query(collection(db, "jurnal_guru"), where("nip", "==", userGuru.username)); 
                 const snap = await getDocs(q); 
                 if (snap.empty) { Swal.fire('Kosong', 'Belum ada data jurnal.', 'info'); return; } 
-                let rawData = []; 
+                
+                let rawData = [];
+                let promises = [];
+
                 snap.forEach(doc => {
                     const d = doc.data();
-                    // Format Absensi Mapel untuk Excel
+                    d.id = doc.id;
+                    // Format Absensi
                     let absenTxt = "-";
                     if(d.absensi_mapel) {
                         const tidakHadir = d.absensi_mapel.filter(s => s.status !== 'H');
-                        if(tidakHadir.length > 0) {
-                            absenTxt = tidakHadir.map(s => `${s.nama} (${s.status})`).join(", ");
-                        } else {
-                            absenTxt = "NIHIL (Hadir Semua)";
-                        }
+                        absenTxt = tidakHadir.length > 0 ? tidakHadir.map(s => `${s.nama} (${s.status})`).join(", ") : "NIHIL (Hadir Semua)";
                     }
                     d.rekap_absen = absenTxt;
-                    rawData.push(d);
+
+                    // Ambil Refleksi Siswa
+                    const qRef = query(collection(db, "refleksi_siswa"), where("id_jurnal", "==", d.id));
+                    const promise = getDocs(qRef).then(refSnap => {
+                        let refleksiTxt = [];
+                        let counts = {p:0, b:0, s:0};
+                        refSnap.forEach(r => {
+                            const rd = r.data();
+                            if(rd.rating==3) counts.p++; else if(rd.rating==2) counts.b++; else counts.s++;
+                            if(rd.pesan && rd.pesan !== '-') refleksiTxt.push(`${rd.nama}: ${rd.pesan}`);
+                        });
+                        d.stats_respon = `Paham:${counts.p}, Bingung:${counts.b}, Pusing:${counts.s}`;
+                        d.komentar_siswa = refleksiTxt.join(" | ") || "Belum ada komentar";
+                        rawData.push(d);
+                    });
+                    promises.push(promise);
                 }); 
+
+                await Promise.all(promises);
                 rawData.sort((a, b) => (b.waktu?.toMillis() || 0) - (a.waktu?.toMillis() || 0)); 
                 
                 const dataExport = rawData.map(d => ({ 
                     Tanggal: d.tanggal || "-", 
                     Jam: d.waktu ? new Date(d.waktu.toDate()).toLocaleTimeString('id-ID') : '-', 
                     Kelas: d.kelas, Mapel: d.mapel, Materi: d.materi, 
-                    Ket_Tidak_Hadir: d.rekap_absen, // KOLOM BARU
+                    Ket_Tidak_Hadir: d.rekap_absen, 
+                    Statistik_Respon: d.stats_respon,
+                    Komentar_Siswa: d.komentar_siswa,
                     Bukti_Fisik: d.foto_bukti 
                 })); 
                 
                 const ws = XLSX.utils.json_to_sheet(dataExport); 
                 const range = XLSX.utils.decode_range(ws['!ref']); 
                 for (let R = range.s.r + 1; R <= range.e.r; ++R) { 
-                    const cellAddress = XLSX.utils.encode_cell({r: R, c: 6}); // Kolom Bukti
+                    const cellAddress = XLSX.utils.encode_cell({r: R, c: 8}); // Kolom Bukti
                     const cell = ws[cellAddress]; 
                     if (cell && cell.v && cell.v.startsWith('http')) { cell.l = { Target: cell.v }; cell.v = "📸 LIHAT FOTO"; } 
                 } 
@@ -437,7 +443,7 @@
                 XLSX.utils.book_append_sheet(wb, ws, "Jurnal Mengajar"); 
                 const tglFile = new Date().toISOString().split('T')[0]; 
                 XLSX.writeFile(wb, `JURNAL_${userGuru.nama}_${tglFile}.xlsx`); 
-                Swal.close(); Swal.fire('Selesai!', 'Laporan Excel sudah rapi.', 'success'); 
+                Swal.close(); Swal.fire('Selesai!', 'Laporan Excel LENGKAP (Jurnal + Absen + Refleksi).', 'success'); 
             } catch (e) { console.error(e); Swal.fire('Gagal', 'Error: ' + e.message, 'error'); } 
         }
         
