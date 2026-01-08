@@ -79,17 +79,17 @@
                     <p class="text-slate-400 text-sm">Status Server: <span class="text-emerald-400 font-bold">ONLINE</span></p>
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="tarikDataSiswa(true)" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 text-xs transition border border-slate-700">
-                        <i data-lucide="refresh-cw" class="w-4 h-4"></i> Sync Data Siswa
+                    <button onclick="tarikDataUser(true)" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 text-xs transition border border-slate-700">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i> Sync Database User
                     </button>
                 </div>
             </div>
 
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800"><p class="text-slate-500 text-xs font-bold uppercase">Total User</p><h3 class="text-3xl font-black text-white mt-1" id="stat-total">0</h3></div>
+                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800"><p class="text-slate-500 text-xs font-bold uppercase">Total User DB</p><h3 class="text-3xl font-black text-white mt-1" id="stat-total">0</h3></div>
                 <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800"><p class="text-slate-500 text-xs font-bold uppercase">Hadir Realtime</p><h3 class="text-3xl font-black text-emerald-400 mt-1" id="stat-hadir">0</h3></div>
-                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800"><p class="text-slate-500 text-xs font-bold uppercase">Guru Aktif</p><h3 class="text-3xl font-black text-orange-400 mt-1" id="stat-guru">0</h3></div>
-                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800"><p class="text-slate-500 text-xs font-bold uppercase">Admin Online</p><h3 class="text-3xl font-black text-blue-400 mt-1">1</h3></div>
+                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800"><p class="text-slate-500 text-xs font-bold uppercase">Guru Terdaftar</p><h3 class="text-3xl font-black text-orange-400 mt-1" id="stat-guru">0</h3></div>
+                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800"><p class="text-slate-500 text-xs font-bold uppercase">Mode Absen</p><h3 class="text-3xl font-black text-blue-400 mt-1">GPS</h3></div>
             </div>
 
             <div class="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden mt-6">
@@ -157,16 +157,17 @@
                 <h3 class="font-bold text-white text-lg mb-4 flex items-center gap-2"><i data-lucide="search" class="text-purple-500"></i> Cari & Kelola User (Mutasi)</h3>
                 
                 <div class="mb-4">
-                    <input type="text" id="cariUserBox" onkeyup="cariUser()" class="w-full bg-slate-950 text-white p-3 rounded-lg border border-slate-700" placeholder="Ketik Nama atau NISN siswa yang akan dihapus...">
+                    <input type="text" id="cariUserBox" onkeyup="cariUser()" class="w-full bg-slate-950 text-white p-3 rounded-lg border border-slate-700" placeholder="Ketik Nama Siswa atau Guru yang akan dihapus...">
+                    <p class="text-[10px] text-slate-500 mt-2">*Tips: Ketik minimal 3 huruf. Sistem akan mencari di seluruh database (Siswa & Guru).</p>
                 </div>
 
                 <div class="overflow-x-auto max-h-96 border border-slate-800 rounded-lg">
                     <table class="w-full text-left text-slate-400">
                         <thead class="bg-slate-950 text-xs uppercase font-bold text-slate-500 sticky top-0">
-                            <tr><th class="p-3">Nama</th><th class="p-3">ID/NISN</th><th class="p-3">Kelas</th><th class="p-3 text-right">Aksi</th></tr>
+                            <tr><th class="p-3">Nama</th><th class="p-3">Role</th><th class="p-3">ID/NISN/NIP</th><th class="p-3">Info</th><th class="p-3 text-right">Aksi</th></tr>
                         </thead>
                         <tbody id="tabel-hasil-cari" class="divide-y divide-slate-800">
-                            <tr><td colspan="4" class="p-4 text-center italic">Ketik nama siswa di atas...</td></tr>
+                            <tr><td colspan="5" class="p-4 text-center italic">Ketik nama di atas untuk mencari...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -273,7 +274,7 @@
 
     <div id="loading" class="fixed inset-0 bg-slate-900 flex flex-col items-center justify-center z-50 text-white">
         <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p class="font-bold animate-pulse">Memuat Sistem...</p>
+        <p class="font-bold animate-pulse">Memuat Database...</p>
     </div>
 
     <script type="module">
@@ -292,14 +293,14 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        let listSiswa = []; 
+        let listUsers = []; 
 
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
             const role = localStorage.getItem('admin_role');
             document.getElementById('badge-role').innerText = role === 'SUPER' ? 'SUPER ADMIN' : 'OPERATOR';
             
-            await tarikDataSiswa(); 
+            await tarikDataUser(); 
             pantauRealtime();
             loadMenuManager(); 
             loadMapel(); 
@@ -318,7 +319,7 @@
         window.gantiTabInput = (mode) => {
             document.getElementById('area-input-excel').classList.add('hidden');
             document.getElementById('area-input-manual').classList.add('hidden');
-            document.getElementById('area-input-manage').classList.add('hidden'); // Tab Baru
+            document.getElementById('area-input-manage').classList.add('hidden'); 
 
             document.getElementById('btn-tab-excel').classList.replace('bg-blue-600', 'bg-slate-800');
             document.getElementById('btn-tab-excel').classList.replace('text-white', 'text-slate-400');
@@ -332,77 +333,113 @@
             document.getElementById(`btn-tab-${mode}`).classList.replace('text-slate-400', 'text-white');
         }
 
-        // --- MANAJEMEN USER (CORE) ---
-        window.tarikDataSiswa = async (forceRefresh = false) => {
-            const cacheKey = 'master_siswa_cache_op'; 
+        // --- MANAJEMEN USER (CORE FIX) ---
+        // FUNGSI INI SEKARANG MENGAMBIL SEMUA DATA (SISWA + GURU)
+        window.tarikDataUser = async (forceRefresh = false) => {
+            const cacheKey = 'master_user_full_v1'; // Ganti nama key biar cache lama ke-reset
             const cachedData = localStorage.getItem(cacheKey); 
+            
             if (!forceRefresh && cachedData) {
-                listSiswa = JSON.parse(cachedData);
-                document.getElementById('stat-total').innerText = listSiswa.length;
-                populateKelasDropdown(); // Generate Dropdown Kelas
+                listUsers = JSON.parse(cachedData);
+                document.getElementById('stat-total').innerText = listUsers.length;
+                populateKelasDropdown(); 
+                hitungGuruManual();
                 return;
             }
             try {
                 if(forceRefresh) document.getElementById('loading').style.display = 'flex';
-                const q = query(collection(db, "users"), where("role", "!=", "guru")); 
+                
+                // QUERY FIX: Ambil semua user tanpa filter role
+                const q = query(collection(db, "users")); 
+                
                 const snap = await getDocs(q);
-                listSiswa = []; 
-                snap.forEach(doc => { const s = doc.data(); listSiswa.push(s); });
-                localStorage.setItem(cacheKey, JSON.stringify(listSiswa)); 
-                document.getElementById('stat-total').innerText = listSiswa.length;
-                populateKelasDropdown(); // Generate Dropdown Kelas
+                listUsers = []; 
+                snap.forEach(doc => { const s = doc.data(); listUsers.push(s); });
+                
+                localStorage.setItem(cacheKey, JSON.stringify(listUsers)); 
+                document.getElementById('stat-total').innerText = listUsers.length;
+                populateKelasDropdown();
+                hitungGuruManual();
+                
                 if(forceRefresh) { document.getElementById('loading').style.display = 'none'; Swal.fire('Sip','Data user diperbarui','success'); }
-            } catch (e) { console.log(e); }
+            } catch (e) { 
+                console.log(e); 
+                if(forceRefresh) document.getElementById('loading').style.display = 'none';
+            }
         }
 
-        // --- NEW: POPULATE KELAS DROPDOWN (ANTI TYPO) ---
+        function hitungGuruManual() {
+            const jmlGuru = listUsers.filter(u => u.role === 'guru' || u.role === 'admin').length;
+            document.getElementById('stat-guru').innerText = jmlGuru;
+        }
+
         function populateKelasDropdown() {
             const select = document.getElementById('manualKelas');
             select.innerHTML = '<option value="">- Pilih Kelas -</option>';
-            
-            const uniqueKelas = [...new Set(listSiswa.map(s => s.kelas))].filter(k => k && k !== '-').sort();
-            uniqueKelas.forEach(k => {
-                select.add(new Option(k, k));
-            });
+            const uniqueKelas = [...new Set(listUsers.map(s => s.kelas))].filter(k => k && k !== '-' && k !== 'undefined').sort();
+            uniqueKelas.forEach(k => { select.add(new Option(k, k)); });
         }
 
-        // --- NEW: CARI USER (LOCAL FILTER) ---
+        // --- PENCARIAN USER (FIXED) ---
+    // --- PENCARIAN USER (VERSI ANTI CRASH) ---
         window.cariUser = () => {
-            const key = document.getElementById('cariUserBox').value.toLowerCase();
+            const input = document.getElementById('cariUserBox');
+            // Cek kalau input kosong, stop biar ga error
+            if(!input) return;
+            
+            const key = input.value.toLowerCase();
             const tbody = document.getElementById('tabel-hasil-cari');
             tbody.innerHTML = '';
 
-            if(key.length < 3) {
-                tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center italic text-xs">Ketik minimal 3 huruf...</td></tr>';
+            // Cek Data List Ada Gak?
+            if (!listUsers || listUsers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-yellow-500">Data kosong. Klik "Sync Database User" dulu!</td></tr>';
                 return;
             }
 
-            const hasil = listSiswa.filter(s => s.nama.toLowerCase().includes(key) || s.username.includes(key));
+            // Cek Minimal Huruf
+            if (key.length < 3) {
+                tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center italic text-xs">Ketik minimal 3 huruf...</td></tr>';
+                return;
+            }
+
+            // FILTER YANG AMAN (Disini perbaikannya)
+            const hasil = listUsers.filter(s => {
+                // KITA PAKSA JADI STRING DULU PAKAI String(...)
+                const namaAman = s.nama ? String(s.nama).toLowerCase() : "";
+                const userAman = s.username ? String(s.username).toLowerCase() : "";
+                
+                return namaAman.includes(key) || userAman.includes(key);
+            });
             
             if(hasil.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-red-400">Tidak ditemukan.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-red-400">Tidak ditemukan.</td></tr>';
                 return;
             }
 
+            // Tampilkan (Batasi 10 aja)
             hasil.slice(0, 10).forEach(s => {
+                let badgeColor = s.role === 'guru' ? 'bg-orange-500 text-white' : (s.role === 'admin' ? 'bg-purple-500 text-white' : 'bg-slate-700 text-slate-300');
+                let infoKelas = s.role === 'siswa' ? s.kelas : 'Pengajar';
+
                 tbody.innerHTML += `
                     <tr class="border-b border-slate-800 hover:bg-slate-800">
-                        <td class="p-3 text-white font-bold">${s.nama}</td>
+                        <td class="p-3 text-white font-bold">${s.nama || "Tanpa Nama"}</td>
+                        <td class="p-3"><span class="px-2 py-1 rounded text-[10px] font-bold uppercase ${badgeColor}">${s.role}</span></td>
                         <td class="p-3 font-mono text-xs text-blue-400">${s.username}</td>
-                        <td class="p-3 text-xs">${s.kelas}</td>
+                        <td class="p-3 text-xs text-slate-400">${infoKelas}</td>
                         <td class="p-3 text-right">
-                            <button onclick="hapusUser('${s.username}', '${s.nama}')" class="bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded text-xs font-bold transition">Mutasi/Hapus</button>
+                            <button onclick="hapusUser('${s.username}', '${s.nama}')" class="bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded text-xs font-bold transition">Hapus</button>
                         </td>
                     </tr>
                 `;
             });
         }
 
-        // --- NEW: HAPUS USER (MUTASI) ---
         window.hapusUser = async (username, nama) => {
             const { value: confirm } = await Swal.fire({
                 title: 'Hapus Permanen?',
-                text: `Siswa ${nama} akan dihapus dari sistem. Data tidak bisa kembali!`,
+                text: `User ${nama} akan dihapus dari sistem. Data tidak bisa kembali!`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#d33',
@@ -414,14 +451,13 @@
                 try {
                     await deleteDoc(doc(db, "users", username));
                     
-                    // Update Local Data (Biar gak perlu refresh page & hemat kuota)
-                    listSiswa = listSiswa.filter(s => s.username !== username);
-                    localStorage.setItem('master_siswa_cache_op', JSON.stringify(listSiswa));
-                    document.getElementById('stat-total').innerText = listSiswa.length;
+                    // Update Local Data Langsung
+                    listUsers = listUsers.filter(s => s.username !== username);
+                    localStorage.setItem('master_user_full_v1', JSON.stringify(listUsers));
+                    document.getElementById('stat-total').innerText = listUsers.length;
                     
-                    // Clear search box
                     document.getElementById('cariUserBox').value = '';
-                    document.getElementById('tabel-hasil-cari').innerHTML = '<tr><td colspan="4" class="p-4 text-center text-green-400">User berhasil dihapus!</td></tr>';
+                    document.getElementById('tabel-hasil-cari').innerHTML = '<tr><td colspan="5" class="p-4 text-center text-green-400">User berhasil dihapus!</td></tr>';
                     
                     Swal.fire('Terhapus!', 'Data user telah dihapus.', 'success');
                 } catch (e) {
@@ -435,7 +471,7 @@
             if(role === 'siswa') {
                 nama = document.getElementById('manualNamaSiswa').value;
                 user = document.getElementById('manualNISN').value;
-                kelas = document.getElementById('manualKelas').value; // Ambil dari Dropdown
+                kelas = document.getElementById('manualKelas').value; 
                 pass = user; 
                 if(!nama || !user || !kelas) return Swal.fire('Lengkapi', 'Nama, NISN, dan Kelas wajib diisi', 'warning');
             } else {
@@ -449,11 +485,21 @@
                 const docRef = doc(db, "users", user);
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) return Swal.fire('Gagal', `Username ${user} sudah ada!`, 'error');
-                await setDoc(doc(db, "users", user), { nama, username: user, password: pass, role, kelas, wali_kelas: "-" });
+                
+                // Simpan ke DB
+                const dataBaru = { nama, username: user, password: pass, role, kelas, wali_kelas: "-" };
+                await setDoc(doc(db, "users", user), dataBaru);
+                
                 Swal.fire('Berhasil', `Data ${role} tersimpan!`, 'success');
+                
                 if(role === 'siswa') { document.getElementById('manualNamaSiswa').value=''; document.getElementById('manualNISN').value=''; document.getElementById('manualKelas').value=''; }
                 else { document.getElementById('manualNamaGuru').value=''; document.getElementById('manualNIP').value=''; }
-                tarikDataSiswa(true); 
+                
+                // Update lokal array tanpa perlu request ulang ke server (Hemat Kuota)
+                listUsers.push(dataBaru);
+                localStorage.setItem('master_user_full_v1', JSON.stringify(listUsers));
+                document.getElementById('stat-total').innerText = listUsers.length;
+
             } catch(e) { Swal.fire('Error', e.message, 'error'); }
         }
 
@@ -471,8 +517,10 @@
                         await setDoc(doc(db,"users",u),{nama:r[0],username:u,password:String(r[2]||"123456"), role:tipe, kelas:String(r[3]||"-").toUpperCase().trim(), wali_kelas:String(r[4]||"-").toUpperCase()},{merge:true}); 
                     } 
                 } 
-                Swal.fire('Selesai','Import Berhasil','success'); tarikDataSiswa(true); 
-            }; reader.readAsArrayBuffer(file); 
+                Swal.fire('Selesai','Import Berhasil','success'); 
+                tarikDataUser(true); // Refresh full
+            }; 
+            reader.readAsArrayBuffer(file); 
         }
 
         // --- DASHBOARD MONITOR ---
@@ -500,8 +548,6 @@
                       tabel.innerHTML += `<tr class="border-b border-slate-800 hover:bg-slate-800/50"><td class="p-4 text-emerald-400 font-mono text-xs">${data.riwayat_kegiatan ? data.riwayat_kegiatan[data.riwayat_kegiatan.length-1].split(' - ')[0] : '-'}</td><td class="p-4 text-white font-bold">${data.nama}</td><td class="p-4 text-xs font-bold text-slate-500 bg-slate-900 rounded">${data.status_terakhir}</td><td class="p-4 text-xs text-slate-500">${dev}</td></tr>`;
                 });
             });
-            // Hitung Guru
-            getDocs(query(collection(db, "users"), where("role", "==", "guru"))).then(s => document.getElementById('stat-guru').innerText = s.size);
         }
 
         // --- FITUR LAIN ---
