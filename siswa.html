@@ -232,6 +232,7 @@
         let userSiswa = null; let lokasiUser = null; let map = null; let markerSiswa = null;
         let streamKamera = null; let tipeAbsenAktif = ""; let tempFotoBukti = null;
         let configSekolah = { validasi_gps_aktif: true, radius_meter: 50 }; let jenisIzinAktif = "";
+        let isTimelineLoaded = false; // FLAG OPTIMASI
 
         const getTodayID = () => { const now = new Date(); return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`; };
 
@@ -245,21 +246,17 @@
                 document.getElementById('dash-kelas').innerText = userSiswa.kelas || "SISWA";
                 document.getElementById('profil-page-nama').innerText = userSiswa.nama;
                 document.getElementById('profil-page-nisn').innerText = userSiswa.nisn;
-                syncAdminSettings(); loadFotoProfil(); renderMenu(); mulaiJam(); pantauDataRealtime(); cekGPS(); loadMenuDinamis(); loadTimelineKBM(); 
+                syncAdminSettings(); loadFotoProfil(); renderMenu(); mulaiJam(); pantauDataRealtime(); cekGPS(); loadMenuDinamis(); 
+                // OPTIMASI: loadTimelineKBM() DIHAPUS DARI SINI (LAZY LOAD)
                 
-                // --- ANTI-BANTING (PREVENT BACK BUTTON EXIT) ---
                 history.pushState(null, null, location.href); 
                 window.onpopstate = function () {
-                    // Kalau modal terbuka, tutup modal dulu
                     if(!document.getElementById('modalKamera').classList.contains('hidden')) { tutupKamera(); history.pushState(null, null, location.href); return; }
                     if(!document.getElementById('modalKartu').classList.contains('hidden')) { tutupKartu(); history.pushState(null, null, location.href); return; }
-                    
-                    // Kalau halaman dashboard tertutup (artinya ada di sub-halaman), kembalikan ke dashboard
                     if(document.getElementById('page-dashboard').classList.contains('hidden-page')) { 
                         kembali(); 
-                        history.pushState(null, null, location.href); // Push lagi biar gak keluar
+                        history.pushState(null, null, location.href); 
                     } else {
-                        // Kalau sudah di dashboard, paksa tetap di situ (Trap)
                         history.pushState(null, null, location.href);
                     }
                 };
@@ -267,7 +264,13 @@
         });
 
         window.renderMenu = () => {
-            const menu = [ { id: 'btnAbsen', label: 'Absensi', icon: 'scan-face', color: 'text-blue-500', bg: 'bg-blue-50', action: "bukaHalaman('page-absen'); setTimeout(initMap, 500);" }, { id: 'btnSakit', label: 'Izin/Sakit', icon: 'thermometer', color: 'text-rose-500', bg: 'bg-rose-50', action: "bukaHalaman('page-sakit')" }, { id: 'btnRefleksi', label: 'Jurnal KBM', icon: 'book-open', color: 'text-pink-500', bg: 'bg-pink-50', action: "bukaHalaman('page-refleksi')" }, { id: 'btnProfil', label: 'Profil', icon: 'user', color: 'text-indigo-500', bg: 'bg-indigo-50', action: "bukaHalaman('page-profil')" } ];
+            // OPTIMASI: Tambahkan action khusus untuk tombol Refleksi
+            const menu = [ 
+                { id: 'btnAbsen', label: 'Absensi', icon: 'scan-face', color: 'text-blue-500', bg: 'bg-blue-50', action: "bukaHalaman('page-absen'); setTimeout(initMap, 500);" }, 
+                { id: 'btnSakit', label: 'Izin/Sakit', icon: 'thermometer', color: 'text-rose-500', bg: 'bg-rose-50', action: "bukaHalaman('page-sakit')" }, 
+                { id: 'btnRefleksi', label: 'Jurnal KBM', icon: 'book-open', color: 'text-pink-500', bg: 'bg-pink-50', action: "bukaHalaman('page-refleksi'); loadTimelineKBM();" }, 
+                { id: 'btnProfil', label: 'Profil', icon: 'user', color: 'text-indigo-500', bg: 'bg-indigo-50', action: "bukaHalaman('page-profil')" } 
+            ];
             const c = document.getElementById('wadah-menu'); c.innerHTML = '';
             menu.forEach(m => { c.innerHTML += `<button onclick="${m.action}" class="flex flex-col items-center gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm active:scale-95 transition"><div class="${m.bg} ${m.color} p-3 rounded-xl"><i data-lucide="${m.icon}" class="w-6 h-6"></i></div><span class="text-[10px] font-bold text-slate-600 uppercase tracking-tight">${m.label}</span></button>`; });
             lucide.createIcons();
@@ -286,9 +289,52 @@
         async function loadMenuDinamis() { const cachedMenu = localStorage.getItem('cache_menu_dinamis'); const sec = document.getElementById('section-menu-dinamis'); if (cachedMenu) { const data = JSON.parse(cachedMenu); if(data.length > 0) { renderMenuDinamis(data); sec.classList.remove('hidden'); return; } } const q = query(collection(db, "menu_dinamis"), orderBy("created_at", "asc")); try { const snap = await getDocs(q); let menuData = []; snap.forEach(d => { const dt = d.data(); if (dt.target === 'siswa' || dt.target === 'umum') menuData.push(dt); }); if(menuData.length > 0) { localStorage.setItem('cache_menu_dinamis', JSON.stringify(menuData)); renderMenuDinamis(menuData); sec.classList.remove('hidden'); } } catch(e) { console.log(e); } }
         function renderMenuDinamis(dataList) { const container = document.getElementById('grid-menu-dinamis'); container.innerHTML = ''; dataList.forEach(dt => { const style = dt.highlight ? "bg-indigo-50 border-indigo-200 text-indigo-700" : "bg-white border-slate-100 text-slate-700"; container.innerHTML += `<a href="${dt.link}" target="_blank" class="${style} p-4 border rounded-2xl text-center flex flex-col items-center gap-2 active:scale-95 transition shadow-sm"><div class="text-2xl">${dt.icon}</div><span class="text-[10px] font-bold uppercase tracking-tighter">${dt.judul}</span></a>`; }); }
 
-        function loadTimelineKBM() { const container = document.getElementById('timeline-kbm'); const todayStr = getTodayID(); const q = query(collection(db, "jurnal_guru"), where("kelas", "==", userSiswa.kelas), where("tanggal", "==", todayStr), orderBy("waktu", "desc"), limit(20)); onSnapshot(q, (snap) => { container.innerHTML = ''; if(snap.empty) { container.innerHTML = '<div class="text-center py-10 text-slate-400 text-xs italic">Belum ada pelajaran hari ini.</div>'; return; } snap.forEach(doc => { const d = doc.data(); const jam = d.waktu ? new Date(d.waktu.toDate()).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : '-'; const docIdJurnal = doc.id; const isRated = localStorage.getItem(`rated_${docIdJurnal}`); const mapelSafe = (d.mapel || "Mapel").replace(/'/g, "\\'"); const ratingArea = isRated ? `<div class="mt-3 text-[10px] text-emerald-600 font-bold bg-emerald-50 p-2 rounded-lg text-center flex items-center justify-center gap-2"><i data-lucide="check-circle" class="w-3 h-3"></i> Refleksi Terkirim</div>` : `<div class="mt-3 pt-3 border-t border-slate-100"><textarea id="pesan-${docIdJurnal}" maxlength="150" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-bold text-slate-700 outline-none focus:border-blue-500 mb-3 transition" rows="2" placeholder="Tulis catatan (Maks 150 huruf)..."></textarea><p class="text-[9px] text-slate-400 mb-2 text-center uppercase font-bold tracking-widest">Bagaimana pelajaran ini?</p><div class="grid grid-cols-4 gap-2 mt-3"><button onclick="kirimRefleksi('${docIdJurnal}', '${mapelSafe}', 4)" class="group bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 rounded-xl p-2 transition active:scale-95 flex flex-col items-center"><span class="text-2xl group-hover:scale-125 transition transform">🥰</span><span class="text-[8px] font-black text-emerald-600 uppercase mt-1">Senang</span></button><button onclick="kirimRefleksi('${docIdJurnal}', '${mapelSafe}', 3)" class="group bg-amber-50 hover:bg-amber-100 border border-amber-100 rounded-xl p-2 transition active:scale-95 flex flex-col items-center"><span class="text-2xl group-hover:scale-125 transition transform">💡</span><span class="text-[8px] font-black text-amber-600 uppercase mt-1">Trinspirasi</span></button><button onclick="kirimRefleksi('${docIdJurnal}', '${mapelSafe}', 2)" class="group bg-orange-50 hover:bg-orange-100 border border-orange-100 rounded-xl p-2 transition active:scale-95 flex flex-col items-center"><span class="text-2xl group-hover:scale-125 transition transform">😵‍💫</span><span class="text-[8px] font-black text-orange-600 uppercase mt-1">Krg Paham</span></button><button onclick="kirimRefleksi('${docIdJurnal}', '${mapelSafe}', 1)" class="group bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl p-2 transition active:scale-95 flex flex-col items-center"><span class="text-2xl group-hover:scale-125 transition transform">😴</span><span class="text-[8px] font-black text-slate-500 uppercase mt-1">Ngantuk</span></button></div></div>`; container.innerHTML += `<div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm mb-4"><div class="flex justify-between items-start mb-2"><span class="bg-indigo-50 text-indigo-600 text-[10px] font-bold px-2 py-1 rounded shadow-sm">${jam}</span><span class="text-[10px] text-slate-400 font-bold uppercase tracking-wide">${d.nama_guru || 'Guru'}</span></div><h4 class="font-bold text-slate-800 text-sm leading-tight">${d.mapel}</h4><p class="text-xs text-slate-500 mt-1 line-clamp-2">${d.materi || '-'}</p>${ratingArea}</div>`; }); lucide.createIcons(); }); }
+        function loadTimelineKBM() { 
+            // OPTIMASI: Cek flag dulu, kalau sudah load, jangan load lagi
+            if(isTimelineLoaded) return;
+            isTimelineLoaded = true;
 
-        window.kirimRefleksi = async (idJurnal, mapel, rating) => { if(!userSiswa) return; const elPesan = document.getElementById(`pesan-${idJurnal}`); const pesan = elPesan ? elPesan.value : "-"; document.getElementById('loadingOverlay').classList.remove('hidden'); try { await addDoc(collection(db, "refleksi_siswa"), { nisn: userSiswa.nisn, nama: userSiswa.nama, kelas: userSiswa.kelas, id_jurnal: idJurnal, mapel: mapel, rating: rating, pesan: pesan || "-", tanggal: getTodayID(), waktu: serverTimestamp() }); localStorage.setItem(`rated_${idJurnal}`, 'true'); Swal.fire({ title: 'Mantap!', text: 'Refleksi berhasil dikirim.', icon: 'success', timer: 1500, showConfirmButton: false }); } catch(e) { Swal.fire('Error', e.message, 'error'); } finally { document.getElementById('loadingOverlay').classList.add('hidden'); } }
+            const container = document.getElementById('timeline-kbm'); const todayStr = getTodayID(); const q = query(collection(db, "jurnal_guru"), where("kelas", "==", userSiswa.kelas), where("tanggal", "==", todayStr), orderBy("waktu", "desc"), limit(20)); 
+            
+            onSnapshot(q, (snap) => { 
+                container.innerHTML = ''; 
+                if(snap.empty) { container.innerHTML = '<div class="text-center py-10 text-slate-400 text-xs italic">Belum ada pelajaran hari ini.</div>'; return; } 
+                snap.forEach(doc => { 
+                    const d = doc.data(); const jam = d.waktu ? new Date(d.waktu.toDate()).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : '-'; const docIdJurnal = doc.id; const isRated = localStorage.getItem(`rated_${docIdJurnal}`); const mapelSafe = (d.mapel || "Mapel").replace(/'/g, "\\'"); 
+                    const ratingArea = isRated ? `<div class="mt-3 text-[10px] text-emerald-600 font-bold bg-emerald-50 p-2 rounded-lg text-center flex items-center justify-center gap-2"><i data-lucide="check-circle" class="w-3 h-3"></i> Refleksi Terkirim</div>` : `<div class="mt-3 pt-3 border-t border-slate-100"><textarea id="pesan-${docIdJurnal}" maxlength="150" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-bold text-slate-700 outline-none focus:border-blue-500 mb-3 transition" rows="2" placeholder="Tulis catatan (Maks 150 huruf)..."></textarea><p class="text-[9px] text-slate-400 mb-2 text-center uppercase font-bold tracking-widest">Bagaimana pelajaran ini?</p><div class="grid grid-cols-4 gap-2 mt-3"><button onclick="kirimRefleksi('${docIdJurnal}', '${mapelSafe}', 4)" class="group bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 rounded-xl p-2 transition active:scale-95 flex flex-col items-center"><span class="text-2xl group-hover:scale-125 transition transform">🥰</span><span class="text-[8px] font-black text-emerald-600 uppercase mt-1">Senang</span></button><button onclick="kirimRefleksi('${docIdJurnal}', '${mapelSafe}', 3)" class="group bg-amber-50 hover:bg-amber-100 border border-amber-100 rounded-xl p-2 transition active:scale-95 flex flex-col items-center"><span class="text-2xl group-hover:scale-125 transition transform">💡</span><span class="text-[8px] font-black text-amber-600 uppercase mt-1">Trinspirasi</span></button><button onclick="kirimRefleksi('${docIdJurnal}', '${mapelSafe}', 2)" class="group bg-orange-50 hover:bg-orange-100 border border-orange-100 rounded-xl p-2 transition active:scale-95 flex flex-col items-center"><span class="text-2xl group-hover:scale-125 transition transform">😵‍💫</span><span class="text-[8px] font-black text-orange-600 uppercase mt-1">Krg Paham</span></button><button onclick="kirimRefleksi('${docIdJurnal}', '${mapelSafe}', 1)" class="group bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl p-2 transition active:scale-95 flex flex-col items-center"><span class="text-2xl group-hover:scale-125 transition transform">😴</span><span class="text-[8px] font-black text-slate-500 uppercase mt-1">Ngantuk</span></button></div></div>`; 
+                    container.innerHTML += `<div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm mb-4"><div class="flex justify-between items-start mb-2"><span class="bg-indigo-50 text-indigo-600 text-[10px] font-bold px-2 py-1 rounded shadow-sm">${jam}</span><span class="text-[10px] text-slate-400 font-bold uppercase tracking-wide">${d.nama_guru || 'Guru'}</span></div><h4 class="font-bold text-slate-800 text-sm leading-tight">${d.mapel}</h4><p class="text-xs text-slate-500 mt-1 line-clamp-2">${d.materi || '-'}</p>${ratingArea}</div>`; 
+                }); 
+                lucide.createIcons(); 
+            }); 
+        }
+
+        window.kirimRefleksi = async (idJurnal, mapel, rating) => { 
+            if(!userSiswa) return; 
+            const elPesan = document.getElementById(`pesan-${idJurnal}`); 
+            const pesan = elPesan ? elPesan.value : "-"; 
+            document.getElementById('loadingOverlay').classList.remove('hidden'); 
+            try { 
+                // 1. Simpan ke koleksi Refleksi (seperti biasa)
+                await addDoc(collection(db, "refleksi_siswa"), { nisn: userSiswa.nisn, nama: userSiswa.nama, kelas: userSiswa.kelas, id_jurnal: idJurnal, mapel: mapel, rating: rating, pesan: pesan || "-", tanggal: getTodayID(), waktu: serverTimestamp() }); 
+                
+                // 2. OPTIMASI WAJIB: Update juga ke dokumen Jurnal Guru (Biar Guru hemat read pas download Excel)
+                const pesanRingkas = `${userSiswa.nama}: ${pesan}`; 
+                const docJurnalRef = doc(db, "jurnal_guru", idJurnal);
+                const docSnap = await getDoc(docJurnalRef);
+                if (docSnap.exists()) {
+                    let komenLama = docSnap.data().rekap_refleksi_string || "";
+                    let komenBaru = komenLama ? (komenLama + " | " + pesanRingkas) : pesanRingkas;
+                    await updateDoc(docJurnalRef, { rekap_refleksi_string: komenBaru });
+                }
+
+                localStorage.setItem(`rated_${idJurnal}`, 'true'); 
+                Swal.fire({ title: 'Mantap!', text: 'Refleksi berhasil dikirim.', icon: 'success', timer: 1500, showConfirmButton: false }); 
+            } catch(e) { 
+                Swal.fire('Error', e.message, 'error'); 
+            } finally { 
+                document.getElementById('loadingOverlay').classList.add('hidden'); 
+            } 
+        }
 
         async function prosesUpdateProfil(fotoData) { document.getElementById('loadingOverlay').classList.remove('hidden'); try { const snap = await uploadString(ref(storage, `profil_siswa/${userSiswa.nisn}_${Date.now()}.jpg`), fotoData, 'data_url'); const downloadURL = await getDownloadURL(snap.ref); await setDoc(doc(db, "siswa", userSiswa.nisn), { foto_profil: downloadURL, last_update_foto: serverTimestamp(), update_foto_count: increment(1) }, { merge: true }); userSiswa.foto_profil = downloadURL; userSiswa.update_foto_count = (userSiswa.update_foto_count || 0) + 1; localStorage.setItem('userSiswa', JSON.stringify(userSiswa)); loadFotoProfil(); Swal.fire({ title: 'Ganteng Maksimal!', text: 'Foto profil baru.', icon: 'success', timer: 1500, showConfirmButton: false }); } catch (error) { Swal.fire('Gagal', error.message, 'error'); } finally { document.getElementById('loadingOverlay').classList.add('hidden'); } }
         window.klikMasuk = () => { if(validasiGPS()) bukaCam("Masuk"); }
