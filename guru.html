@@ -175,7 +175,7 @@
         <div class="modal-content bg-white w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
             <div class="bg-orange-50 p-4 border-b border-orange-100 flex justify-between items-center shrink-0">
                 <h3 class="font-bold text-orange-800">Detail Kelas <span id="judul-modal-wali"></span></h3>
-                <button onclick="document.getElementById('modal-wali').classList.remove('active')" class="p-2 bg-white rounded-full text-slate-400 hover:text-red-500"><i data-lucide="x" class="w-4 h-4"></i></button>
+                <button onclick="tutupModalWali()" class="p-2 bg-white rounded-full text-slate-400 hover:text-red-500"><i data-lucide="x" class="w-4 h-4"></i></button>
             </div>
             <div class="bg-white p-2 border-b border-slate-100 flex justify-between text-[10px] font-bold text-slate-500 px-4 shrink-0">
                 <span>NAMA SISWA</span>
@@ -209,7 +209,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, limit, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
         const firebaseConfig = {
@@ -232,6 +232,10 @@
         let dataSiswaWali = [];
         let dataAbsenWali = {};
         let currentFacingMode = 'environment';
+        
+        // CACHE GLOBAL (OPTIMASI MEMORY)
+        let cacheSiswaPerKelas = {}; // Nyimpan data siswa per kelas biar gak download terus
+        let unsubscribeWali = null; // Buat matikan listener wali kelas
 
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
@@ -259,22 +263,18 @@
                     });
                 }
                 
-                // --- ANTI-BANTING (PREVENT BACK BUTTON EXIT) ---
                 history.pushState(null, null, location.href); 
                 window.onpopstate = function () {
-                    // Kalau modal Kamera terbuka
                     if(!document.getElementById('modalKamera').classList.contains('hidden')) { 
                         tutupKamera(); 
                         history.pushState(null, null, location.href); 
                         return; 
                     }
-                    // Kalau modal Wali Kelas terbuka
                     if(document.getElementById('modal-wali').classList.contains('active')) { 
-                        document.getElementById('modal-wali').classList.remove('active'); 
+                        tutupModalWali();
                         history.pushState(null, null, location.href); 
                         return; 
                     }
-                    // Default: Paksa diam di halaman (Trap)
                     history.pushState(null, null, location.href);
                 };
 
@@ -289,23 +289,37 @@
             });
         }
 
-        async function initWaliKelas(kelasWali) {
+       async function initWaliKelas(kelasWali) {
             document.getElementById('panel-wali-kelas').classList.remove('hidden');
             document.getElementById('nama-kelas-wali').innerText = kelasWali;
             document.getElementById('badge-wali').classList.remove('hidden');
             document.getElementById('judul-modal-wali').innerText = kelasWali;
 
-            const qSiswa = query(collection(db, "users"), where("kelas", "==", kelasWali), where("role", "==", "siswa"));
-            const snap = await getDocs(qSiswa);
-            dataSiswaWali = [];
-            snap.forEach(doc => dataSiswaWali.push(doc.data())); 
-            pantauAbsenWali(kelasWali);
+            // Load Master Siswa Sekali Saja (Cache)
+            if(!cacheSiswaPerKelas[kelasWali]) {
+                const qSiswa = query(collection(db, "users"), where("kelas", "==", kelasWali), where("role", "==", "siswa"));
+                const snap = await getDocs(qSiswa);
+                dataSiswaWali = [];
+                snap.forEach(doc => dataSiswaWali.push(doc.data())); 
+                cacheSiswaPerKelas[kelasWali] = dataSiswaWali;
+            } else {
+                dataSiswaWali = cacheSiswaPerKelas[kelasWali];
+            }
+            
+            // --- BAGIAN INI SAYA AKTIFKAN LAGI UNTUK MAS ASMAUL ---
+            // Biar di Dashboard angka Hadir/Izin/Alpha jalan terus (Realtime)
+            pantauAbsenWali(kelasWali); 
         }
 
+        // OPTIMASI: Listener hanya nyala saat modal dibuka
         function pantauAbsenWali(kelasWali) {
+            if(unsubscribeWali) unsubscribeWali(); // Matikan yg lama kalau ada
+
             const todayStr = new Date().toLocaleDateString('fr-CA');
             const q = query(collection(db, "absensi"), where("tanggal", "==", todayStr), where("kelas", "==", kelasWali));
-            onSnapshot(q, (snap) => {
+            
+            // Simpan unsubscribe function ke variabel global
+            unsubscribeWali = onSnapshot(q, (snap) => {
                 let h=0, i=0;
                 dataAbsenWali = {};
                 snap.forEach(doc => {
@@ -315,18 +329,36 @@
                     if(st.includes("Masuk") || st.includes("Hadir") || d.jam_masuk) h++;
                     else if(st.includes("Sakit") || st.includes("Izin")) i++;
                 });
+                // Update Badge di Panel Depan
                 document.getElementById('wali-hadir').innerText = h;
                 document.getElementById('wali-izin').innerText = i;
                 document.getElementById('wali-alpha').innerText = dataSiswaWali.length - (h + i);
+                
+                // Kalau modal lagi kebuka, update listnya juga realtime
+                if(document.getElementById('modal-wali').classList.contains('active')) {
+                    renderListWali();
+                }
             });
         }
 
         window.bukaModalWali = async () => {
+            document.getElementById('modal-wali').classList.add('active');
+            // Baru nyalakan listener realtime saat dibuka
+            if(userGuru.wali_kelas) pantauAbsenWali(userGuru.wali_kelas);
+            renderListWali();
+        }
+
+        window.tutupModalWali = () => {
+            document.getElementById('modal-wali').classList.remove('active');
+            // OPTIONAL: Bisa matikan listener di sini kalau mau SUPER HEMAT, 
+            // tapi dibiarkan nyala biar badge di depan update terus juga oke (karena filter spesifik kelas, readnya dikit).
+        }
+
+        function renderListWali() {
             const container = document.getElementById('list-siswa-wali');
             container.innerHTML = '';
             if(dataSiswaWali.length === 0) {
                 container.innerHTML = '<div class="text-center text-slate-400">Data siswa kosong.</div>';
-                document.getElementById('modal-wali').classList.add('active');
                 return;
             }
             dataSiswaWali.sort((a,b) => a.nama.localeCompare(b.nama));
@@ -351,24 +383,45 @@
                 const fotoSrc = `https://ui-avatars.com/api/?name=${s.nama}&background=random&color=fff`;
                 container.innerHTML += `<div class="flex items-center justify-between bg-white p-2 rounded-xl border ${borderClass} mb-2 shadow-sm"><div class="flex items-center gap-3"><img src="${fotoSrc}" class="w-8 h-8 rounded-full object-cover bg-slate-200"><div class="font-bold text-xs text-slate-700 truncate w-40">${s.nama}</div></div><div>${statusHtml}</div></div>`;
             });
-            document.getElementById('modal-wali').classList.add('active');
         }
 
+        // OPTIMASI: LOAD SISWA PAKE CACHE
         window.loadSiswaUntukAbsen = async () => {
             const kls = document.getElementById('jurnal-kelas').value;
             const container = document.getElementById('list-absen-mapel');
             const area = document.getElementById('area-absen-mapel');
+            
             if (!kls) { area.classList.add('hidden'); return; }
             area.classList.remove('hidden');
+            
+            // Cek Cache dulu
+            if (cacheSiswaPerKelas[kls]) {
+                console.log("⚡ Load siswa dari cache memori (0 Read)");
+                renderSiswaAbsen(cacheSiswaPerKelas[kls]);
+                return;
+            }
+
             container.innerHTML = '<div class="text-center text-xs text-slate-400 italic">Memuat siswa...</div>';
+            console.log("⚠️ Download siswa dari server (Costly)");
             const q = query(collection(db, "users"), where("kelas", "==", kls), where("role", "==", "siswa"));
             const snap = await getDocs(q);
-            container.innerHTML = '';
-            document.getElementById('jml-siswa-mapel').innerText = snap.size + ' Siswa';
-            if(snap.empty) { container.innerHTML = '<div class="text-center text-xs text-slate-400">Tidak ada siswa.</div>'; return; }
-            let siswaArr = []; snap.forEach(doc => siswaArr.push(doc.data())); siswaArr.sort((a,b) => a.nama.localeCompare(b.nama));
             
-            // TOMBOL ABSENSI + DISPEN
+            let siswaArr = []; 
+            snap.forEach(doc => siswaArr.push(doc.data())); 
+            siswaArr.sort((a,b) => a.nama.localeCompare(b.nama));
+            
+            // Simpan ke Cache
+            cacheSiswaPerKelas[kls] = siswaArr;
+            renderSiswaAbsen(siswaArr);
+        }
+
+        function renderSiswaAbsen(siswaArr) {
+            const container = document.getElementById('list-absen-mapel');
+            container.innerHTML = '';
+            document.getElementById('jml-siswa-mapel').innerText = siswaArr.length + ' Siswa';
+            
+            if(siswaArr.length === 0) { container.innerHTML = '<div class="text-center text-xs text-slate-400">Tidak ada siswa.</div>'; return; }
+            
             siswaArr.forEach(s => {
                 const id = s.username; 
                 container.innerHTML += `
@@ -388,10 +441,7 @@
         async function loadDaftarKelas() { 
             const sel = document.getElementById('jurnal-kelas'); 
             const cachedKelas = localStorage.getItem('cache_list_kelas'); 
-            
-            // CEK CACHE
             if(cachedKelas) { renderOptions(sel, JSON.parse(cachedKelas)); return; } 
-            
             try { 
                 const q = query(collection(db, "users"), where("role", "==", "siswa")); 
                 const snap = await getDocs(q); 
@@ -428,7 +478,6 @@
         function loadMenuDinamis() { 
             const container = document.getElementById('grid-menu-dinamis'); 
             const sec = document.getElementById('section-menu-dinamis'); 
-            // PENTING: Gunakan Cache kalau bisa di sini nanti, untuk sekarang snapshot
             onSnapshot(query(collection(db, "menu_dinamis"), orderBy("created_at", "asc")), (snap) => { 
                 container.innerHTML = ''; 
                 let ada = false; 
@@ -477,7 +526,9 @@
                     nip: userGuru.username, nama_guru: userGuru.nama, kelas: kls, mapel: mapel, materi: materi, 
                     foto_bukti: urlFoto, waktu: serverTimestamp(), tanggal: todayStr,
                     absensi_mapel: absensiSiswa,
-                    jam_ke: `${jamMulai} - ${jamSelesai}`
+                    jam_ke: `${jamMulai} - ${jamSelesai}`,
+                    // OPTIMASI: Siapkan field kosong untuk menampung rekapan refleksi siswa nanti
+                    rekap_refleksi_string: "" 
                 }); 
                 Swal.fire('Tersimpan', 'Jurnal berhasil diupload.', 'success'); 
                 document.getElementById('jurnal-materi').value = ''; fotoBuktiJurnal = null; document.getElementById('preview-foto-jurnal').innerText = "Belum ada foto bukti."; document.getElementById('preview-foto-jurnal').className = "text-xs text-slate-400 italic"; 
@@ -485,8 +536,9 @@
             } catch(e) { Swal.fire('Gagal', e.message, 'error'); } finally { document.getElementById('loading').classList.add('hidden'); } 
         }
         
+        // --- FITUR DOWNLOAD EXCEL (SUDAH DI-OPTIMASI) ---
         window.downloadRekapJurnal = async () => { 
-            Swal.fire({ title: 'Menyusun Laporan...', text: 'Menggabungkan Jurnal & Refleksi Siswa...', didOpen: () => Swal.showLoading() }); 
+            Swal.fire({ title: 'Menyusun Laporan...', text: 'Mengunduh Jurnal...', didOpen: () => Swal.showLoading() }); 
             try { 
                 const tglMulai = document.getElementById('filter-mulai').value;
                 const tglSelesai = document.getElementById('filter-selesai').value;
@@ -499,10 +551,9 @@
                 const snap = await getDocs(q); 
                 if (snap.empty) { Swal.fire('Kosong', 'Belum ada data jurnal.', 'info'); return; } 
                 
-                let rawData = []; let promises = [];
+                let rawData = []; 
                 snap.forEach(doc => {
-                    const d = doc.data(); d.id = doc.id;
-                    
+                    const d = doc.data(); 
                     if (d.tanggal < tglMulai || d.tanggal > tglSelesai) { return; }
 
                     let absenTxt = "-";
@@ -519,29 +570,14 @@
                     }
                     d.rekap_absen = absenTxt;
 
-                    const qRef = query(collection(db, "refleksi_siswa"), where("id_jurnal", "==", d.id));
-                    const promise = getDocs(qRef).then(refSnap => {
-                        let refleksiTxt = []; 
-                        let counts = { sen:0, ins:0, kpa:0, nga:0 }; 
-                        
-                        refSnap.forEach(r => {
-                            const rd = r.data();
-                            if(rd.rating==4) counts.sen++; 
-                            else if(rd.rating==3) counts.ins++; 
-                            else if(rd.rating==2) counts.kpa++; 
-                            else counts.nga++;
-
-                            if(rd.pesan && rd.pesan !== '-') refleksiTxt.push(`${rd.nama}: ${rd.pesan}`);
-                        });
-                        
-                        d.stats_respon = `🥰:${counts.sen}, 💡:${counts.ins}, 😵‍💫:${counts.kpa}, 😴:${counts.nga}`;
-                        d.komentar_siswa = refleksiTxt.join(" | ") || "Belum ada komentar";
-                        rawData.push(d);
-                    });
-                    promises.push(promise);
+                    // OPTIMASI: TIDAK LAGI QUERY KE KOLEKSI REFLEKSI
+                    // KITA AMBIL LANGSUNG DARI FIELD 'rekap_refleksi_string'
+                    // (Field ini harus diisi saat siswa submit refleksi)
+                    d.komentar_siswa = d.rekap_refleksi_string || "(Data lama/Belum ada feedback)";
+                    
+                    rawData.push(d);
                 }); 
 
-                await Promise.all(promises);
                 rawData.sort((a, b) => (b.waktu?.toMillis() || 0) - (a.waktu?.toMillis() || 0)); 
                 
                 if(rawData.length === 0) { return Swal.fire('Kosong', 'Tidak ada jurnal di tanggal yang dipilih.', 'info'); }
@@ -552,15 +588,14 @@
                     Jam_Pelajaran: d.jam_ke || "-", 
                     Kelas: d.kelas, Mapel: d.mapel, Materi: d.materi, 
                     Ket_Tidak_Hadir: d.rekap_absen, 
-                    Statistik_Respon: d.stats_respon,
-                    Komentar_Siswa: d.komentar_siswa,
+                    Komentar_Siswa: d.komentar_siswa, // Ambil dari data lokal
                     Bukti_Fisik: d.foto_bukti 
                 })); 
                 
                 const ws = XLSX.utils.json_to_sheet(dataExport); 
                 const range = XLSX.utils.decode_range(ws['!ref']); 
                 for (let R = range.s.r + 1; R <= range.e.r; ++R) { 
-                    const cellAddress = XLSX.utils.encode_cell({r: R, c: 9}); 
+                    const cellAddress = XLSX.utils.encode_cell({r: R, c: 8}); // Kolom Bukti Fisik
                     const cell = ws[cellAddress]; 
                     if (cell && cell.v && cell.v.startsWith('http')) { cell.l = { Target: cell.v }; cell.v = "📸 LIHAT FOTO"; } 
                 } 
@@ -568,7 +603,7 @@
                 XLSX.utils.book_append_sheet(wb, ws, "Jurnal Mengajar"); 
                 
                 XLSX.writeFile(wb, `JURNAL_${userGuru.nama}_${tglMulai}_sd_${tglSelesai}.xlsx`); 
-                Swal.close(); Swal.fire('Selesai!', 'Laporan Excel LENGKAP (Jurnal + Absen + Refleksi).', 'success'); 
+                Swal.close(); Swal.fire('Selesai!', 'Laporan Excel Siap.', 'success'); 
             } catch (e) { console.error(e); Swal.fire('Gagal', 'Error: ' + e.message, 'error'); } 
         }
         
