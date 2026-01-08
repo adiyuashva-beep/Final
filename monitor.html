@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitor Live - SiGanteng (Optimized)</title>
+    <title>Monitor Live - SiGanteng (Super Hemat Mode)</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 
     <style>
-        /* VISUAL STYLE TETAP SAMA PERSIS */
         :root { 
             --bg-dark: #0b1120; 
             --card-bg: #151e32; 
@@ -105,9 +104,14 @@
 
         .footer-marquee { height: 5vh; background: #020617; display: flex; align-items: center; border-top: 1px solid var(--neon-blue); z-index: 10; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); }
         marquee { font-size: 1.2em; font-weight: 500; color: #f1f5f9; letter-spacing: 1px; font-family: 'Share Tech Mono', monospace; text-shadow: none; }
+        
+        .refresh-btn { position: fixed; top: 10px; left: 10px; z-index: 100; background: rgba(0,0,0,0.5); color: #fff; border: 1px solid #333; padding: 5px 10px; font-size: 10px; cursor: pointer; border-radius: 4px; opacity: 0.2; transition: opacity 0.3s; }
+        .refresh-btn:hover { opacity: 1; }
     </style>
 </head>
 <body>
+
+    <button onclick="forceRefreshMaster()" class="refresh-btn">🔄 Reset Cache</button>
 
     <div class="header">
         <div class="brand-left">
@@ -157,6 +161,8 @@
                     <div class="stat-item"><h4 class="c-izin">IZIN</h4><p id="total-izin">0</p></div>
                     <div class="stat-item"><h4 class="c-alpha">BELUM</h4><p id="total-alpha">0</p></div>
                 </div>
+                
+                <div id="data-source-indicator" style="position:absolute; bottom:5px; right:10px; font-size:9px; color:rgba(255,255,255,0.2);">Waiting...</div>
             </div>
 
             <div class="box-belum">
@@ -164,7 +170,12 @@
                     <span><i class='bx bx-user-x'></i> BELUM HADIR</span>
                     <span style="background:rgba(255,255,255,0.1); padding:2px 8px; border-radius:4px; font-family:'Share Tech Mono';" id="badge-belum">0</span>
                 </div>
-                <div class="scroller-content"><div class="marquee-vertical" id="list-belum"></div></div>
+                <div class="scroller-content">
+                    <div class="marquee-vertical" id="list-belum"></div>
+                    <div id="msg-too-many" style="display:none; text-align:center; padding:20px; color:#64748b; font-size:0.8em;">
+                        Data masih terlalu banyak.<br>List ditampilkan saat sisa < 50.
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -216,23 +227,34 @@
         let dataAbsenHariIni = []; 
         let validStudentNISNs = new Set();
 
-        // 1. CACHING MASTER SISWA (HEMAT KUOTA)
+        // 1. CACHING MASTER SISWA (OPTIMASI UTAMA)
         async function loadMasterSiswa() {
             // Cek Cache
-            const cachedSiswa = localStorage.getItem('cache_master_siswa');
+            const cachedSiswa = localStorage.getItem('cache_master_siswa_v2'); // Ganti key version
+            const indicator = document.getElementById('data-source-indicator');
+            
             if(cachedSiswa) {
-                console.log("⚡ Menggunakan Cache Master Siswa");
                 const parsed = JSON.parse(cachedSiswa);
-                allSiswa = parsed.data;
-                parsed.data.forEach(s => validStudentNISNs.add(s.username));
-                document.getElementById('total-populasi').innerText = allSiswa.length;
-                startMonitorAbsen(); // Langsung monitor
-                return;
+                // Cek umur cache (misal 24 jam)
+                const now = new Date().getTime();
+                if (now - parsed.timestamp < 24 * 60 * 60 * 1000) {
+                    console.log("⚡ [HEMAT] Menggunakan Cache Lokal (0 Reads)");
+                    indicator.innerText = "Source: Local Cache (Fast)";
+                    allSiswa = parsed.data;
+                    allSiswa.forEach(s => validStudentNISNs.add(s.username));
+                    document.getElementById('total-populasi').innerText = allSiswa.length;
+                    startMonitorAbsen(); // Langsung monitor
+                    return;
+                }
             }
 
-            console.log("⚠️ Mengambil Master Siswa dari Server (1x Read)");
+            console.log("⚠️ [WARNING] Mengambil Master Siswa dari Server (Costly)");
+            indicator.innerText = "Source: Server Fetching...";
+            indicator.style.color = "orange";
+
             try {
-                const q = query(collection(db, "users"));
+                // OPTIMASI: HANYA AMBIL ROLE SISWA (Jangan ambil Guru/Admin)
+                const q = query(collection(db, "users"), where("role", "==", "siswa"));
                 const querySnapshot = await getDocs(q); 
                 
                 allSiswa = [];
@@ -240,9 +262,6 @@
 
                 querySnapshot.forEach(doc => {
                     const d = doc.data();
-                    const role = d.role ? d.role.toLowerCase() : 'siswa';
-                    if(role !== 'siswa') return; 
-
                     if (d.username) {
                         const nisnClean = String(d.username).trim().replace(/[^a-zA-Z0-9]/g, '');
                         if(nisnClean.length > 0) {
@@ -253,14 +272,26 @@
                 });
                 
                 // Simpan ke Cache
-                localStorage.setItem('cache_master_siswa', JSON.stringify({
+                localStorage.setItem('cache_master_siswa_v2', JSON.stringify({
                     timestamp: new Date().getTime(),
                     data: allSiswa
                 }));
 
+                indicator.innerText = "Source: Server (Cached for next time)";
+                indicator.style.color = "#10b981";
                 document.getElementById('total-populasi').innerText = allSiswa.length;
                 startMonitorAbsen();
-            } catch (error) { console.error(error); }
+            } catch (error) { 
+                console.error(error); 
+                indicator.innerText = "Error Fetching Data";
+            }
+        }
+
+        window.forceRefreshMaster = () => {
+            if(confirm("Download ulang data siswa terbaru? (Membutuhkan Kuota)")) {
+                localStorage.removeItem('cache_master_siswa_v2');
+                location.reload();
+            }
         }
 
         // 2. MONITORING (REALTIME)
@@ -275,16 +306,17 @@
                     
                     if(d.nisn) {
                         const nisnBersih = String(d.nisn).trim().replace(/[^a-zA-Z0-9]/g, '');
-                        // Hanya tampilkan jika siswa valid (ada di master)
-                        // atau kita bisa tampilkan semua untuk debug
-                        tempAbsen.push({
-                            ...d,
-                            nisn_clean: nisnBersih,
-                            jam_display: formatJam(d),
-                            nama_display: d.nama || "Siswa",
-                            kelas_display: d.kelas || "-",
-                            foto_url: urlFoto
-                        });
+                        // Hanya proses jika siswa valid
+                        if(validStudentNISNs.has(nisnBersih)) {
+                            tempAbsen.push({
+                                ...d,
+                                nisn_clean: nisnBersih,
+                                jam_display: formatJam(d),
+                                nama_display: d.nama || "Siswa",
+                                kelas_display: d.kelas || "-",
+                                foto_url: urlFoto
+                            });
+                        }
                     }
                 });
 
@@ -301,6 +333,8 @@
             const countIzin = dataAbsenHariIni.filter(d => d.status_terakhir === 'Izin' || d.status_terakhir === 'Sakit').length;
             const countHadir = listHadir.length;
             const totalMasuk = countHadir + countIzin;
+            
+            // Perhitungan list belum hadir dilakukan di memori
             const listBelum = allSiswa.filter(s => !nisnHadir.includes(s.username));
 
             document.getElementById('total-populasi').innerText = totalPopulasi;
@@ -325,8 +359,25 @@
             if(elChart) { elChart.style.background = `conic-gradient(${warnaDonat} ${derajat}deg, #0f172a 0deg)`; }
 
             // UPDATE LISTS
-            renderScrollList(listBelum, 'list-belum', 'belum');
+            
+            // ANTI-CRASH STRATEGY: 
+            // Jangan render list "Belum Hadir" jika jumlahnya masih Ratusan. 
+            // Itu membebani DOM dan bikin browser hang -> auto reload -> boros read.
+            const containerBelum = document.getElementById('list-belum');
+            const msgTooMany = document.getElementById('msg-too-many');
+
             document.getElementById('badge-belum').innerText = listBelum.length;
+
+            if(listBelum.length > 50) {
+                containerBelum.innerHTML = ''; // Kosongkan biar ringan
+                containerBelum.style.display = 'none';
+                msgTooMany.style.display = 'block';
+                msgTooMany.innerHTML = `Masih ada <strong>${listBelum.length}</strong> siswa belum hadir.<br>List disembunyikan agar performa lancar.`;
+            } else {
+                containerBelum.style.display = 'block';
+                msgTooMany.style.display = 'none';
+                renderScrollList(listBelum, 'list-belum', 'belum');
+            }
 
             let sortedByTime = [...listHadir].sort((a,b) => a.jam_display.localeCompare(b.jam_display));
             renderGasik(sortedByTime.slice(0, 10));
