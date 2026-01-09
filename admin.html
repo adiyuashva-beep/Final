@@ -90,9 +90,7 @@
 
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800"><p class="text-slate-500 text-xs font-bold uppercase">Total Siswa Aktif</p><h3 class="text-3xl font-black text-white mt-1" id="stat-total">0</h3></div>
-                
                 <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800"><p class="text-slate-500 text-xs font-bold uppercase">Siswa Hadir Realtime</p><h3 class="text-3xl font-black text-emerald-400 mt-1" id="stat-hadir">0</h3></div>
-                
                 <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800"><p class="text-slate-500 text-xs font-bold uppercase">Guru Terdaftar</p><h3 class="text-3xl font-black text-orange-400 mt-1" id="stat-guru">0</h3></div>
                 <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800"><p class="text-slate-500 text-xs font-bold uppercase">Mode Absen</p><h3 class="text-3xl font-black text-blue-400 mt-1">GPS</h3></div>
             </div>
@@ -223,17 +221,31 @@
             <h2 class="text-3xl font-bold text-white flex items-center gap-3"><i data-lucide="settings" class="w-8 h-8 text-blue-500"></i> Pengaturan & Fitur</h2>
             
             <div class="bg-slate-900 rounded-[2rem] border border-slate-800 p-8 shadow-2xl mb-6 relative overflow-hidden">
-                <h3 class="font-bold text-white text-lg mb-6 flex items-center gap-2"><i data-lucide="shield-check" class="text-blue-500"></i> Kelola Tim Admin</h3>
-                <div class="flex gap-4 items-end mb-6">
-                    <div class="flex-1">
-                        <label class="text-xs text-slate-500 uppercase font-bold">NIP / Username Calon Admin</label>
-                        <input type="text" id="inputCalonAdmin" class="w-full bg-slate-950 text-white p-3 rounded-lg border border-slate-700 mt-1" placeholder="Masukkan NIP atau Username...">
+                <h3 class="font-bold text-white text-lg mb-6 flex items-center gap-2"><i data-lucide="shield-check" class="text-blue-500"></i> Manajemen Admin & Pejabat</h3>
+                
+                <div class="flex flex-col md:flex-row gap-4 items-end mb-6">
+                    <div class="flex-1 w-full">
+                        <label class="text-xs text-slate-500 uppercase font-bold">NIP / Username Guru</label>
+                        <input type="text" id="inputCalonAdmin" class="w-full bg-slate-950 text-white p-3 rounded-lg border border-slate-700 mt-1" placeholder="Masukkan NIP Guru...">
                     </div>
-                    <button onclick="angkatJadiAdmin()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg shadow-lg">Jadikan Admin</button>
+                    
+                    <div class="w-full md:w-1/3">
+                        <label class="text-xs text-slate-500 uppercase font-bold">Pilih Jabatan (Role)</label>
+                        <select id="inputRoleAdmin" class="w-full bg-slate-950 text-white p-3 rounded-lg border border-slate-700 mt-1 outline-none">
+                            <option value="admin">Admin Umum / TU (IT)</option>
+                            <option value="bk">Koordinator BK (Kesiswaan)</option>
+                            <option value="kurikulum">Waka Kurikulum</option>
+                            </select>
+                    </div>
+
+                    <button onclick="angkatJadiAdmin()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg shadow-lg w-full md:w-auto">
+                        <i data-lucide="user-check" class="w-4 h-4 inline mr-1"></i> Lantik
+                    </button>
                 </div>
-                <h4 class="text-sm font-bold text-slate-500 mb-2">Daftar Admin Aktif:</h4>
+
+                <h4 class="text-sm font-bold text-slate-500 mb-2">Daftar Pejabat & Admin Aktif:</h4>
                 <div id="list-admin-aktif" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    <div class="text-slate-500 italic text-sm">Memuat data admin...</div>
+                    <div class="text-slate-500 italic text-sm">Memuat data pejabat...</div>
                 </div>
             </div>
 
@@ -403,11 +415,10 @@
         }
 
         function updateDashboardStats() {
-            // FIX LOGIC: Hitung spesifik
             const siswaOnly = listUsers.filter(u => u.role === 'siswa');
             const guruOnly = listUsers.filter(u => u.role === 'guru' || u.role === 'admin');
             
-            document.getElementById('stat-total').innerText = siswaOnly.length; // SINKRON DENGAN BK
+            document.getElementById('stat-total').innerText = siswaOnly.length; 
             document.getElementById('stat-guru').innerText = guruOnly.length;
         }
 
@@ -418,7 +429,6 @@
             uniqueKelas.forEach(k => { select.add(new Option(k, k)); });
         }
 
-        // --- PENCARIAN & EDIT USER (UPDATE) ---
         window.cariUser = () => {
             const input = document.getElementById('cariUserBox');
             if(!input) return;
@@ -467,7 +477,6 @@
             });
         }
 
-        // --- FITUR BARU: MODAL EDIT ---
         window.editUser = (username) => {
             const user = listUsers.find(u => u.username === username);
             if(!user) return;
@@ -481,14 +490,12 @@
             
             if(user.role === 'siswa') {
                 divKelas.classList.remove('hidden');
-                // Copy opsi kelas dari manual input
                 selectKelas.innerHTML = document.getElementById('manualKelas').innerHTML;
                 selectKelas.value = user.kelas;
             } else {
                 divKelas.classList.add('hidden');
             }
 
-            // Buka Modal
             const modal = document.getElementById('modalEdit');
             modal.classList.remove('opacity-0', 'pointer-events-none');
             document.body.classList.add('modal-active');
@@ -509,14 +516,12 @@
             if(!n || !p) return Swal.fire('Gagal','Nama dan Password tidak boleh kosong','warning');
 
             try {
-                // Update ke Firebase
                 await updateDoc(doc(db, "users", u), {
                     nama: n,
                     password: p,
                     kelas: k
                 });
 
-                // Update Local Data (Biar gak perlu refresh)
                 const index = listUsers.findIndex(x => x.username === u);
                 if (index !== -1) {
                     listUsers[index].nama = n;
@@ -526,8 +531,8 @@
                 }
 
                 tutupModal();
-                cariUser(); // Refresh tabel hasil cari
-                updateDashboardStats(); // Update angka real time
+                cariUser(); 
+                updateDashboardStats(); 
                 Swal.fire('Berhasil','Data user diupdate!','success');
 
             } catch(e) {
@@ -625,10 +630,7 @@
                 let hadir = 0; let logData = [];
                 snap.forEach(doc => { 
                     const d = doc.data(); 
-                    // FIX LOGIC: Cek apakah user ini SISWA (menggunakan listUsers)
-                    // Jika listUsers kosong (belum sync), maka anggap semua hadir (fallback)
-                    // Tapi jika sudah sync, filter hanya 'siswa'.
-                    
+                    // Filter hanya siswa yang ada di listSiswa (Anti Guru)
                     let isSiswa = true; 
                     if(listUsers.length > 0) {
                         const u = listUsers.find(x => x.username === d.nisn);
@@ -672,9 +674,76 @@
         window.updateLabelRadius = () => document.getElementById('labelRadius').innerText = document.getElementById('inputRadius').value + "m";
         window.updateLabelStatus = () => { const o = document.getElementById('toggleGPS').checked; const b = document.getElementById('statusGPSBadge'); b.innerText = o ? "MODE DISIPLIN: AKTIF" : "MODE DARURAT (BEBAS)"; b.className = o ? "inline-block px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest bg-emerald-900 text-emerald-400" : "inline-block px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest bg-red-900 text-red-400"; }
 
-        function loadDaftarAdmin() { onSnapshot(query(collection(db, "users"), where("role", "==", "admin")), (snap) => { const container = document.getElementById('list-admin-aktif'); container.innerHTML = ''; snap.forEach(doc => { const d = doc.data(); container.innerHTML += `<div class="flex justify-between items-center bg-slate-950 p-3 rounded-lg border border-slate-800"><div><p class="text-white font-bold text-sm">${d.nama}</p><p class="text-xs text-slate-500 font-mono">${d.username}</p></div><button onclick="copotAdmin('${doc.id}', '${d.nama}')" class="text-red-500 hover:bg-red-500/10 p-2 rounded"><i data-lucide="shield-off" class="w-4 h-4"></i></button></div>`; }); lucide.createIcons(); }); }
-        window.angkatJadiAdmin = async () => { const u = document.getElementById('inputCalonAdmin').value; if(!u) return; const q = query(collection(db, "users"), where("username", "==", u)); const snap = await getDocs(q); if(snap.empty) return Swal.fire('Gagal', 'User tidak ditemukan', 'error'); snap.forEach(async (d) => { await updateDoc(doc(db, "users", d.id), { role: 'admin' }); }); Swal.fire('Sukses', '', 'success'); document.getElementById('inputCalonAdmin').value=''; }
-        window.copotAdmin = async (id, nama) => { if(confirm(`Copot admin ${nama}?`)) await updateDoc(doc(db, "users", id), { role: 'guru' }); }
+        // --- UPDATE: MENAMPILKAN ADMIN DARI BERBAGAI ROLE ---
+        function loadDaftarAdmin() { 
+            // Kita ambil user yang rolenya BUKAN 'siswa' dan BUKAN 'guru'
+            // Karena Firestore 'not-in' terbatas, kita pakai 'in' aja biar pasti
+            const q = query(collection(db, "users"), where("role", "in", ["admin", "super", "bk", "kurikulum"]));
+            
+            onSnapshot(q, (snap) => { 
+                const container = document.getElementById('list-admin-aktif'); 
+                container.innerHTML = ''; 
+                
+                if (snap.empty) {
+                    container.innerHTML = '<div class="text-slate-500 italic text-sm">Belum ada pejabat yang dilantik.</div>';
+                    return;
+                }
+
+                snap.forEach(doc => { 
+                    const d = doc.data(); 
+                    
+                    // Bikin Badge Keren
+                    let roleBadge = "";
+                    if(d.role === 'admin' || d.role === 'super') roleBadge = `<span class="text-[9px] bg-blue-600 text-white px-2 py-0.5 rounded font-bold">ADMIN IT</span>`;
+                    else if(d.role === 'bk') roleBadge = `<span class="text-[9px] bg-emerald-600 text-white px-2 py-0.5 rounded font-bold">KOOR. BK</span>`;
+                    else if(d.role === 'kurikulum') roleBadge = `<span class="text-[9px] bg-yellow-600 text-white px-2 py-0.5 rounded font-bold">WAKA KURIKULUM</span>`;
+                    else roleBadge = `<span class="text-[9px] bg-slate-600 text-white px-2 py-0.5 rounded font-bold">${d.role.toUpperCase()}</span>`;
+
+                    container.innerHTML += `
+                        <div class="flex justify-between items-center bg-slate-950 p-3 rounded-lg border border-slate-800">
+                            <div>
+                                <p class="text-white font-bold text-sm">${d.nama}</p>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <p class="text-xs text-slate-500 font-mono">${d.username}</p>
+                                    ${roleBadge}
+                                </div>
+                            </div>
+                            <button onclick="copotAdmin('${doc.id}', '${d.nama}')" class="text-red-500 hover:bg-red-500/10 p-2 rounded" title="Turunkan Jabatan">
+                                <i data-lucide="shield-off" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    `; 
+                }); 
+                lucide.createIcons(); 
+            }); 
+        }
+
+        // --- UPDATE: LOGIKA PELANTIKAN DENGAN PILIHAN ROLE ---
+        window.angkatJadiAdmin = async () => { 
+            const u = document.getElementById('inputCalonAdmin').value; 
+            const r = document.getElementById('inputRoleAdmin').value; // Ambil nilai dropdown
+            
+            if(!u) return Swal.fire('Eits', 'Isi NIP dulu dong', 'warning');
+            
+            const q = query(collection(db, "users"), where("username", "==", u)); 
+            const snap = await getDocs(q); 
+            
+            if(snap.empty) return Swal.fire('Gagal', 'User tidak ditemukan di database', 'error'); 
+            
+            snap.forEach(async (d) => { 
+                await updateDoc(doc(db, "users", d.id), { role: r }); 
+            }); 
+            
+            Swal.fire('Sukses', `User berhasil dilantik menjadi ${r.toUpperCase()}`, 'success'); 
+            document.getElementById('inputCalonAdmin').value=''; 
+        }
+
+        window.copotAdmin = async (id, nama) => { 
+            if(confirm(`Yakin ingin menurunkan jabatan ${nama} menjadi GURU BIASA?`)) {
+                await updateDoc(doc(db, "users", id), { role: 'guru' }); 
+            }
+        }
+        
         window.logout = () => { localStorage.clear(); window.location.href='index.html'; }
     </script>
 </body>
