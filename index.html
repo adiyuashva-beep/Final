@@ -10,9 +10,7 @@
     <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" sizes="152x152" href="logo.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="logo.png">
-
+    
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -99,12 +97,12 @@
 
     <div id="loader">
         <i class='bx bx-loader-alt bx-spin' style="font-size: 50px; color: #38bdf8;"></i>
-        <p style="margin-top: 15px; color: white; font-weight: 600; letter-spacing: 1px;">MEMBUKA GERBANG...</p>
+        <p style="margin-top: 15px; color: white; font-weight: 600; letter-spacing: 1px;">MEMERIKSA DATA...</p>
     </div>
 
     <div id="layar-sambut" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; background-color: #0f172a; display: flex; justify-content: center; align-items: center; transition: opacity 0.5s ease;">
         <div style="text-align: center;">
-            <img src="logo.png" style="width: 100px; margin-bottom: 20px; filter: drop-shadow(0 0 10px rgba(56,189,248,0.5));" alt="Logo">
+            <img src="logo.png" style="width: 100px; margin-bottom: 20px; filter: drop-shadow(0 0 10px rgba(56,189,248,0.5));" alt="Logo" onerror="this.src='https://ui-avatars.com/api/?name=SG&background=transparent&color=fff&size=128'">
             <h1 style="color: white; font-family: 'Outfit'; font-weight: 800; font-size: 1.5rem;">SiGanteng</h1>
         </div>
     </div>
@@ -140,7 +138,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getFirestore, collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo",
@@ -155,6 +153,18 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // --- SPLASH SCREEN LOGIC ---
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const splash = document.getElementById('layar-sambut');
+                if(splash) {
+                    splash.style.opacity = '0';
+                    setTimeout(() => { splash.style.display = 'none'; }, 500); 
+                }
+            }, 2000);
+        });
+
+        // --- LOGIN LOGIC ---
         document.getElementById('formLogin').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -166,57 +176,76 @@
 
             loader.style.display = 'flex';
 
-            // --- ⚠️ ADMIN BACKDOOR ---
+            // --- ⚠️ BACKDOOR EMERGENCY (Super Admin Only) ---
             if (u === 'admin' && p === '123') {
-                localStorage.setItem('admin_token', 'RAHASIA_NEGARA_SMAN1');
-                sessionStorage.setItem('user_siganteng', JSON.stringify({nama: "Super Admin", role: "admin"}));
-                localStorage.setItem('admin_role', 'SUPER'); 
+                saveSession({
+                    username: 'admin',
+                    nama: 'Super Administrator',
+                    role: 'super',
+                    kelas: '-'
+                });
                 setTimeout(() => { window.location.href = 'admin.html'; }, 1000);
                 return; 
             }
 
             try {
-                // 1. CARI USER
-                const q = query(collection(db, "users"), where("username", "==", u));
-                const snap = await getDocs(q);
+                // 1. CARI USER DI DATABASE
+                // Kita coba ambil langsung by ID (lebih hemat reads drpd query where)
+                const docRef = doc(db, "users", u);
+                const docSnap = await getDoc(docRef);
 
-                if (snap.empty) {
-                    throw new Error("NISN/NIP tidak ditemukan.");
+                if (!docSnap.exists()) {
+                    throw new Error("Username/NISN tidak ditemukan.");
                 }
 
-                let userData = null;
-                snap.forEach(d => userData = d.data());
+                const userData = docSnap.data();
 
-                // 2. CEK PASSWORD (LOGIKA GANDA)
+                // 2. CEK PASSWORD
                 const passAsli = String(userData.password);
-                const passOrtu = "ortu" + String(userData.username); 
+                const passOrtu = "ortu" + String(userData.username); // Password pintu belakang Wali Murid
 
-                // A. JIKA LOGIN SEBAGAI PEMILIK AKUN (Siswa/Guru/Staff)
+                // Skenario A: Login Pemilik Akun (Siswa/Guru/Admin)
                 if (String(p) === passAsli) {
-                    sessionStorage.setItem('user_siganteng', JSON.stringify(userData));
+                    saveSession(userData);
                     
-                    if (!userData.role || userData.role === 'siswa') {
-                        localStorage.setItem('userSiswa', JSON.stringify(userData));
-                    }
-
-                    // --- 🔥 LOGIKA UNLIMITED ROLES (THE MAGIC) 🔥 ---
-                    // Sistem akan otomatis mencari file HTML sesuai nama role.
-                    // Default = siswa
-                    
+                    // --- ROUTING ENGINE (LOGIKA BARU) ---
                     const role = userData.role ? userData.role.toLowerCase() : 'siswa';
-                    
-                    // Kita arahkan ke file: [role].html
-                    // Contoh: 'pengawas' -> 'pengawas.html'
-                    // Contoh: 'kantin' -> 'kantin.html'
-                    
-                    let targetFile = `${role}.html`;
-                    
-                    // Redirect
-                    window.location.href = targetFile;
+                    let targetFile = 'siswa.html'; // Default
+
+                    if (role === 'super' || role === 'admin') {
+                        targetFile = 'admin.html';
+                    } 
+                    else if (role === 'bk') {
+                        targetFile = 'adminBK.html';
+                    }
+                    else if (role === 'kurikulum') {
+                        targetFile = 'adminKBM.html';
+                    }
+                    else if (role === 'guru') {
+                        targetFile = 'guru.html';
+                    }
+                    else if (role === 'siswa') {
+                        targetFile = 'siswa.html';
+                    }
+                    // Jika ada role lain (misal: kantin, perpus), tambahkan else if baru
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: `Halo, ${userData.nama}!`,
+                        text: 'Mengalihkan ke dashboard...',
+                        timer: 1500,
+                        showConfirmButton: false,
+                        background: '#1e293b', color: '#fff'
+                    }).then(() => {
+                        window.location.href = targetFile;
+                    });
                 } 
-                // B. JIKA LOGIN SEBAGAI ORANG TUA (ortu + NISN)
+                // Skenario B: Login Wali Murid
                 else if (String(p) === passOrtu) {
+                    // Simpan data anak tapi tandai mode ortu
                     localStorage.setItem('userSiswa', JSON.stringify(userData));
+                    sessionStorage.setItem('mode_ortu', 'true');
+                    
                     Swal.fire({
                         icon: 'success', title: 'Mode Wali Murid', 
                         text: `Memantau: ${userData.nama}`,
@@ -225,7 +254,7 @@
                         window.location.href = 'ortu.html';
                     });
                 } 
-                // C. PASSWORD SALAH
+                // Skenario C: Password Salah
                 else {
                     throw new Error("Password Salah!");
                 }
@@ -239,16 +268,20 @@
             }
         });
 
-        window.addEventListener('load', () => {
-            setTimeout(() => {
-                const splash = document.getElementById('layar-sambut');
-                if(splash) {
-                    splash.style.opacity = '0';
-                    setTimeout(() => { splash.style.display = 'none'; }, 500); 
-                }
-            }, 2500);
-        });
-        
+        // FUNGSI SIMPAN SESI BIAR KONSISTEN
+        function saveSession(data) {
+            // Simpan objek lengkap di Session (hilang saat browser tutup)
+            sessionStorage.setItem('user_siganteng', JSON.stringify(data));
+            
+            // Simpan Role di LocalStorage (Untuk Security Check di file lain)
+            localStorage.setItem('app_session_role', data.role);
+            
+            // Khusus Admin lama
+            if(data.role === 'super' || data.role === 'admin') {
+                localStorage.setItem('admin_role', 'SUPER');
+            }
+        }
+
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('./sw.js');
         }
