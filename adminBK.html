@@ -97,7 +97,7 @@
 
             <div class="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden mt-6">
                 <div class="p-4 border-b border-slate-800 flex justify-between items-center">
-                    <h3 class="font-bold text-white">Log Aktivitas Terbaru</h3>
+                    <h3 class="font-bold text-white">Log Aktivitas Terbaru (Siswa Only)</h3>
                     <span class="text-xs text-slate-500">Live Today</span>
                 </div>
                 <div class="overflow-x-auto max-h-96">
@@ -313,6 +313,12 @@
         window.tarikDataSiswa = async (forceRefresh = false) => {
             const cacheKey = 'master_siswa_cache_bk_v2'; 
             
+            // FIX LOGIC: Jika forceRefresh, hapus cache lama agar data hantu hilang
+            if(forceRefresh) {
+                localStorage.removeItem(cacheKey);
+                document.getElementById('loading').style.display = 'flex';
+            }
+
             try {
                 const cachedData = localStorage.getItem(cacheKey); 
                 if (!forceRefresh && cachedData) {
@@ -323,12 +329,11 @@
                     return;
                 }
             } catch (e) {
-                console.log("Cache rusak, download ulang...");
                 localStorage.removeItem(cacheKey);
             }
 
             try {
-                if(forceRefresh) document.getElementById('loading').style.display = 'flex';
+                // Query hanya SISWA (Guru tidak masuk sini)
                 const q = query(collection(db, "users"), where("role", "==", "siswa")); 
                 const snap = await getDocs(q);
                 
@@ -350,6 +355,7 @@
                 
                 if(forceRefresh) { 
                     document.getElementById('loading').style.display = 'none'; 
+                    Swal.fire('Sip','Data siswa diperbarui (Cache Dibersihkan)','success'); 
                 }
             } catch (e) { 
                 console.log("Error tarik siswa:", e); 
@@ -525,6 +531,7 @@
                     querySnapshot.forEach(doc => snapAbsen.push(doc.data()));
                     cacheRekapData[cacheKey] = snapAbsen;
                 } catch(e) {
+                    // Fallback
                     const qFallback = query(collection(db, "absensi"), where("tanggal", ">=", startStr), where("tanggal", "<=", endStr));
                     const fallbackSnap = await getDocs(qFallback);
                     fallbackSnap.forEach(doc => snapAbsen.push(doc.data()));
@@ -582,7 +589,7 @@
                         if (st.includes("Masuk") || st.includes("Hadir") || st.includes("Pulang")) { cellClass = "bg-hadir"; cellText = dataHarian.time; r.counts.h++; } 
                         else if (st.includes("Sakit")) { cellClass = "bg-sakit"; cellText = "S"; r.counts.s++; } 
                         else if (st.includes("Izin")) { cellClass = "bg-izin"; cellText = "I"; r.counts.i++; }
-                    } 
+                    }
                     
                     if (!cellText) { 
                         if (isLiburNasional) { cellClass = "bg-red-900/40 text-red-500 font-bold"; cellText = "L"; } 
@@ -591,9 +598,9 @@
                             let isAlpha = false;
                             if (cellDate < todayZero) { isAlpha = true; } 
                             else if (cellDate.getTime() === todayZero.getTime()) {
-                                const jam = now.getHours();
-                                const menit = now.getMinutes();
-                                if (jam > 7 || (jam === 7 && menit >= 30)) { isAlpha = true; }
+                                // FIX LOGIC: Jika hari ini tapi belum absen, biarkan kosong dulu sampai batas tertentu, atau langsung A jika tegas
+                                // User request: Biar tegas, A saja.
+                                isAlpha = true;
                             }
 
                             if (isAlpha) { 
@@ -611,7 +618,57 @@
         }
 
         // OTHER FUNCTIONS
-        function pantauRealtime() { const todayStr = new Date().toLocaleDateString('fr-CA'); const q = query(collection(db, "absensi"), where("tanggal", "==", todayStr)); onSnapshot(q, (snap) => { let hadir=0, izin=0; let log=[]; snap.forEach(doc => { const d=doc.data(); if(d.status_terakhir.includes("Masuk")||d.status_terakhir.includes("Hadir")) hadir++; else if(d.status_terakhir.includes("Sakit")||d.status_terakhir.includes("Izin")) izin++; log.push(d); }); document.getElementById('stat-hadir').innerText=hadir; document.getElementById('stat-izin').innerText=izin; document.getElementById('stat-alpha').innerText=listSiswa.length-(hadir+izin); const tbl=document.getElementById('tabel-live'); if(tbl){ tbl.innerHTML=''; log.sort((a,b)=>(b.jam_masuk?b.jam_masuk.seconds:0)-(a.jam_masuk?a.jam_masuk.seconds:0)).slice(0,20).forEach(d=>{ tbl.innerHTML+=`<tr class="border-b border-slate-800 hover:bg-slate-800"><td class="p-4 text-emerald-400 font-mono">${d.jam_masuk?new Date(d.jam_masuk.seconds*1000).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}):'-'}</td><td class="p-4 text-white">${d.nama}</td><td class="p-4">${d.kelas}</td><td class="p-4">${d.status_terakhir}</td></tr>`; }); } if(!document.getElementById('container-tabel-mbg').classList.contains('hidden')){ const judul=document.getElementById('judul-tabel-mbg').innerText; if(judul.includes("KELAS X")) previewMBG('X'); else if(judul.includes("XI")) previewMBG('XI'); else if(judul.includes("XII")) previewMBG('XII'); } }); }
+        function pantauRealtime() { 
+            const todayStr = new Date().toLocaleDateString('fr-CA'); 
+            const q = query(collection(db, "absensi"), where("tanggal", "==", todayStr)); 
+            
+            onSnapshot(q, (snap) => { 
+                let hadir=0, izin=0; let log=[]; 
+                snap.forEach(doc => { 
+                    const d=doc.data(); 
+                    
+                    // FIX LOGIC: Filter hanya siswa yang ada di listSiswa (Anti Guru)
+                    // Jika listSiswa belum load (awal banget), skip dulu untuk safety
+                    let isSiswa = false;
+                    if(listSiswa.length > 0) {
+                        const checkUser = listSiswa.find(u => u.nisn === d.nisn);
+                        if(checkUser) isSiswa = true;
+                    } else {
+                        // Fallback jika cache kosong (jarang terjadi karena ada tarikDataSiswa di awal)
+                        // Kita asumsikan true kalau NISN angka
+                        if(/^\d+$/.test(d.nisn)) isSiswa = true;
+                    }
+
+                    if(isSiswa) {
+                        if(d.status_terakhir.includes("Masuk")||d.status_terakhir.includes("Hadir")) hadir++; 
+                        else if(d.status_terakhir.includes("Sakit")||d.status_terakhir.includes("Izin")) izin++; 
+                        log.push(d); 
+                    }
+                }); 
+                
+                document.getElementById('stat-hadir').innerText=hadir; 
+                document.getElementById('stat-izin').innerText=izin; 
+                
+                // Rumus Pasti: Total Siswa (DB) - (Hadir + Izin)
+                const totalSiswa = listSiswa.length;
+                const alpha = totalSiswa > 0 ? totalSiswa - (hadir+izin) : 0;
+                document.getElementById('stat-alpha').innerText = alpha; 
+                
+                const tbl=document.getElementById('tabel-live'); 
+                if(tbl){ 
+                    tbl.innerHTML=''; 
+                    log.sort((a,b)=>(b.jam_masuk?b.jam_masuk.seconds:0)-(a.jam_masuk?a.jam_masuk.seconds:0)).slice(0,20).forEach(d=>{ 
+                        tbl.innerHTML+=`<tr class="border-b border-slate-800 hover:bg-slate-800"><td class="p-4 text-emerald-400 font-mono">${d.jam_masuk?new Date(d.jam_masuk.seconds*1000).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}):'-'}</td><td class="p-4 text-white">${d.nama}</td><td class="p-4">${d.kelas}</td><td class="p-4">${d.status_terakhir}</td></tr>`; 
+                    }); 
+                } 
+                if(!document.getElementById('container-tabel-mbg').classList.contains('hidden')){ 
+                    const judul=document.getElementById('judul-tabel-mbg').innerText; 
+                    if(judul.includes("KELAS X")) previewMBG('X'); 
+                    else if(judul.includes("XI")) previewMBG('XI'); 
+                    else if(judul.includes("XII")) previewMBG('XII'); 
+                } 
+            }); 
+        }
         function loadHariLibur() { const q = query(collection(db, "hari_libur"), orderBy("tanggal", "asc")); onSnapshot(q, (snap) => { cacheHariLibur = {}; snap.forEach(doc => { const d=doc.data(); cacheHariLibur[d.tanggal] = d.keterangan; }); }); }
         window.simpanLibur = async () => { const tgl = document.getElementById('inputTglLibur').value; const ket = document.getElementById('inputKetLibur').value; if(!tgl || !ket) return Swal.fire('Gagal','','warning'); await addDoc(collection(db, "hari_libur"), { tanggal: tgl, keterangan: ket }); Swal.fire('Sukses','','success'); }
         window.hapusLibur = async (id) => { if(confirm("Hapus?")) await deleteDoc(doc(db, "hari_libur", id)); }
