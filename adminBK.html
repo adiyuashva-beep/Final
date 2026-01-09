@@ -22,7 +22,7 @@
         .table-sticky td:nth-child(2), .table-sticky th:nth-child(2) { position: sticky; left: 40px; z-index: 40; background: #1e293b; border-right: 1px solid #334155; }
 
         .bg-weekend { background-color: #334155; color: #475569; }
-        .bg-hadir { background-color: #064e3b; color: #a7f3d0; font-size: 0.75rem; vertical-align: middle; }
+        .bg-hadir { background-color: #064e3b; color: #a7f3d0; font-size: 0.65rem; vertical-align: middle; line-height: 1.1; }
         .bg-dispen { background-color: #581c87; color: #e9d5ff; font-weight: bold; vertical-align: middle; }
         .bg-sakit { background-color: #1e3a8a; color: #bfdbfe; font-weight: bold; vertical-align: middle; }
         .bg-izin { background-color: #713f12; color: #fef08a; font-weight: bold; vertical-align: middle; }
@@ -123,7 +123,13 @@
                     <select id="pilih-kelas" class="bg-slate-800 text-white text-xs rounded-lg px-3 py-2 outline-none border border-slate-700">
                         <option value="">- Pilih Kelas -</option>
                     </select>
+                    
                     <button onclick="loadRekap()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-bold">Tampilkan</button>
+                    
+                    <button onclick="forceRefreshRekap()" class="bg-orange-600 hover:bg-orange-500 text-white px-3 py-2 rounded-lg text-xs font-bold transition" title="Paksa Ambil Data Terbaru (Bersihkan Cache)">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                    </button>
+
                     <button onclick="downloadExcel('tabel-rekap')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-bold" title="Download Excel"><i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Excel Lengkap</button>
                 </div>
             </div>
@@ -276,6 +282,7 @@
 
         let listSiswa = []; let mapKelas = {}; let cacheAbsenHariIni = {}; let cacheHariLibur = {}; 
         let cacheDispen = {}; 
+        let cacheRekapData = {}; 
 
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
@@ -343,7 +350,6 @@
                 
                 if(forceRefresh) { 
                     document.getElementById('loading').style.display = 'none'; 
-                    Swal.fire('Sip','Data siswa diperbarui','success'); 
                 }
             } catch (e) { 
                 console.log("Error tarik siswa:", e); 
@@ -356,9 +362,43 @@
             if(!sel) return;
             sel.innerHTML = '<option value="">- Pilih Kelas -</option>';
             Object.keys(mapKelas).sort().forEach(k => sel.add(new Option(k, k)));
-            
             const statEl = document.getElementById('stat-total');
             if(statEl) statEl.innerText = listSiswa.length;
+        }
+
+        // --- TOMBOL REFRESH SAKTI (BARU) ---
+        window.forceRefreshRekap = async () => {
+            const kls = document.getElementById('pilih-kelas').value;
+            const bln = parseInt(document.getElementById('pilih-bulan').value) + 1;
+            const thn = document.getElementById('pilih-tahun').value;
+            
+            if(!kls) return; 
+
+            // 1. UPDATE DATA SISWA DULU (PENTING!)
+            const Toast = Swal.mixin({toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, timerProgressBar: true});
+            Toast.fire({icon: 'info', title: 'Sinkronisasi Data...'});
+
+            try {
+                // Hapus cache siswa lama biar download baru
+                localStorage.removeItem('master_siswa_cache_bk_v2'); 
+                await tarikDataSiswa(true); // forceRefresh=true
+            } catch (e) {
+                console.log("Gagal update siswa, lanjut refresh rekap...");
+            }
+
+            // 2. HAPUS DATA ABSEN LAMA DARI MEMORI
+            const blnStr = bln < 10 ? '0' + bln : bln;
+            const cacheKey = `${kls}_${thn}-${blnStr}`;
+            
+            if(cacheRekapData[cacheKey]) {
+                delete cacheRekapData[cacheKey];
+                console.log("🗑️ Cache Absen dihapus! Mengambil data baru...");
+            }
+            
+            // 3. Panggil ulang loadRekap
+            await loadRekap();
+            
+            Toast.fire({icon: 'success', title: 'Data Berhasil Diupdate!'});
         }
 
         // 2. KELOLA DISPENSASI
@@ -367,7 +407,6 @@
             const resDiv = document.getElementById('hasilCariSiswa');
             resDiv.innerHTML = '';
             if(val.length < 3) { resDiv.classList.add('hidden'); return; }
-            
             const results = listSiswa.filter(s => (s.nama && s.nama.toLowerCase().includes(val)) || (s.nisn && s.nisn.includes(val))).slice(0, 5);
             if(results.length > 0) {
                 resDiv.classList.remove('hidden');
@@ -395,40 +434,30 @@
             const start = document.getElementById('inputStart').value;
             const end = document.getElementById('inputEnd').value;
             const alasan = document.getElementById('inputAlasan').value;
-            
             const fileInput = document.getElementById('inputBuktiSurat');
             const file = fileInput.files[0];
 
             if(!nisn || !start || !end) return Swal.fire('Lengkapi Data', 'Pilih siswa dan tanggal dulu', 'warning');
-            
             Swal.fire({ title: 'Menyimpan...', didOpen: () => Swal.showLoading() });
 
             try {
                 let urlSurat = "-"; 
-
                 if (file) {
                     const namaFile = `${nisn}_${Date.now()}_${file.name}`;
                     const storageRef = ref(storage, `surat_dispen/${namaFile}`);
                     const snapshot = await uploadBytes(storageRef, file);
                     urlSurat = await getDownloadURL(snapshot.ref);
                 }
-
                 await addDoc(collection(db, "dispensasi"), {
                     nisn, nama, kelas, start, end, alasan,
                     link_surat: urlSurat, 
                     created_at: new Date().toISOString()
                 });
-
                 Swal.fire('Berhasil', 'Dispensasi & Surat dicatat', 'success');
-                
                 document.getElementById('inputNisnSiswa').value = '';
                 document.getElementById('displayNamaSiswa').value = '';
                 document.getElementById('inputBuktiSurat').value = ''; 
-                
-            } catch(e) { 
-                console.error(e);
-                Swal.fire('Error', e.message, 'error'); 
-            }
+            } catch(e) { Swal.fire('Error', e.message, 'error'); }
         }
 
         function loadDispen() {
@@ -442,25 +471,12 @@
                     snap.forEach(doc => {
                         const d = doc.data();
                         const id = doc.id;
-                        
                         if(!cacheDispen[d.nisn]) cacheDispen[d.nisn] = [];
                         cacheDispen[d.nisn].push({start: d.start, end: d.end});
-
                         let btnSurat = d.link_surat && d.link_surat !== "-" 
                             ? `<a href="${d.link_surat}" target="_blank" class="text-blue-400 hover:text-blue-300 mr-2 bg-blue-500/10 p-1 rounded" title="Lihat Surat"><i data-lucide="file-text" class="w-4 h-4"></i></a>` 
                             : `<span class="text-slate-600 mr-2 cursor-not-allowed p-1" title="Tanpa Surat"><i data-lucide="file-minus" class="w-4 h-4"></i></span>`;
-
-                        tbody.innerHTML += `
-                            <tr class="border-b border-slate-800 hover:bg-slate-800">
-                                <td class="p-3 text-white font-bold">${d.nama}</td>
-                                <td class="p-3 font-mono text-xs text-blue-400">${d.start} s.d ${d.end}</td>
-                                <td class="p-3 text-xs">${d.alasan}</td>
-                                <td class="p-3 text-right flex justify-end items-center">
-                                    ${btnSurat}
-                                    <button onclick="hapusDispen('${id}')" class="text-red-500 hover:text-red-400 p-1 hover:bg-red-500/10 rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                                </td>
-                            </tr>
-                        `;
+                        tbody.innerHTML += `<tr class="border-b border-slate-800 hover:bg-slate-800"><td class="p-3 text-white font-bold">${d.nama}</td><td class="p-3 font-mono text-xs text-blue-400">${d.start} s.d ${d.end}</td><td class="p-3 text-xs">${d.alasan}</td><td class="p-3 text-right flex justify-end items-center">${btnSurat}<button onclick="hapusDispen('${id}')" class="text-red-500 hover:text-red-400 p-1 hover:bg-red-500/10 rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td></tr>`;
                     });
                     lucide.createIcons();
                 });
@@ -468,7 +484,7 @@
         }
         window.hapusDispen = async (id) => { if(confirm("Hapus data dispen ini?")) await deleteDoc(doc(db, "dispensasi", id)); }
 
-        // 3. REKAP BULANAN
+        // 3. REKAP BULANAN (TEGAS & CACHED)
         window.loadRekap = async () => {
             const bln = parseInt(document.getElementById('pilih-bulan').value) + 1;
             const thn = document.getElementById('pilih-tahun').value;
@@ -495,11 +511,25 @@
             let targetUsers = mapKelas[kls] || [];
             if(targetUsers.length === 0) { tbody.innerHTML = '<tr><td colspan="40" class="p-4 text-center">Data siswa tidak ditemukan.</td></tr>'; return; }
             
-            const startStr = `${thn}-${blnStr}-01`; 
-            const endStr = `${thn}-${blnStr}-${daysInMonth}`;
-            
-            const qAbsen = query(collection(db, "absensi"), where("tanggal", ">=", startStr), where("tanggal", "<=", endStr));
-            const snapAbsen = await getDocs(qAbsen);
+            const cacheKey = `${kls}_${thn}-${blnStr}`;
+            let snapAbsen = [];
+
+            if (cacheRekapData[cacheKey]) {
+                snapAbsen = cacheRekapData[cacheKey];
+            } else {
+                const startStr = `${thn}-${blnStr}-01`; 
+                const endStr = `${thn}-${blnStr}-${daysInMonth}`;
+                const qAbsen = query(collection(db, "absensi"), where("kelas", "==", kls), where("tanggal", ">=", startStr), where("tanggal", "<=", endStr));
+                try {
+                    const querySnapshot = await getDocs(qAbsen);
+                    querySnapshot.forEach(doc => snapAbsen.push(doc.data()));
+                    cacheRekapData[cacheKey] = snapAbsen;
+                } catch(e) {
+                    const qFallback = query(collection(db, "absensi"), where("tanggal", ">=", startStr), where("tanggal", "<=", endStr));
+                    const fallbackSnap = await getDocs(qFallback);
+                    fallbackSnap.forEach(doc => snapAbsen.push(doc.data()));
+                }
+            }
             
             let dataMap = {};
             targetUsers.forEach(u => { 
@@ -507,11 +537,9 @@
                 dataMap[cleanNISN] = { nama: u.nama, att: {}, counts: {h:0, d:0, s:0, i:0, a:0} }; 
             });
             
-            snapAbsen.forEach(doc => {
-                const d = doc.data();
+            snapAbsen.forEach(d => {
                 const tgl = parseInt(d.tanggal.split('-')[2]); 
                 const docNISN = String(d.nisn).replace(/[^a-zA-Z0-9]/g, '').trim();
-                
                 if(dataMap[docNISN]) {
                     let jamMasuk = d.jam_masuk ? new Date(d.jam_masuk.seconds*1000).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : "-";
                     let jamPulang = d.jam_pulang ? new Date(d.jam_pulang.seconds*1000).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : "-";
@@ -520,6 +548,9 @@
             });
             
             tbody.innerHTML = '';
+            const now = new Date();
+            const todayZero = new Date(); todayZero.setHours(0,0,0,0);
+
             targetUsers.sort((a,b) => a.nama.localeCompare(b.nama)).forEach((u, idx) => {
                 const cleanNISN = String(u.nisn).replace(/[^a-zA-Z0-9]/g, '').trim();
                 const r = dataMap[cleanNISN];
@@ -531,9 +562,10 @@
                 for(let d=1; d<=daysInMonth; d++) {
                     const dStr = d < 10 ? '0' + d : d;
                     const dateStr = `${thn}-${blnStr}-${dStr}`;
+                    const isLiburNasional = cacheHariLibur[dateStr];
                     const dayOfWeek = new Date(thn, bln-1, d).getDay();
                     const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
-                    const isLiburNasional = cacheHariLibur[dateStr];
+                    const cellDate = new Date(thn, bln-1, d);
                     
                     let isDispen = false;
                     if(cacheDispen[cleanNISN]) {
@@ -547,19 +579,28 @@
                         cellClass = "bg-dispen"; cellText = "D"; r.counts.d++;
                     } else if (dataHarian) { 
                         const st = dataHarian.status;
-                        if (st.includes("Masuk") || st.includes("Hadir") || st.includes("Pulang")) { 
-                            cellClass = "bg-hadir"; cellText = dataHarian.time; r.counts.h++; 
-                        } 
+                        if (st.includes("Masuk") || st.includes("Hadir") || st.includes("Pulang")) { cellClass = "bg-hadir"; cellText = dataHarian.time; r.counts.h++; } 
                         else if (st.includes("Sakit")) { cellClass = "bg-sakit"; cellText = "S"; r.counts.s++; } 
-                        else if (st.includes("Izin")) { cellClass = "bg-izin"; cellText = "I"; r.counts.i++; } 
-                    } else { 
+                        else if (st.includes("Izin")) { cellClass = "bg-izin"; cellText = "I"; r.counts.i++; }
+                    } 
+                    
+                    if (!cellText) { 
                         if (isLiburNasional) { cellClass = "bg-red-900/40 text-red-500 font-bold"; cellText = "L"; } 
                         else if (isWeekend) { cellClass = "bg-weekend"; cellText = ""; } 
                         else { 
-                            const cellDate = new Date(thn, bln-1, d); 
-                            const today = new Date();
-                            if(cellDate < today.setHours(0,0,0,0)) { totalAlpha++; cellClass = "bg-alpha"; cellText = "A"; } 
-                            else { cellText = "-"; } 
+                            let isAlpha = false;
+                            if (cellDate < todayZero) { isAlpha = true; } 
+                            else if (cellDate.getTime() === todayZero.getTime()) {
+                                const jam = now.getHours();
+                                const menit = now.getMinutes();
+                                if (jam > 7 || (jam === 7 && menit >= 30)) { isAlpha = true; }
+                            }
+
+                            if (isAlpha) { 
+                                totalAlpha++; cellClass = "bg-alpha"; cellText = "A"; 
+                            } else { 
+                                cellText = "-"; 
+                            } 
                         } 
                     }
                     rowHTML += `<td class="p-1 border border-slate-700 text-center ${cellClass} leading-tight text-[9px]">${cellText}</td>`;
@@ -569,30 +610,11 @@
             });
         }
 
-        // OTHER FUNCTIONS (LIBUR, MBG, DLL)
-        function loadHariLibur() { 
-            const q = query(collection(db, "hari_libur"), orderBy("tanggal", "asc")); 
-            onSnapshot(q, (snap) => { 
-                const tbody = document.getElementById('tbody-libur'); 
-                if(tbody) {
-                    tbody.innerHTML = ''; 
-                    cacheHariLibur = {}; 
-                    if(snap.empty) { tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center italic">Tidak ada jadwal libur.</td></tr>'; return; } 
-                    snap.forEach(doc => { 
-                        const d = doc.data(); 
-                        cacheHariLibur[d.tanggal] = d.keterangan; 
-                        const tglIndo = d.tanggal.split('-').reverse().join('-'); 
-                        tbody.innerHTML += `<tr class="hover:bg-slate-800 border-b border-slate-800"><td class="p-3 font-mono text-white">${tglIndo}</td><td class="p-3 text-slate-300 font-bold">${d.keterangan}</td><td class="p-3 text-right"><button onclick="hapusLibur('${doc.id}')" class="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white p-2 rounded transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td></tr>`; 
-                    }); 
-                    lucide.createIcons();
-                }
-            }); 
-        }
+        // OTHER FUNCTIONS
+        function pantauRealtime() { const todayStr = new Date().toLocaleDateString('fr-CA'); const q = query(collection(db, "absensi"), where("tanggal", "==", todayStr)); onSnapshot(q, (snap) => { let hadir=0, izin=0; let log=[]; snap.forEach(doc => { const d=doc.data(); if(d.status_terakhir.includes("Masuk")||d.status_terakhir.includes("Hadir")) hadir++; else if(d.status_terakhir.includes("Sakit")||d.status_terakhir.includes("Izin")) izin++; log.push(d); }); document.getElementById('stat-hadir').innerText=hadir; document.getElementById('stat-izin').innerText=izin; document.getElementById('stat-alpha').innerText=listSiswa.length-(hadir+izin); const tbl=document.getElementById('tabel-live'); if(tbl){ tbl.innerHTML=''; log.sort((a,b)=>(b.jam_masuk?b.jam_masuk.seconds:0)-(a.jam_masuk?a.jam_masuk.seconds:0)).slice(0,20).forEach(d=>{ tbl.innerHTML+=`<tr class="border-b border-slate-800 hover:bg-slate-800"><td class="p-4 text-emerald-400 font-mono">${d.jam_masuk?new Date(d.jam_masuk.seconds*1000).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}):'-'}</td><td class="p-4 text-white">${d.nama}</td><td class="p-4">${d.kelas}</td><td class="p-4">${d.status_terakhir}</td></tr>`; }); } if(!document.getElementById('container-tabel-mbg').classList.contains('hidden')){ const judul=document.getElementById('judul-tabel-mbg').innerText; if(judul.includes("KELAS X")) previewMBG('X'); else if(judul.includes("XI")) previewMBG('XI'); else if(judul.includes("XII")) previewMBG('XII'); } }); }
+        function loadHariLibur() { const q = query(collection(db, "hari_libur"), orderBy("tanggal", "asc")); onSnapshot(q, (snap) => { cacheHariLibur = {}; snap.forEach(doc => { const d=doc.data(); cacheHariLibur[d.tanggal] = d.keterangan; }); }); }
         window.simpanLibur = async () => { const tgl = document.getElementById('inputTglLibur').value; const ket = document.getElementById('inputKetLibur').value; if(!tgl || !ket) return Swal.fire('Gagal','','warning'); await addDoc(collection(db, "hari_libur"), { tanggal: tgl, keterangan: ket }); Swal.fire('Sukses','','success'); }
         window.hapusLibur = async (id) => { if(confirm("Hapus?")) await deleteDoc(doc(db, "hari_libur", id)); }
-
-        function pantauRealtime() { const todayStr = new Date().toLocaleDateString('fr-CA'); const q = query(collection(db, "absensi"), where("tanggal", "==", todayStr)); onSnapshot(q, (snap) => { let hadir=0, izin=0; let log=[]; snap.forEach(doc => { const d=doc.data(); if(d.status_terakhir.includes("Masuk")||d.status_terakhir.includes("Hadir")) hadir++; else if(d.status_terakhir.includes("Sakit")||d.status_terakhir.includes("Izin")) izin++; log.push(d); }); document.getElementById('stat-hadir').innerText=hadir; document.getElementById('stat-izin').innerText=izin; document.getElementById('stat-alpha').innerText=listSiswa.length-(hadir+izin); const tbl=document.getElementById('tabel-live'); if(tbl){ tbl.innerHTML=''; log.sort((a,b)=>(b.jam_masuk?b.jam_masuk.seconds:0)-(a.jam_masuk?a.jam_masuk.seconds:0)).slice(0,20).forEach(d=>{ tbl.innerHTML+=`<tr class="border-b border-slate-800 hover:bg-slate-800"><td class="p-4 text-emerald-400 font-mono">${d.jam_masuk?new Date(d.jam_masuk.seconds*1000).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}):'-'}</td><td class="p-4 text-white">${d.nama}</td><td class="p-4">${d.kelas}</td><td class="p-4">${d.status_terakhir}</td></tr>`; }); } }); }
-        
         window.downloadExcel = (id) => { const t=document.getElementById(id); const l=document.createElement("a"); l.href='data:application/vnd.ms-excel;charset=utf-8,'+encodeURIComponent(t.outerHTML.replace(/<table/g,'<table border="1"').replace(/<br>/g, ' - ')); l.download="REKAP_BK_DETAIL.xls"; l.click(); }
         window.logout = () => { localStorage.clear(); window.location.href='index.html'; }
         function setupDropdown() { const d=new Date(); const m=["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agt","Sep","Okt","Nov","Des"]; m.forEach((b,i)=>{let o=new Option(b,i); if(i===d.getMonth())o.selected=true; document.getElementById('pilih-bulan').add(o);}); for(let y=d.getFullYear()-1;y<=d.getFullYear()+1;y++) document.getElementById('pilih-tahun').add(new Option(y,y)); }
