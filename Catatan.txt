@@ -8,3 +8,5 @@ Reads (today)
 320K
  Reads (Total Januari 9 Januari 11.21 )
 4.9juta 
+
+Di admin HTML dasboar app store perlu ditambahkan on off untuk setiap  fitur yang baru ditambahkan
