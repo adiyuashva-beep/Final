@@ -89,18 +89,20 @@
             </div>
 
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800"><p class="text-slate-500 text-xs font-bold uppercase">Total User DB</p><h3 class="text-3xl font-black text-white mt-1" id="stat-total">0</h3></div>
-                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800"><p class="text-slate-500 text-xs font-bold uppercase">Hadir Realtime</p><h3 class="text-3xl font-black text-emerald-400 mt-1" id="stat-hadir">0</h3></div>
+                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800"><p class="text-slate-500 text-xs font-bold uppercase">Total Siswa Aktif</p><h3 class="text-3xl font-black text-white mt-1" id="stat-total">0</h3></div>
+                
+                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800"><p class="text-slate-500 text-xs font-bold uppercase">Siswa Hadir Realtime</p><h3 class="text-3xl font-black text-emerald-400 mt-1" id="stat-hadir">0</h3></div>
+                
                 <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800"><p class="text-slate-500 text-xs font-bold uppercase">Guru Terdaftar</p><h3 class="text-3xl font-black text-orange-400 mt-1" id="stat-guru">0</h3></div>
                 <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800"><p class="text-slate-500 text-xs font-bold uppercase">Mode Absen</p><h3 class="text-3xl font-black text-blue-400 mt-1">GPS</h3></div>
             </div>
 
             <div class="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden mt-6">
-                <div class="p-4 border-b border-slate-800"><h3 class="font-bold text-white">Live Traffic Log</h3></div>
+                <div class="p-4 border-b border-slate-800"><h3 class="font-bold text-white">Live Traffic Log (All Users)</h3></div>
                 <div class="overflow-x-auto max-h-96">
                     <table class="w-full text-left text-slate-400">
                         <thead class="bg-slate-950 text-xs uppercase font-bold text-slate-500 sticky top-0">
-                            <tr><th class="p-4">Jam</th><th class="p-4">User</th><th class="p-4">Aktivitas</th><th class="p-4">Device</th></tr>
+                            <tr><th class="p-4">Jam</th><th class="p-4">User</th><th class="p-4">Role</th><th class="p-4">Aktivitas</th></tr>
                         </thead>
                         <tbody id="tabel-live" class="divide-y divide-slate-800"></tbody>
                     </table>
@@ -377,9 +379,8 @@
             
             if (!forceRefresh && cachedData) {
                 listUsers = JSON.parse(cachedData);
-                document.getElementById('stat-total').innerText = listUsers.length;
+                updateDashboardStats();
                 populateKelasDropdown(); 
-                hitungGuruManual();
                 return;
             }
             try {
@@ -391,9 +392,8 @@
                 snap.forEach(doc => { const s = doc.data(); listUsers.push(s); });
                 
                 localStorage.setItem(cacheKey, JSON.stringify(listUsers)); 
-                document.getElementById('stat-total').innerText = listUsers.length;
+                updateDashboardStats();
                 populateKelasDropdown();
-                hitungGuruManual();
                 
                 if(forceRefresh) { document.getElementById('loading').style.display = 'none'; Swal.fire('Sip','Data user diperbarui','success'); }
             } catch (e) { 
@@ -402,9 +402,13 @@
             }
         }
 
-        function hitungGuruManual() {
-            const jmlGuru = listUsers.filter(u => u.role === 'guru' || u.role === 'admin').length;
-            document.getElementById('stat-guru').innerText = jmlGuru;
+        function updateDashboardStats() {
+            // FIX LOGIC: Hitung spesifik
+            const siswaOnly = listUsers.filter(u => u.role === 'siswa');
+            const guruOnly = listUsers.filter(u => u.role === 'guru' || u.role === 'admin');
+            
+            document.getElementById('stat-total').innerText = siswaOnly.length; // SINKRON DENGAN BK
+            document.getElementById('stat-guru').innerText = guruOnly.length;
         }
 
         function populateKelasDropdown() {
@@ -523,6 +527,7 @@
 
                 tutupModal();
                 cariUser(); // Refresh tabel hasil cari
+                updateDashboardStats(); // Update angka real time
                 Swal.fire('Berhasil','Data user diupdate!','success');
 
             } catch(e) {
@@ -546,7 +551,8 @@
                     await deleteDoc(doc(db, "users", username));
                     listUsers = listUsers.filter(s => s.username !== username);
                     localStorage.setItem('master_user_full_v1', JSON.stringify(listUsers));
-                    document.getElementById('stat-total').innerText = listUsers.length;
+                    
+                    updateDashboardStats();
                     
                     document.getElementById('cariUserBox').value = '';
                     document.getElementById('tabel-hasil-cari').innerHTML = '<tr><td colspan="5" class="p-4 text-center text-green-400">User berhasil dihapus!</td></tr>';
@@ -587,7 +593,7 @@
                 
                 listUsers.push(dataBaru);
                 localStorage.setItem('master_user_full_v1', JSON.stringify(listUsers));
-                document.getElementById('stat-total').innerText = listUsers.length;
+                updateDashboardStats();
 
             } catch(e) { Swal.fire('Error', e.message, 'error'); }
         }
@@ -619,9 +625,23 @@
                 let hadir = 0; let logData = [];
                 snap.forEach(doc => { 
                     const d = doc.data(); 
-                    if(d.status_terakhir.includes("Masuk") || d.status_terakhir.includes("Hadir")) hadir++;
-                    logData.push(d); 
+                    // FIX LOGIC: Cek apakah user ini SISWA (menggunakan listUsers)
+                    // Jika listUsers kosong (belum sync), maka anggap semua hadir (fallback)
+                    // Tapi jika sudah sync, filter hanya 'siswa'.
+                    
+                    let isSiswa = true; 
+                    if(listUsers.length > 0) {
+                        const u = listUsers.find(x => x.username === d.nisn);
+                        if(u && u.role !== 'siswa') isSiswa = false;
+                    }
+
+                    if (isSiswa && (d.status_terakhir.includes("Masuk") || d.status_terakhir.includes("Hadir"))) {
+                        hadir++;
+                    }
+                    
+                    logData.push({ ...d, role: isSiswa ? 'Siswa' : 'Guru/Staff' }); 
                 });
+                
                 document.getElementById('stat-hadir').innerText = hadir;
                 
                 logData.sort((a,b) => (b.jam_masuk ? b.jam_masuk.seconds : 0) - (a.jam_masuk ? a.jam_masuk.seconds : 0));
@@ -633,7 +653,8 @@
                           else if(data.device_info.includes("iPhone")) dev = "📱 iPhone";
                           else if(data.device_info.includes("Windows")) dev = "💻 PC";
                       }
-                      tabel.innerHTML += `<tr class="border-b border-slate-800 hover:bg-slate-800/50"><td class="p-4 text-emerald-400 font-mono text-xs">${data.riwayat_kegiatan ? data.riwayat_kegiatan[data.riwayat_kegiatan.length-1].split(' - ')[0] : '-'}</td><td class="p-4 text-white font-bold">${data.nama}</td><td class="p-4 text-xs font-bold text-slate-500 bg-slate-900 rounded">${data.status_terakhir}</td><td class="p-4 text-xs text-slate-500">${dev}</td></tr>`;
+                      let colorRole = data.role === 'Siswa' ? 'text-slate-400' : 'text-orange-400 font-bold';
+                      tabel.innerHTML += `<tr class="border-b border-slate-800 hover:bg-slate-800/50"><td class="p-4 text-emerald-400 font-mono text-xs">${data.riwayat_kegiatan ? data.riwayat_kegiatan[data.riwayat_kegiatan.length-1].split(' - ')[0] : '-'}</td><td class="p-4 text-white font-bold">${data.nama}</td><td class="p-4 text-xs ${colorRole}">${data.role}</td><td class="p-4 text-xs font-bold text-slate-500 bg-slate-900 rounded">${data.status_terakhir}</td></tr>`;
                 });
             });
         }
