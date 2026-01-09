@@ -111,7 +111,7 @@
 </head>
 <body>
 
-    <button onclick="forceRefreshMaster()" class="refresh-btn">🔄 Reset Cache</button>
+    <button onclick="forceRefreshMaster()" class="refresh-btn">🔄 Reset Cache v3</button>
 
     <div class="header">
         <div class="brand-left">
@@ -152,7 +152,7 @@
                 </div>
                 
                 <div style="margin-bottom: 10px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; width: 100%;">
-                    <span style="font-size: 0.8em; color: #94a3b8; font-weight: 600; letter-spacing:1px;">TOTAL POPULASI</span>
+                    <span style="font-size: 0.8em; color: #94a3b8; font-weight: 600; letter-spacing:1px;">TOTAL POPULASI SISWA</span>
                     <div style="font-size: 1.8em; font-weight: 800; color: white; font-family: 'Share Tech Mono', monospace;" id="total-populasi">...</div>
                 </div>
                 
@@ -230,7 +230,8 @@
         // 1. CACHING MASTER SISWA (OPTIMASI UTAMA)
         async function loadMasterSiswa() {
             // Cek Cache
-            const cachedSiswa = localStorage.getItem('cache_master_siswa_v2'); // Ganti key version
+            const cacheKey = 'cache_master_siswa_v3'; // Versi 3 untuk memastikan data baru ter-load
+            const cachedSiswa = localStorage.getItem(cacheKey);
             const indicator = document.getElementById('data-source-indicator');
             
             if(cachedSiswa) {
@@ -272,7 +273,7 @@
                 });
                 
                 // Simpan ke Cache
-                localStorage.setItem('cache_master_siswa_v2', JSON.stringify({
+                localStorage.setItem(cacheKey, JSON.stringify({
                     timestamp: new Date().getTime(),
                     data: allSiswa
                 }));
@@ -289,7 +290,7 @@
 
         window.forceRefreshMaster = () => {
             if(confirm("Download ulang data siswa terbaru? (Membutuhkan Kuota)")) {
-                localStorage.removeItem('cache_master_siswa_v2');
+                localStorage.removeItem('cache_master_siswa_v3');
                 location.reload();
             }
         }
@@ -306,7 +307,7 @@
                     
                     if(d.nisn) {
                         const nisnBersih = String(d.nisn).trim().replace(/[^a-zA-Z0-9]/g, '');
-                        // Hanya proses jika siswa valid
+                        // FIX LOGIC: Hanya proses jika NISN ada di daftar siswa (Anti Guru)
                         if(validStudentNISNs.has(nisnBersih)) {
                             tempAbsen.push({
                                 ...d,
@@ -326,11 +327,14 @@
         }
 
         function updateTampilanLayar() {
-            const listHadir = dataAbsenHariIni.filter(d => d.status_terakhir !== 'Sakit' && d.status_terakhir !== 'Izin');
+            // FIX LOGIC: Filter status
+            const listHadir = dataAbsenHariIni.filter(d => d.status_terakhir.includes("Masuk") || d.status_terakhir.includes("Hadir") || d.status_terakhir.includes("Pulang"));
+            const listIzin = dataAbsenHariIni.filter(d => d.status_terakhir.includes("Sakit") || d.status_terakhir.includes("Izin"));
+            
             const nisnHadir = dataAbsenHariIni.map(d => d.nisn_clean); 
             
             const totalPopulasi = allSiswa.length > 0 ? allSiswa.length : 0; 
-            const countIzin = dataAbsenHariIni.filter(d => d.status_terakhir === 'Izin' || d.status_terakhir === 'Sakit').length;
+            const countIzin = listIzin.length;
             const countHadir = listHadir.length;
             const totalMasuk = countHadir + countIzin;
             
@@ -361,15 +365,13 @@
             // UPDATE LISTS
             
             // ANTI-CRASH STRATEGY: 
-            // Jangan render list "Belum Hadir" jika jumlahnya masih Ratusan. 
-            // Itu membebani DOM dan bikin browser hang -> auto reload -> boros read.
             const containerBelum = document.getElementById('list-belum');
             const msgTooMany = document.getElementById('msg-too-many');
 
             document.getElementById('badge-belum').innerText = listBelum.length;
 
             if(listBelum.length > 50) {
-                containerBelum.innerHTML = ''; // Kosongkan biar ringan
+                containerBelum.innerHTML = ''; 
                 containerBelum.style.display = 'none';
                 msgTooMany.style.display = 'block';
                 msgTooMany.innerHTML = `Masih ada <strong>${listBelum.length}</strong> siswa belum hadir.<br>List disembunyikan agar performa lancar.`;
@@ -387,7 +389,8 @@
             renderScrollList(listTelat, 'list-telat', 'telat');
             document.getElementById('badge-telat').innerText = listTelat.length;
 
-            const listLive = [...listHadir].sort((a,b) => b.jam_display.localeCompare(a.jam_display));
+            // Live Feed: Campuran Hadir & Izin, tapi utamakan yang baru masuk
+            const listLive = [...listHadir, ...listIzin].sort((a,b) => b.jam_display.localeCompare(a.jam_display));
             renderLiveFeed(listLive);
         }
         
@@ -428,7 +431,7 @@
             let durasi = data.length * 3; if(durasi < 15) durasi = 15;
             container.style.animation = `scrollUp ${durasi}s linear infinite`;
             data.forEach(d => {
-                const isTelat = d.jam_display > JAM_BATAS_TERLAMBAT;
+                const isTelat = d.jam_display > JAM_BATAS_TERLAMBAT && !d.status_terakhir.includes("Izin") && !d.status_terakhir.includes("Sakit");
                 const statusClass = isTelat ? 'is-telat' : '';
                 container.insertAdjacentHTML('beforeend', `<div class="live-card-big ${statusClass}"><img src="${d.foto_url}" class="live-img" onerror="this.src='${DEFAULT_IMG}'"><div class="live-info"><div class="live-name">${d.nama_display}</div><div class="live-class">${d.kelas_display}</div></div><div class="live-time">${d.jam_display}</div></div>`);
             });
