@@ -1,12 +1,8 @@
-adminBK.html Menu upload surat masih diperhitungkan mau link aja atau upload
-user admin belum kebentuk
-tinggal dikit, beralih ke phpmysql
-Read luamayan banget di firabase per tgl 9 januari jam 11.21 READ firabase mencapai 
-Reads (today)
-821K
- Reads (no-cost tier)
-320K
- Reads (Total Januari 9 Januari 11.21 )
-4.9juta 
+sekarang udah di perbarui 3 file
+Admin.html
+adminBK.html
+monitor.html
+tp ini belum tau optimasi readnya yang penting jalan dulu aja.
 
 Di admin HTML dasboar app store perlu ditambahkan on off untuk setiap  fitur yang baru ditambahkan
+
