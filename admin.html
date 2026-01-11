@@ -212,7 +212,12 @@
                 </div>
                 <div class="md:col-span-2 bg-slate-900 p-6 rounded-2xl border border-slate-800">
                     <h3 class="font-bold text-white mb-4">Daftar Tombol Aktif</h3>
-                    <div class="overflow-x-auto"><table class="w-full text-left text-sm text-slate-400"><thead class="bg-slate-950 text-xs uppercase font-bold text-slate-500"><tr><th class="p-3">Target</th><th class="p-3">Ikon</th><th class="p-3">Judul</th><th class="p-3">Link</th><th class="p-3 text-right">Aksi</th></tr></thead><tbody id="tbody-menu-list" class="divide-y divide-slate-800"></tbody></table></div>
+                    <div class="overflow-x-auto"><table class="w-full text-left text-sm text-slate-400">
+                        <thead class="bg-slate-950 text-xs uppercase font-bold text-slate-500">
+                            <tr><th class="p-3">Target</th><th class="p-3">Ikon</th><th class="p-3">Judul</th><th class="p-3">Link</th><th class="p-3 text-center">Status</th><th class="p-3 text-right">Aksi</th></tr>
+                        </thead>
+                        <tbody id="tbody-menu-list" class="divide-y divide-slate-800"></tbody>
+                    </table></div>
                 </div>
             </div>
         </div>
@@ -220,6 +225,16 @@
         <div id="view-settings" class="hidden space-y-6 fade-in">
             <h2 class="text-3xl font-bold text-white flex items-center gap-3"><i data-lucide="settings" class="w-8 h-8 text-blue-500"></i> Pengaturan & Fitur</h2>
             
+            <div class="bg-gradient-to-r from-slate-900 to-slate-800 rounded-[2rem] border border-slate-700 p-8 shadow-2xl mb-6 flex flex-col md:flex-row items-center justify-between gap-6">
+                <div>
+                    <h3 class="font-bold text-white text-2xl mb-2 flex items-center gap-2"><i data-lucide="sliders-horizontal" class="text-blue-400"></i> Control Room Center</h3>
+                    <p class="text-slate-400 text-sm max-w-lg">Pusat kendali saklar akses (Jam Operasional), Pengaturan GPS Radius, Titik Koordinat Sekolah, dan Fitur teknis lainnya. Klik tombol ini untuk membuka panel kendali.</p>
+                </div>
+                <button onclick="window.open('admin_control.html', '_blank', 'width=1100,height=800')" class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-xl font-black text-lg shadow-lg shadow-blue-500/30 transition transform hover:scale-105 flex items-center gap-3 whitespace-nowrap border-2 border-blue-400">
+                    BUKA PANEL KENDALI <i data-lucide="external-link" class="w-6 h-6"></i>
+                </button>
+            </div>
+
             <div class="bg-slate-900 rounded-[2rem] border border-slate-800 p-8 shadow-2xl mb-6 relative overflow-hidden">
                 <h3 class="font-bold text-white text-lg mb-6 flex items-center gap-2"><i data-lucide="shield-check" class="text-blue-500"></i> Manajemen Admin & Pejabat</h3>
                 
@@ -235,7 +250,7 @@
                             <option value="admin">Admin Umum / TU (IT)</option>
                             <option value="bk">Koordinator BK (Kesiswaan)</option>
                             <option value="kurikulum">Waka Kurikulum</option>
-                            </select>
+                        </select>
                     </div>
 
                     <button onclick="angkatJadiAdmin()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg shadow-lg w-full md:w-auto">
@@ -247,42 +262,6 @@
                 <div id="list-admin-aktif" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     <div class="text-slate-500 italic text-sm">Memuat data pejabat...</div>
                 </div>
-            </div>
-
-            <div class="bg-slate-900 rounded-[2rem] border border-slate-800 p-8 shadow-2xl relative overflow-hidden">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
-                    <div>
-                        <div class="flex items-center justify-between mb-6">
-                            <div><h3 class="font-bold text-white text-lg">Mode Disiplin GPS</h3><p class="text-xs text-slate-400 mt-1">Jika ON, siswa wajib dalam radius sekolah.</p></div>
-                            <div class="relative inline-block w-14 align-middle select-none"><input type="checkbox" id="toggleGPS" class="toggle-checkbox absolute block w-8 h-8 rounded-full bg-white border-4 appearance-none cursor-pointer border-slate-600 transition-all duration-300" onchange="updateLabelStatus()"/><label for="toggleGPS" class="toggle-label block overflow-hidden h-8 rounded-full bg-slate-700 cursor-pointer"></label></div>
-                        </div>
-                        <div id="statusGPSBadge" class="inline-block px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest bg-slate-800 text-slate-500">Menunggu Data...</div>
-                        
-                        <div class="mt-6 space-y-4">
-                            <div class="flex items-center justify-between p-3 bg-slate-950/50 rounded-xl border border-slate-700">
-                                <div><h4 class="font-bold text-white text-sm">Refleksi KBM (Ortu)</h4></div>
-                                <div class="relative inline-block w-10 align-middle select-none"><input type="checkbox" id="toggleKBM_Ortu" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-2 appearance-none cursor-pointer border-slate-600 transition-all duration-300"/><label for="toggleKBM_Ortu" class="toggle-label block overflow-hidden h-5 rounded-full bg-slate-700 cursor-pointer"></label></div>
-                            </div>
-                            <div class="flex items-center justify-between p-3 bg-slate-950/50 rounded-xl border border-slate-700">
-                                <div><h4 class="font-bold text-white text-sm">Evaluasi Siswa (Guru)</h4></div>
-                                <div class="relative inline-block w-10 align-middle select-none"><input type="checkbox" id="toggleRefleksi_Guru" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-2 appearance-none cursor-pointer border-slate-600 transition-all duration-300"/><label for="toggleRefleksi_Guru" class="toggle-label block overflow-hidden h-5 rounded-full bg-slate-700 cursor-pointer"></label></div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-slate-950/50 p-6 rounded-2xl border border-slate-800">
-                        <h4 class="font-bold text-white text-sm mb-4 flex items-center gap-2"><i data-lucide="map-pin" class="w-4 h-4 text-orange-500"></i> Titik Koordinat Sekolah</h4>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div><label class="block text-[10px] text-slate-500 uppercase font-bold mb-1">Latitude</label><input type="text" id="inputLat" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white text-xs font-mono" placeholder="-7.xxxxx"></div>
-                            <div><label class="block text-[10px] text-slate-500 uppercase font-bold mb-1">Longitude</label><input type="text" id="inputLng" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white text-xs font-mono" placeholder="110.xxxxx"></div>
-                        </div>
-                        <div class="mt-4">
-                            <div class="flex justify-between items-end mb-2"><label class="font-bold text-white text-xs">Jarak Toleransi</label><span id="labelRadius" class="text-xl font-black text-blue-500">50m</span></div>
-                            <input type="range" id="inputRadius" min="10" max="1000" step="10" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-600" oninput="updateLabelRadius()">
-                        </div>
-                    </div>
-                </div>
-                <button onclick="simpanConfig()" id="btnSaveConfig" class="mt-8 w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-500/20 active:scale-95 transition flex items-center justify-center gap-2"><i data-lucide="save" class="w-5 h-5"></i> SIMPAN SEMUA PENGATURAN</button>
             </div>
         </div>
 
@@ -356,7 +335,6 @@
             pantauRealtime();
             loadMenuManager(); 
             loadMapel(); 
-            loadSettings();
             loadDaftarAdmin(); 
             document.getElementById('loading').style.display = 'none';
         });
@@ -397,16 +375,13 @@
             }
             try {
                 if(forceRefresh) document.getElementById('loading').style.display = 'flex';
-                
                 const q = query(collection(db, "users")); 
                 const snap = await getDocs(q);
                 listUsers = []; 
                 snap.forEach(doc => { const s = doc.data(); listUsers.push(s); });
-                
                 localStorage.setItem(cacheKey, JSON.stringify(listUsers)); 
                 updateDashboardStats();
                 populateKelasDropdown();
-                
                 if(forceRefresh) { document.getElementById('loading').style.display = 'none'; Swal.fire('Sip','Data user diperbarui','success'); }
             } catch (e) { 
                 console.log(e); 
@@ -417,7 +392,6 @@
         function updateDashboardStats() {
             const siswaOnly = listUsers.filter(u => u.role === 'siswa');
             const guruOnly = listUsers.filter(u => u.role === 'guru' || u.role === 'admin');
-            
             document.getElementById('stat-total').innerText = siswaOnly.length; 
             document.getElementById('stat-guru').innerText = guruOnly.length;
         }
@@ -432,62 +406,36 @@
         window.cariUser = () => {
             const input = document.getElementById('cariUserBox');
             if(!input) return;
-            
             const key = input.value.toLowerCase();
             const tbody = document.getElementById('tabel-hasil-cari');
             tbody.innerHTML = '';
-
             if (!listUsers || listUsers.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-yellow-500">Data kosong. Klik "Sync Database User" dulu!</td></tr>';
-                return;
+                tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-yellow-500">Data kosong. Klik "Sync Database User" dulu!</td></tr>'; return;
             }
-
             if (key.length < 3) {
-                tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center italic text-xs">Ketik minimal 3 huruf...</td></tr>';
-                return;
+                tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center italic text-xs">Ketik minimal 3 huruf...</td></tr>'; return;
             }
-
             const hasil = listUsers.filter(s => {
                 const namaAman = s.nama ? String(s.nama).toLowerCase() : "";
                 const userAman = s.username ? String(s.username).toLowerCase() : "";
                 return namaAman.includes(key) || userAman.includes(key);
             });
-            
-            if(hasil.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-red-400">Tidak ditemukan.</td></tr>';
-                return;
-            }
-
+            if(hasil.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-red-400">Tidak ditemukan.</td></tr>'; return; }
             hasil.slice(0, 10).forEach(s => {
                 let badgeColor = s.role === 'guru' ? 'bg-orange-500 text-white' : (s.role === 'admin' ? 'bg-purple-500 text-white' : 'bg-slate-700 text-slate-300');
                 let infoKelas = s.role === 'siswa' ? s.kelas : 'Pengajar';
-
-                tbody.innerHTML += `
-                    <tr class="border-b border-slate-800 hover:bg-slate-800">
-                        <td class="p-3 text-white font-bold">${s.nama || "Tanpa Nama"}</td>
-                        <td class="p-3"><span class="px-2 py-1 rounded text-[10px] font-bold uppercase ${badgeColor}">${s.role}</span></td>
-                        <td class="p-3 font-mono text-xs text-blue-400">${s.username}</td>
-                        <td class="p-3 text-xs text-slate-400">${infoKelas}</td>
-                        <td class="p-3 text-right flex justify-end gap-2">
-                            <button onclick="editUser('${s.username}')" class="bg-yellow-500 hover:bg-yellow-400 text-black px-3 py-1 rounded text-xs font-bold transition">Edit</button>
-                            <button onclick="hapusUser('${s.username}', '${s.nama}')" class="bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded text-xs font-bold transition">Hapus</button>
-                        </td>
-                    </tr>
-                `;
+                tbody.innerHTML += `<tr class="border-b border-slate-800 hover:bg-slate-800"><td class="p-3 text-white font-bold">${s.nama || "Tanpa Nama"}</td><td class="p-3"><span class="px-2 py-1 rounded text-[10px] font-bold uppercase ${badgeColor}">${s.role}</span></td><td class="p-3 font-mono text-xs text-blue-400">${s.username}</td><td class="p-3 text-xs text-slate-400">${infoKelas}</td><td class="p-3 text-right flex justify-end gap-2"><button onclick="editUser('${s.username}')" class="bg-yellow-500 hover:bg-yellow-400 text-black px-3 py-1 rounded text-xs font-bold transition">Edit</button><button onclick="hapusUser('${s.username}', '${s.nama}')" class="bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded text-xs font-bold transition">Hapus</button></td></tr>`;
             });
         }
 
         window.editUser = (username) => {
             const user = listUsers.find(u => u.username === username);
             if(!user) return;
-
             document.getElementById('editUsername').value = user.username;
             document.getElementById('editNama').value = user.nama;
             document.getElementById('editPassword').value = user.password;
-            
             const divKelas = document.getElementById('divEditKelas');
             const selectKelas = document.getElementById('editKelas');
-            
             if(user.role === 'siswa') {
                 divKelas.classList.remove('hidden');
                 selectKelas.innerHTML = document.getElementById('manualKelas').innerHTML;
@@ -495,7 +443,6 @@
             } else {
                 divKelas.classList.add('hidden');
             }
-
             const modal = document.getElementById('modalEdit');
             modal.classList.remove('opacity-0', 'pointer-events-none');
             document.body.classList.add('modal-active');
@@ -512,16 +459,9 @@
             const n = document.getElementById('editNama').value;
             const p = document.getElementById('editPassword').value;
             const k = document.getElementById('editKelas').value;
-            
             if(!n || !p) return Swal.fire('Gagal','Nama dan Password tidak boleh kosong','warning');
-
             try {
-                await updateDoc(doc(db, "users", u), {
-                    nama: n,
-                    password: p,
-                    kelas: k
-                });
-
+                await updateDoc(doc(db, "users", u), { nama: n, password: p, kelas: k });
                 const index = listUsers.findIndex(x => x.username === u);
                 if (index !== -1) {
                     listUsers[index].nama = n;
@@ -529,77 +469,43 @@
                     listUsers[index].kelas = k;
                     localStorage.setItem('master_user_full_v1', JSON.stringify(listUsers));
                 }
-
-                tutupModal();
-                cariUser(); 
-                updateDashboardStats(); 
+                tutupModal(); cariUser(); updateDashboardStats(); 
                 Swal.fire('Berhasil','Data user diupdate!','success');
-
-            } catch(e) {
-                Swal.fire('Error', e.message, 'error');
-            }
+            } catch(e) { Swal.fire('Error', e.message, 'error'); }
         }
 
         window.hapusUser = async (username, nama) => {
-            const { value: confirm } = await Swal.fire({
-                title: 'Hapus Permanen?',
-                text: `User ${nama} akan dihapus. Data tidak bisa kembali!`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
-                confirmButtonText: 'Ya, Hapus!'
-            });
-
+            const { value: confirm } = await Swal.fire({ title: 'Hapus Permanen?', text: `User ${nama} akan dihapus.`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#3085d6', confirmButtonText: 'Ya, Hapus!' });
             if (confirm) {
                 try {
                     await deleteDoc(doc(db, "users", username));
                     listUsers = listUsers.filter(s => s.username !== username);
                     localStorage.setItem('master_user_full_v1', JSON.stringify(listUsers));
-                    
                     updateDashboardStats();
-                    
                     document.getElementById('cariUserBox').value = '';
                     document.getElementById('tabel-hasil-cari').innerHTML = '<tr><td colspan="5" class="p-4 text-center text-green-400">User berhasil dihapus!</td></tr>';
                     Swal.fire('Terhapus!', 'Data user telah dihapus.', 'success');
-                } catch (e) {
-                    Swal.fire('Gagal', e.message, 'error');
-                }
+                } catch (e) { Swal.fire('Gagal', e.message, 'error'); }
             }
         }
 
         window.simpanManual = async (role) => {
             let nama, user, pass, kelas;
             if(role === 'siswa') {
-                nama = document.getElementById('manualNamaSiswa').value;
-                user = document.getElementById('manualNISN').value;
-                kelas = document.getElementById('manualKelas').value; 
-                pass = user; 
+                nama = document.getElementById('manualNamaSiswa').value; user = document.getElementById('manualNISN').value; kelas = document.getElementById('manualKelas').value; pass = user; 
                 if(!nama || !user || !kelas) return Swal.fire('Lengkapi', 'Nama, NISN, dan Kelas wajib diisi', 'warning');
             } else {
-                nama = document.getElementById('manualNamaGuru').value;
-                user = document.getElementById('manualNIP').value;
-                pass = "123456"; 
-                kelas = "-";
+                nama = document.getElementById('manualNamaGuru').value; user = document.getElementById('manualNIP').value; pass = "123456"; kelas = "-";
                 if(!nama || !user) return Swal.fire('Lengkapi', 'Nama dan NIP wajib diisi', 'warning');
             }
             try {
-                const docRef = doc(db, "users", user);
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) return Swal.fire('Gagal', `Username ${user} sudah ada!`, 'error');
-                
+                const docRef = doc(db, "users", user); const docSnap = await getDoc(docRef); if (docSnap.exists()) return Swal.fire('Gagal', `Username ${user} sudah ada!`, 'error');
                 const dataBaru = { nama, username: user, password: pass, role, kelas, wali_kelas: "-" };
                 await setDoc(doc(db, "users", user), dataBaru);
-                
                 Swal.fire('Berhasil', `Data ${role} tersimpan!`, 'success');
-                
                 if(role === 'siswa') { document.getElementById('manualNamaSiswa').value=''; document.getElementById('manualNISN').value=''; document.getElementById('manualKelas').value=''; }
                 else { document.getElementById('manualNamaGuru').value=''; document.getElementById('manualNIP').value=''; }
-                
-                listUsers.push(dataBaru);
-                localStorage.setItem('master_user_full_v1', JSON.stringify(listUsers));
-                updateDashboardStats();
-
+                listUsers.push(dataBaru); localStorage.setItem('master_user_full_v1', JSON.stringify(listUsers)); updateDashboardStats();
             } catch(e) { Swal.fire('Error', e.message, 'error'); }
         }
 
@@ -630,31 +536,15 @@
                 let hadir = 0; let logData = [];
                 snap.forEach(doc => { 
                     const d = doc.data(); 
-                    // Filter hanya siswa yang ada di listSiswa (Anti Guru)
                     let isSiswa = true; 
-                    if(listUsers.length > 0) {
-                        const u = listUsers.find(x => x.username === d.nisn);
-                        if(u && u.role !== 'siswa') isSiswa = false;
-                    }
-
-                    if (isSiswa && (d.status_terakhir.includes("Masuk") || d.status_terakhir.includes("Hadir"))) {
-                        hadir++;
-                    }
-                    
+                    if(listUsers.length > 0) { const u = listUsers.find(x => x.username === d.nisn); if(u && u.role !== 'siswa') isSiswa = false; }
+                    if (isSiswa && (d.status_terakhir.includes("Masuk") || d.status_terakhir.includes("Hadir"))) { hadir++; }
                     logData.push({ ...d, role: isSiswa ? 'Siswa' : 'Guru/Staff' }); 
                 });
-                
                 document.getElementById('stat-hadir').innerText = hadir;
-                
                 logData.sort((a,b) => (b.jam_masuk ? b.jam_masuk.seconds : 0) - (a.jam_masuk ? a.jam_masuk.seconds : 0));
                 const tabel = document.getElementById('tabel-live'); tabel.innerHTML = "";
                 logData.slice(0, 10).forEach(data => {
-                      let dev = "Unknown";
-                      if(data.device_info) {
-                          if(data.device_info.includes("Android")) dev = "📱 Android";
-                          else if(data.device_info.includes("iPhone")) dev = "📱 iPhone";
-                          else if(data.device_info.includes("Windows")) dev = "💻 PC";
-                      }
                       let colorRole = data.role === 'Siswa' ? 'text-slate-400' : 'text-orange-400 font-bold';
                       tabel.innerHTML += `<tr class="border-b border-slate-800 hover:bg-slate-800/50"><td class="p-4 text-emerald-400 font-mono text-xs">${data.riwayat_kegiatan ? data.riwayat_kegiatan[data.riwayat_kegiatan.length-1].split(' - ')[0] : '-'}</td><td class="p-4 text-white font-bold">${data.nama}</td><td class="p-4 text-xs ${colorRole}">${data.role}</td><td class="p-4 text-xs font-bold text-slate-500 bg-slate-900 rounded">${data.status_terakhir}</td></tr>`;
                 });
@@ -665,75 +555,93 @@
         window.tambahMapel = async () => { const nama = document.getElementById('inputNamaMapel').value.trim(); if(nama) { await addDoc(collection(db, "mata_pelajaran"), {nama}); document.getElementById('inputNamaMapel').value = ''; Swal.fire('Sukses','','success'); } }
         window.hapusMapel = async (id) => { if(confirm("Hapus?")) await deleteDoc(doc(db,"mata_pelajaran",id)); }
         
-        function loadMenuManager() { onSnapshot(query(collection(db, "menu_dinamis"), orderBy("created_at", "asc")), (snap) => { const tb = document.getElementById('tbody-menu-list'); tb.innerHTML = ''; snap.forEach(d => { const data = d.data(); tb.innerHTML += `<tr class="hover:bg-slate-800"><td class="p-3 uppercase text-blue-400 font-bold">${data.target}</td><td class="p-3">${data.icon}</td><td class="p-3 text-white">${data.judul}</td><td class="p-3 text-xs font-mono text-blue-400">${data.link}</td><td class="p-3 text-right"><button onclick="hapusMenu('${d.id}')" class="text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td></tr>`; }); lucide.createIcons(); }); }
-        window.simpanMenuBaru = async () => { const t = document.getElementById('menuTarget').value; const j = document.getElementById('menuJudul').value; const i = document.getElementById('menuIcon').value; const l = document.getElementById('menuLink').value; if(j&&l) { await addDoc(collection(db, "menu_dinamis"), {target:t, judul:j, icon:i, link:l, highlight:document.getElementById('menuWarna').checked, created_at: new Date().toISOString()}); Swal.fire('Sukses','','success'); } }
-        window.hapusMenu = async(id) => { if(confirm("Hapus?")) await deleteDoc(doc(db,"menu_dinamis",id)); }
-
-        async function loadSettings() { onSnapshot(doc(db, "pengaturan", "sekolah"), (docSnap) => { if (docSnap.exists()) { const d = docSnap.data(); document.getElementById('toggleGPS').checked = d.validasi_gps_aktif; document.getElementById('inputLat').value = d.lokasi_lat || "-7.6739830"; document.getElementById('inputLng').value = d.lokasi_lng || "109.6319560"; document.getElementById('inputRadius').value = d.radius_meter || 50; updateLabelRadius(); updateLabelStatus(); } }); onSnapshot(doc(db, "pengaturan", "fitur"), (docSnap) => { if (docSnap.exists()) { const d = docSnap.data(); document.getElementById('toggleKBM_Ortu').checked = d.kbm_ortu_aktif; document.getElementById('toggleRefleksi_Guru').checked = d.refleksi_guru_aktif; } }); }
-        window.simpanConfig = async () => { const btn = document.getElementById('btnSaveConfig'); btn.innerHTML = `<i class="animate-spin" data-lucide="loader-2"></i> Menyimpan...`; try { await setDoc(doc(db, "pengaturan", "sekolah"), { lokasi_lat: parseFloat(document.getElementById('inputLat').value), lokasi_lng: parseFloat(document.getElementById('inputLng').value), radius_meter: parseInt(document.getElementById('inputRadius').value), validasi_gps_aktif: document.getElementById('toggleGPS').checked }, { merge: true }); await setDoc(doc(db, "pengaturan", "fitur"), { kbm_ortu_aktif: document.getElementById('toggleKBM_Ortu').checked, refleksi_guru_aktif: document.getElementById('toggleRefleksi_Guru').checked }, { merge: true }); Swal.fire('Berhasil!', '', 'success'); } catch(e) { Swal.fire('Error', e.message, 'error'); } finally { btn.innerHTML = `<i data-lucide="save"></i> SIMPAN SEMUA PENGATURAN`; lucide.createIcons(); } }
-        window.updateLabelRadius = () => document.getElementById('labelRadius').innerText = document.getElementById('inputRadius').value + "m";
-        window.updateLabelStatus = () => { const o = document.getElementById('toggleGPS').checked; const b = document.getElementById('statusGPSBadge'); b.innerText = o ? "MODE DISIPLIN: AKTIF" : "MODE DARURAT (BEBAS)"; b.className = o ? "inline-block px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest bg-emerald-900 text-emerald-400" : "inline-block px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest bg-red-900 text-red-400"; }
-
-        // --- UPDATE: MENAMPILKAN ADMIN DARI BERBAGAI ROLE ---
-        function loadDaftarAdmin() { 
-            // Kita ambil user yang rolenya BUKAN 'siswa' dan BUKAN 'guru'
-            // Karena Firestore 'not-in' terbatas, kita pakai 'in' aja biar pasti
-            const q = query(collection(db, "users"), where("role", "in", ["admin", "super", "bk", "kurikulum"]));
-            
-            onSnapshot(q, (snap) => { 
-                const container = document.getElementById('list-admin-aktif'); 
-                container.innerHTML = ''; 
-                
-                if (snap.empty) {
-                    container.innerHTML = '<div class="text-slate-500 italic text-sm">Belum ada pejabat yang dilantik.</div>';
-                    return;
-                }
-
-                snap.forEach(doc => { 
-                    const d = doc.data(); 
+        function loadMenuManager() { 
+            onSnapshot(query(collection(db, "menu_dinamis"), orderBy("created_at", "asc")), (snap) => { 
+                const tb = document.getElementById('tbody-menu-list'); 
+                tb.innerHTML = ''; 
+                snap.forEach(d => { 
+                    const data = d.data();
+                    const isAktif = data.aktif !== false; // Default true (jika field belum ada)
                     
-                    // Bikin Badge Keren
-                    let roleBadge = "";
-                    if(d.role === 'admin' || d.role === 'super') roleBadge = `<span class="text-[9px] bg-blue-600 text-white px-2 py-0.5 rounded font-bold">ADMIN IT</span>`;
-                    else if(d.role === 'bk') roleBadge = `<span class="text-[9px] bg-emerald-600 text-white px-2 py-0.5 rounded font-bold">KOOR. BK</span>`;
-                    else if(d.role === 'kurikulum') roleBadge = `<span class="text-[9px] bg-yellow-600 text-white px-2 py-0.5 rounded font-bold">WAKA KURIKULUM</span>`;
-                    else roleBadge = `<span class="text-[9px] bg-slate-600 text-white px-2 py-0.5 rounded font-bold">${d.role.toUpperCase()}</span>`;
+                    // Tombol Toggle Warna-Warni
+                    const btnToggle = isAktif 
+                        ? `<button onclick="toggleMenuStatus('${d.id}', false)" class="bg-emerald-500 text-white px-2 py-1 rounded text-[10px] font-bold shadow hover:bg-emerald-600 transition">ON</button>` 
+                        : `<button onclick="toggleMenuStatus('${d.id}', true)" class="bg-slate-600 text-slate-400 px-2 py-1 rounded text-[10px] font-bold shadow hover:bg-slate-500 transition">OFF</button>`;
 
-                    container.innerHTML += `
-                        <div class="flex justify-between items-center bg-slate-950 p-3 rounded-lg border border-slate-800">
-                            <div>
-                                <p class="text-white font-bold text-sm">${d.nama}</p>
-                                <div class="flex items-center gap-2 mt-1">
-                                    <p class="text-xs text-slate-500 font-mono">${d.username}</p>
-                                    ${roleBadge}
-                                </div>
-                            </div>
-                            <button onclick="copotAdmin('${doc.id}', '${d.nama}')" class="text-red-500 hover:bg-red-500/10 p-2 rounded" title="Turunkan Jabatan">
-                                <i data-lucide="shield-off" class="w-4 h-4"></i>
-                            </button>
-                        </div>
-                    `; 
+                    tb.innerHTML += `
+                        <tr class="hover:bg-slate-800">
+                            <td class="p-3 uppercase text-blue-400 font-bold">${data.target}</td>
+                            <td class="p-3">${data.icon}</td>
+                            <td class="p-3 text-white">${data.judul}</td>
+                            <td class="p-3 text-xs font-mono text-blue-400 truncate max-w-[150px]">${data.link}</td>
+                            <td class="p-3 text-center">${btnToggle}</td>
+                            <td class="p-3 text-right">
+                                <button onclick="hapusMenu('${d.id}')" class="text-red-500 hover:text-red-400 p-1 rounded hover:bg-red-500/10">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </td>
+                        </tr>`; 
                 }); 
                 lucide.createIcons(); 
             }); 
         }
 
-        // --- UPDATE: LOGIKA PELANTIKAN DENGAN PILIHAN ROLE ---
+        window.simpanMenuBaru = async () => { 
+            const t = document.getElementById('menuTarget').value; 
+            const j = document.getElementById('menuJudul').value; 
+            const i = document.getElementById('menuIcon').value; 
+            const l = document.getElementById('menuLink').value; 
+            if(j&&l) { 
+                await addDoc(collection(db, "menu_dinamis"), {
+                    target:t, judul:j, icon:i, link:l, 
+                    highlight:document.getElementById('menuWarna').checked, 
+                    aktif: true, // Default ON saat dibuat
+                    created_at: new Date().toISOString()
+                }); 
+                Swal.fire('Sukses','','success'); 
+            } 
+        }
+
+        window.hapusMenu = async(id) => { if(confirm("Hapus?")) await deleteDoc(doc(db,"menu_dinamis",id)); }
+
+        // --- FUNGSI TOGGLE BARU ---
+        window.toggleMenuStatus = async (id, newStatus) => {
+            try {
+                await updateDoc(doc(db, "menu_dinamis", id), { aktif: newStatus });
+                // Tidak perlu reload, onSnapshot akan otomatis update UI
+            } catch (e) {
+                console.error(e);
+                Swal.fire('Error', 'Gagal update status', 'error');
+            }
+        }
+
+        // --- MANAJEMEN ADMIN BARU ---
+        function loadDaftarAdmin() { 
+            const q = query(collection(db, "users"), where("role", "in", ["admin", "super", "bk", "kurikulum"]));
+            onSnapshot(q, (snap) => { 
+                const container = document.getElementById('list-admin-aktif'); 
+                container.innerHTML = ''; 
+                if (snap.empty) { container.innerHTML = '<div class="text-slate-500 italic text-sm">Belum ada pejabat yang dilantik.</div>'; return; }
+                snap.forEach(doc => { 
+                    const d = doc.data(); 
+                    let roleBadge = "";
+                    if(d.role === 'admin' || d.role === 'super') roleBadge = `<span class="text-[9px] bg-blue-600 text-white px-2 py-0.5 rounded font-bold">ADMIN IT</span>`;
+                    else if(d.role === 'bk') roleBadge = `<span class="text-[9px] bg-emerald-600 text-white px-2 py-0.5 rounded font-bold">KOOR. BK</span>`;
+                    else if(d.role === 'kurikulum') roleBadge = `<span class="text-[9px] bg-yellow-600 text-white px-2 py-0.5 rounded font-bold">WAKA KURIKULUM</span>`;
+                    container.innerHTML += `<div class="flex justify-between items-center bg-slate-950 p-3 rounded-lg border border-slate-800"><div><p class="text-white font-bold text-sm">${d.nama}</p><div class="flex items-center gap-2 mt-1"><p class="text-xs text-slate-500 font-mono">${d.username}</p>${roleBadge}</div></div><button onclick="copotAdmin('${doc.id}', '${d.nama}')" class="text-red-500 hover:bg-red-500/10 p-2 rounded" title="Turunkan Jabatan"><i data-lucide="shield-off" class="w-4 h-4"></i></button></div>`; 
+                }); 
+                lucide.createIcons(); 
+            }); 
+        }
+
         window.angkatJadiAdmin = async () => { 
             const u = document.getElementById('inputCalonAdmin').value; 
-            const r = document.getElementById('inputRoleAdmin').value; // Ambil nilai dropdown
-            
+            const r = document.getElementById('inputRoleAdmin').value;
             if(!u) return Swal.fire('Eits', 'Isi NIP dulu dong', 'warning');
-            
             const q = query(collection(db, "users"), where("username", "==", u)); 
             const snap = await getDocs(q); 
-            
             if(snap.empty) return Swal.fire('Gagal', 'User tidak ditemukan di database', 'error'); 
-            
-            snap.forEach(async (d) => { 
-                await updateDoc(doc(db, "users", d.id), { role: r }); 
-            }); 
-            
+            snap.forEach(async (d) => { await updateDoc(doc(db, "users", d.id), { role: r }); }); 
             Swal.fire('Sukses', `User berhasil dilantik menjadi ${r.toUpperCase()}`, 'success'); 
             document.getElementById('inputCalonAdmin').value=''; 
         }

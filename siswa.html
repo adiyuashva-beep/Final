@@ -227,7 +227,27 @@
 
         const firebaseConfig = { apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo", authDomain: "siganteng-absensi.firebaseapp.com", databaseURL: "https://siganteng-absensi-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "siganteng-absensi", storageBucket: "siganteng-absensi.firebasestorage.app", messagingSenderId: "917873420012", appId: "1:917873420012:web:0fe1a9eddc5f94959ba7c9" };
         const app = initializeApp(firebaseConfig); const db = getFirestore(app); const storage = getStorage(app);
-
+// --- 🛡️ SATPAM AKSES (CODE BLOCK START) ---
+        // Pasang ini tepat di bawah 'const db = getFirestore(app);'
+        
+        onSnapshot(doc(db, "pengaturan", "akses_global"), (snap) => {
+            if (snap.exists()) {
+                const akses = snap.data();
+                // Cek apakah pintu 'siswa' ditutup?
+                if (akses.siswa === false) {
+                    // JIKA DITUTUP: Hapus seluruh tampilan & ganti pesan maintenance
+                    document.body.innerHTML = `
+                        <div style="height:100vh; background:#0f172a; color:white; display:flex; flex-direction:column; justify-content:center; align-items:center; font-family:'Outfit',sans-serif; text-align:center;">
+                            <div style="font-size:4rem; margin-bottom:1rem;">⛔</div>
+                            <h1 style="font-weight:900; font-size:2rem;">AKSES DITUTUP</h1>
+                            <p style="color:#94a3b8; margin-bottom:2rem;">Sistem sedang istirahat atau maintenance.<br>Silakan kembali nanti.</p>
+                            <button onclick="window.location.href='index.html'" style="background:#3b82f6; color:white; border:none; padding:12px 30px; border-radius:12px; font-weight:bold; cursor:pointer;">KEMBALI LOGIN</button>
+                        </div>
+                    `;
+                }
+            }
+        });
+        // --- 🛡️ SATPAM AKSES (CODE BLOCK END) ---
         let SEKOLAH_LAT = -7.6739830; let SEKOLAH_LNG = 109.6319560;
         let userSiswa = null; let lokasiUser = null; let map = null; let markerSiswa = null;
         let streamKamera = null; let tipeAbsenAktif = ""; let tempFotoBukti = null;

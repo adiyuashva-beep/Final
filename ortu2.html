@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pantauan Orang Tua - SiGanteng</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="logo.png">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        body { font-family: 'Outfit', sans-serif; background-color: #f8fafc; }
+        .fade-in { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .bg-gradient-ortu { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen pb-20">
+
+    <div class="bg-gradient-ortu p-6 pb-12 rounded-b-[3rem] shadow-xl text-white relative overflow-hidden">
+        <div class="absolute top-0 right-0 p-4 opacity-10"><i data-lucide="heart-handshake" class="w-32 h-32"></i></div>
+        <div class="relative z-10">
+            <p class="text-[10px] uppercase font-bold opacity-70 tracking-[0.2em] mb-1">SiGanteng Mobile</p>
+            <h1 class="text-2xl font-black">Portal <span class="text-blue-400">Wali Murid</span></h1>
+            <p class="text-xs text-slate-400 mt-2 max-w-[250px]">Pantau kehadiran & aktivitas belajar putra-putri Anda secara realtime.</p>
+        </div>
+    </div>
+
+    <main class="px-6 -mt-8 relative z-20 space-y-6">
+
+        <div class="bg-white p-6 rounded-[2rem] shadow-xl border border-slate-100 fade-in">
+            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2 ml-1">Masukkan NISN Putra/Putri Anda</label>
+            <div class="flex gap-2">
+                <input type="tel" id="inputNISN" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-lg font-bold text-slate-700 outline-none focus:border-blue-500 transition text-center tracking-widest placeholder:tracking-normal" placeholder="Nomor NISN">
+                <button onclick="cekDataAnak()" class="bg-blue-600 text-white p-3 rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-500/30">
+                    <i data-lucide="search" class="w-6 h-6"></i>
+                </button>
+            </div>
+        </div>
+
+        <div id="panel-data-anak" class="hidden space-y-6 fade-in">
+            
+            <div class="bg-white p-6 rounded-[2rem] shadow-lg border border-slate-100 text-center relative overflow-hidden">
+                <h2 id="nama-siswa" class="text-xl font-black text-slate-800 leading-tight mb-1">...</h2>
+                <p id="kelas-siswa" class="text-xs font-bold text-slate-400 bg-slate-100 inline-block px-3 py-1 rounded-full mb-4">...</p>
+                
+                <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Status Hari Ini</p>
+                    <h3 id="status-harian" class="text-2xl font-black text-slate-700">Belum Hadir</h3>
+                    <div class="flex justify-center gap-4 mt-3 text-xs font-mono font-bold">
+                        <span class="text-emerald-600 bg-emerald-50 px-2 py-1 rounded">IN: <span id="jam-masuk">--:--</span></span>
+                        <span class="text-rose-600 bg-rose-50 px-2 py-1 rounded">OUT: <span id="jam-pulang">--:--</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="font-bold text-slate-700 text-sm mb-3 ml-2 flex items-center gap-2">
+                    <i data-lucide="book-open" class="w-4 h-4 text-orange-500"></i> Materi Belajar Hari Ini
+                </h3>
+                <div id="list-jurnal" class="space-y-3">
+                    <div class="text-center py-6 text-slate-400 text-xs italic">Menunggu data...</div>
+                </div>
+            </div>
+
+            <div id="box-refleksi" class="hidden bg-indigo-50 p-6 rounded-[2rem] border border-indigo-100">
+                <h3 class="font-bold text-indigo-900 text-sm mb-2 flex items-center gap-2">
+                    <i data-lucide="message-circle" class="w-4 h-4"></i> Suara Wali Murid
+                </h3>
+                <p class="text-[10px] text-indigo-600/70 mb-4">Berikan masukan/kendala terkait KBM hari ini.</p>
+                <textarea id="input-saran" class="w-full bg-white border border-indigo-100 rounded-xl p-3 text-xs font-bold text-slate-700 outline-none focus:border-indigo-500 mb-3" rows="3" placeholder="Tulis pesan untuk sekolah..."></textarea>
+                <button onclick="kirimSaranOrtu()" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold text-xs shadow-lg shadow-indigo-500/20 active:scale-95 transition">KIRIM MASUKAN</button>
+            </div>
+
+        </div>
+
+    </main>
+
+    <div id="loading" class="hidden fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center">
+        <div class="animate-spin rounded-full h-10 w-10 border-4 border-white border-t-transparent"></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, onSnapshot, collection, query, where, getDocs, orderBy, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        const firebaseConfig = { apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo", authDomain: "siganteng-absensi.firebaseapp.com", databaseURL: "https://siganteng-absensi-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "siganteng-absensi", storageBucket: "siganteng-absensi.firebasestorage.app", messagingSenderId: "917873420012", appId: "1:917873420012:web:0fe1a9eddc5f94959ba7c9" };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let dataAnak = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            pantauSaklar(); // Aktifkan Satpam
+        });
+
+        // --- 1. SATPAM AKSES & FITUR (PENTING!) ---
+        function pantauSaklar() {
+            // A. Cek Akses Halaman (Gerbang)
+            onSnapshot(doc(db, "pengaturan", "akses_global"), (snap) => {
+                if (snap.exists()) {
+                    const akses = snap.data();
+                    if (akses.ortu === false) { // Jika saklar 'Akses Ortu' OFF
+                        document.body.innerHTML = `
+                            <div style="height:100vh; background:#0f172a; color:white; display:flex; flex-direction:column; justify-content:center; align-items:center; font-family:sans-serif; text-align:center; padding:20px;">
+                                <div style="font-size:4rem; margin-bottom:1rem;">⛔</div>
+                                <h1 style="font-weight:900; font-size:1.5rem;">LAYANAN DITUTUP</h1>
+                                <p style="color:#94a3b8; margin-bottom:2rem; font-size:0.8rem;">Akses Wali Murid dinonaktifkan sementara.<br>Silakan coba lagi di jam kerja.</p>
+                                <button onclick="location.reload()" style="background:#3b82f6; color:white; border:none; padding:10px 25px; border-radius:10px; font-weight:bold;">Refresh</button>
+                            </div>
+                        `;
+                    }
+                }
+            });
+
+            // B. Cek Fitur Refleksi (Kotak Saran)
+            onSnapshot(doc(db, "pengaturan", "fitur"), (snap) => {
+                if (snap.exists()) {
+                    const fitur = snap.data();
+                    const box = document.getElementById('box-refleksi');
+                    if(box) {
+                        if (fitur.kbm_ortu === true) {
+                            box.classList.remove('hidden'); // Munculkan kalau ON
+                        } else {
+                            box.classList.add('hidden'); // Sembunyikan kalau OFF
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- 2. LOGIKA UTAMA ---
+        window.cekDataAnak = async () => {
+            const nisn = document.getElementById('inputNISN').value.trim();
+            if (!nisn) return Swal.fire('NISN Kosong', 'Mohon masukkan NISN siswa.', 'warning');
+
+            document.getElementById('loading').classList.remove('hidden');
+
+            try {
+                // Cari Siswa di Database
+                const docRef = doc(db, "users", nisn); // Asumsi ID User = NISN
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists() && docSnap.data().role === 'siswa') {
+                    dataAnak = docSnap.data();
+                    tampilkanDashboard(dataAnak);
+                } else {
+                    // Coba cari by query kalau ID bukan NISN (Opsional, jaga2)
+                    const q = query(collection(db, "users"), where("username", "==", nisn), where("role", "==", "siswa"));
+                    const querySnap = await getDocs(q);
+                    if (!querySnap.empty) {
+                        dataAnak = querySnap.docs[0].data();
+                        tampilkanDashboard(dataAnak);
+                    } else {
+                        Swal.fire('Tidak Ditemukan', 'Data siswa tidak terdaftar.', 'error');
+                        document.getElementById('panel-data-anak').classList.add('hidden');
+                    }
+                }
+            } catch (e) {
+                console.error(e);
+                Swal.fire('Error', 'Gagal mengambil data.', 'error');
+            } finally {
+                document.getElementById('loading').classList.add('hidden');
+            }
+        }
+
+        function tampilkanDashboard(siswa) {
+            document.getElementById('panel-data-anak').classList.remove('hidden');
+            document.getElementById('nama-siswa').innerText = siswa.nama;
+            document.getElementById('kelas-siswa').innerText = siswa.kelas || "KELAS -";
+            
+            pantauAbsenRealtime(siswa.username); // username = NISN
+            loadJurnalHariIni(siswa.kelas);
+        }
+
+        function pantauAbsenRealtime(nisn) {
+            const todayStr = new Date().toLocaleDateString('fr-CA'); // YYYY-MM-DD
+            const docID = `${todayStr}_${nisn}`;
+            
+            onSnapshot(doc(db, "absensi", docID), (docSnap) => {
+                const elStatus = document.getElementById('status-harian');
+                const elMasuk = document.getElementById('jam-masuk');
+                const elPulang = document.getElementById('jam-pulang');
+
+                if (docSnap.exists()) {
+                    const d = docSnap.data();
+                    elStatus.innerText = d.status_terakhir || "Hadir";
+                    
+                    if(d.jam_masuk) elMasuk.innerText = new Date(d.jam_masuk.seconds*1000).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+                    if(d.jam_pulang) elPulang.innerText = new Date(d.jam_pulang.seconds*1000).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+                    
+                    // Warna status
+                    if(d.status_terakhir.includes("Sakit") || d.status_terakhir.includes("Izin")) elStatus.className = "text-2xl font-black text-blue-500";
+                    else if(d.status_terakhir.includes("Alpha")) elStatus.className = "text-2xl font-black text-red-500";
+                    else elStatus.className = "text-2xl font-black text-emerald-500";
+
+                } else {
+                    elStatus.innerText = "Belum Hadir";
+                    elStatus.className = "text-2xl font-black text-slate-400";
+                    elMasuk.innerText = "--:--";
+                    elPulang.innerText = "--:--";
+                }
+            });
+        }
+
+        function loadJurnalHariIni(kelas) {
+            if(!kelas) return;
+            const container = document.getElementById('list-jurnal');
+            const todayStr = new Date().toLocaleDateString('fr-CA');
+            
+            const q = query(collection(db, "jurnal_guru"), where("kelas", "==", kelas), where("tanggal", "==", todayStr), orderBy("waktu", "asc"));
+            
+            onSnapshot(q, (snap) => {
+                container.innerHTML = '';
+                if(snap.empty) {
+                    container.innerHTML = '<div class="text-center py-6 text-slate-400 text-xs italic bg-white rounded-xl border border-slate-100">Belum ada pelajaran yang masuk hari ini.</div>';
+                    return;
+                }
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    const jam = d.waktu ? new Date(d.waktu.toDate()).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : '-';
+                    container.innerHTML += `
+                        <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex gap-3 items-start">
+                            <div class="bg-blue-50 text-blue-600 font-bold text-[10px] px-2 py-1 rounded h-fit">${jam}</div>
+                            <div>
+                                <h4 class="font-bold text-slate-800 text-xs uppercase">${d.mapel}</h4>
+                                <p class="text-[10px] text-slate-500 font-bold mb-1">${d.nama_guru}</p>
+                                <p class="text-xs text-slate-600 leading-relaxed line-clamp-2">${d.materi}</p>
+                            </div>
+                        </div>
+                    `;
+                });
+            });
+        }
+
+        window.kirimSaranOrtu = async () => {
+            const pesan = document.getElementById('input-saran').value.trim();
+            if(!pesan) return Swal.fire('Kosong','Tulis sesuatu dulu Pak/Bu.','warning');
+            
+            document.getElementById('loading').classList.remove('hidden');
+            try {
+                await addDoc(collection(db, "masukan_ortu"), {
+                    nisn: dataAnak.username,
+                    nama_siswa: dataAnak.nama,
+                    kelas: dataAnak.kelas,
+                    pesan: pesan,
+                    tanggal: new Date().toLocaleDateString('fr-CA'),
+                    waktu: serverTimestamp()
+                });
+                Swal.fire('Terkirim','Terima kasih atas masukannya.','success');
+                document.getElementById('input-saran').value = '';
+            } catch(e) {
+                Swal.fire('Gagal', e.message, 'error');
+            } finally {
+                document.getElementById('loading').classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>

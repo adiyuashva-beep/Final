@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control Room - SiGanteng</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        body { font-family: 'Outfit', sans-serif; background-color: #0f172a; color: #e2e8f0; }
+        .card-saklar { background: #1e293b; border: 1px solid #334155; border-radius: 1rem; padding: 1.5rem; transition: all 0.3s; }
+        .card-saklar:hover { border-color: #475569; }
+        .btn-on { background-color: #059669; color: white; box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); border: 2px solid #34d399; }
+        .btn-off { background-color: #1e293b; color: #94a3b8; border: 2px solid #334155; }
+        .range-slider { -webkit-appearance: none; width: 100%; height: 8px; border-radius: 5px; background: #334155; outline: none; }
+        .range-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #3b82f6; cursor: pointer; border: 2px solid white; }
+    </style>
+</head>
+<body class="p-6 md:p-10 max-w-5xl mx-auto">
+
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-black text-white tracking-tighter flex items-center gap-3">
+                <i data-lucide="settings-2" class="w-8 h-8 text-blue-500"></i> CONTROL ROOM
+            </h1>
+            <p class="text-slate-400 text-sm mt-1">Pusat Kendali Akses & Fitur SiGanteng</p>
+        </div>
+        <button onclick="window.close()" class="bg-slate-800 hover:bg-red-900/50 text-white px-5 py-3 rounded-xl font-bold border border-slate-700 transition flex items-center gap-2">
+            <i data-lucide="x" class="w-5 h-5"></i> Tutup Panel
+        </button>
+    </div>
+
+    <div class="mb-10">
+        <h2 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+            <i data-lucide="lock" class="w-5 h-5 text-orange-500"></i> Gerbang Akses (Jam Operasional)
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            
+            <div class="card-saklar flex justify-between items-center">
+                <div>
+                    <h3 class="font-bold text-white text-lg">Akses Siswa</h3>
+                    <p class="text-xs text-slate-400">Login & Dashboard Siswa</p>
+                </div>
+                <button id="btn-akses-siswa" onclick="toggleAkses('siswa')" class="px-6 py-2 rounded-full font-black text-xs uppercase tracking-widest transition-all">
+                    ...
+                </button>
+            </div>
+
+            <div class="card-saklar flex justify-between items-center">
+                <div>
+                    <h3 class="font-bold text-white text-lg">Akses Guru</h3>
+                    <p class="text-xs text-slate-400">Input Jurnal & Absen</p>
+                </div>
+                <button id="btn-akses-guru" onclick="toggleAkses('guru')" class="px-6 py-2 rounded-full font-black text-xs uppercase tracking-widest transition-all">
+                    ...
+                </button>
+            </div>
+
+            <div class="card-saklar flex justify-between items-center">
+                <div>
+                    <h3 class="font-bold text-white text-lg">Akses Ortu</h3>
+                    <p class="text-xs text-slate-400">Pantauan Wali Murid</p>
+                </div>
+                <button id="btn-akses-ortu" onclick="toggleAkses('ortu')" class="px-6 py-2 rounded-full font-black text-xs uppercase tracking-widest transition-all">
+                    ...
+                </button>
+            </div>
+
+            <div class="card-saklar flex justify-between items-center">
+                <div>
+                    <h3 class="font-bold text-white text-lg">Panel Pejabat</h3>
+                    <p class="text-xs text-slate-400">Admin BK & Kurikulum</p>
+                </div>
+                <button id="btn-akses-pejabat" onclick="toggleAkses('pejabat')" class="px-6 py-2 rounded-full font-black text-xs uppercase tracking-widest transition-all">
+                    ...
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <hr class="border-slate-800 my-8">
+
+    <div class="mb-10">
+        <h2 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+            <i data-lucide="map-pin" class="w-5 h-5 text-emerald-500"></i> Logika GPS & Radius
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <div class="card-saklar">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-white">Mode Disiplin GPS</h3>
+                    <button id="btn-gps-mode" onclick="toggleGPS()" class="px-4 py-2 rounded-lg font-bold text-xs uppercase transition-all">...</button>
+                </div>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    <span class="text-emerald-400 font-bold">ON:</span> Siswa wajib berada di radius sekolah.<br>
+                    <span class="text-red-400 font-bold">OFF:</span> Mode Darurat (Bisa absen dari mana saja).
+                </p>
+            </div>
+
+            <div class="card-saklar">
+                <div class="flex justify-between items-end mb-2">
+                    <h3 class="font-bold text-white">Radius Toleransi</h3>
+                    <span id="label-radius" class="text-2xl font-black text-blue-500">...</span>
+                </div>
+                <input type="range" id="input-radius" min="10" max="1000" step="10" class="range-slider mb-4" onchange="simpanRadius()">
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[10px] text-slate-500 font-bold uppercase">Latitude</label>
+                        <input type="text" id="input-lat" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white font-mono" onchange="simpanLokasi()">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-500 font-bold uppercase">Longitude</label>
+                        <input type="text" id="input-lng" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white font-mono" onchange="simpanLokasi()">
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="mb-10">
+        <h2 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+            <i data-lucide="sparkles" class="w-5 h-5 text-purple-500"></i> Fitur Tambahan
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="card-saklar flex justify-between items-center">
+                <div><h3 class="font-bold text-white">Refleksi Ortu (KBM)</h3></div>
+                <button id="btn-fitur-ortu" onclick="toggleFitur('kbm_ortu')" class="px-6 py-2 rounded-full font-black text-xs uppercase tracking-widest transition-all">...</button>
+            </div>
+            <div class="card-saklar flex justify-between items-center">
+                <div><h3 class="font-bold text-white">Refleksi Guru</h3></div>
+                <button id="btn-fitur-guru" onclick="toggleFitur('refleksi_guru')" class="px-6 py-2 rounded-full font-black text-xs uppercase tracking-widest transition-all">...</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, doc, onSnapshot, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        const firebaseConfig = { apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo", authDomain: "siganteng-absensi.firebaseapp.com", databaseURL: "https://siganteng-absensi-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "siganteng-absensi", storageBucket: "siganteng-absensi.firebasestorage.app", messagingSenderId: "917873420012", appId: "1:917873420012:web:0fe1a9eddc5f94959ba7c9" };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // --- 1. LISTENER REALTIME (Agar status tombol selalu update) ---
+        
+        // A. Pantau Saklar Akses (Gerbang)
+        onSnapshot(doc(db, "pengaturan", "akses_global"), (docSnap) => {
+            if (docSnap.exists()) {
+                const d = docSnap.data();
+                renderTombol('btn-akses-siswa', d.siswa);
+                renderTombol('btn-akses-guru', d.guru);
+                renderTombol('btn-akses-ortu', d.ortu);
+                renderTombol('btn-akses-pejabat', d.pejabat);
+            } else {
+                // Inisialisasi jika belum ada
+                setDoc(doc(db, "pengaturan", "akses_global"), { siswa: true, guru: true, ortu: true, pejabat: true });
+            }
+        });
+
+        // B. Pantau GPS & Sekolah
+        onSnapshot(doc(db, "pengaturan", "sekolah"), (docSnap) => {
+            if (docSnap.exists()) {
+                const d = docSnap.data();
+                const btnGPS = document.getElementById('btn-gps-mode');
+                if(d.validasi_gps_aktif) {
+                    btnGPS.innerText = "AKTIF";
+                    btnGPS.className = "btn-on px-4 py-2 rounded-lg font-bold text-xs uppercase transition-all";
+                } else {
+                    btnGPS.innerText = "MATI";
+                    btnGPS.className = "btn-off px-4 py-2 rounded-lg font-bold text-xs uppercase transition-all";
+                }
+
+                document.getElementById('input-radius').value = d.radius_meter || 50;
+                document.getElementById('label-radius').innerText = (d.radius_meter || 50) + "m";
+                document.getElementById('input-lat').value = d.lokasi_lat || "";
+                document.getElementById('input-lng').value = d.lokasi_lng || "";
+            }
+        });
+
+        // C. Pantau Fitur Tambahan
+        onSnapshot(doc(db, "pengaturan", "fitur"), (docSnap) => {
+            if (docSnap.exists()) {
+                const d = docSnap.data();
+                renderTombol('btn-fitur-ortu', d.kbm_ortu);
+                renderTombol('btn-fitur-guru', d.refleksi_guru);
+            } else {
+                setDoc(doc(db, "pengaturan", "fitur"), { kbm_ortu: true, refleksi_guru: true });
+            }
+        });
+
+        // --- FUNGSI RENDER TOMBOL ---
+        function renderTombol(id, status) {
+            const btn = document.getElementById(id);
+            if(status) {
+                btn.innerText = "BUKA / ON";
+                btn.className = "btn-on px-6 py-2 rounded-full font-black text-xs uppercase tracking-widest transition-all";
+            } else {
+                btn.innerText = "TUTUP / OFF";
+                btn.className = "btn-off px-6 py-2 rounded-full font-black text-xs uppercase tracking-widest transition-all";
+            }
+        }
+
+        // --- LOGIKA TOGGLE (KLIK) ---
+        window.toggleAkses = async (target) => {
+            const ref = doc(db, "pengaturan", "akses_global");
+            // Kita pakai update manual karena toggle butuh state sekarang. 
+            // Trik: Baca teks tombol untuk tau state sekarang (hemat read)
+            const btn = document.getElementById(`btn-akses-${target}`);
+            const newState = btn.innerText.includes("OFF"); // Kalau skrg OFF, berarti mau di ON kan
+            
+            await setDoc(ref, { [target]: newState }, { merge: true });
+            Swal.fire({
+                toast: true, position: 'top-end', showConfirmButton: false, timer: 1000,
+                icon: newState ? 'success' : 'warning',
+                title: `Akses ${target.toUpperCase()} ${newState ? 'DIBUKA' : 'DITUTUP'}`
+            });
+        }
+
+        window.toggleFitur = async (field) => {
+            const ref = doc(db, "pengaturan", "fitur");
+            const btnID = field === 'kbm_ortu' ? 'btn-fitur-ortu' : 'btn-fitur-guru';
+            const btn = document.getElementById(btnID);
+            const newState = btn.innerText.includes("OFF");
+            
+            await setDoc(ref, { [field]: newState }, { merge: true });
+        }
+
+        window.toggleGPS = async () => {
+            const btn = document.getElementById('btn-gps-mode');
+            const newState = btn.innerText.includes("MATI"); // Kalau Mati mau dihidupkan
+            await setDoc(doc(db, "pengaturan", "sekolah"), { validasi_gps_aktif: newState }, { merge: true });
+            Swal.fire({
+                toast: true, position: 'top-end', showConfirmButton: false, timer: 1000,
+                icon: newState ? 'success' : 'info',
+                title: `Mode GPS ${newState ? 'DISIPLIN' : 'DARURAT'}`
+            });
+        }
+
+        window.simpanRadius = async () => {
+            const val = parseInt(document.getElementById('input-radius').value);
+            document.getElementById('label-radius').innerText = val + "m";
+            await setDoc(doc(db, "pengaturan", "sekolah"), { radius_meter: val }, { merge: true });
+        }
+
+        window.simpanLokasi = async () => {
+            const lat = parseFloat(document.getElementById('input-lat').value);
+            const lng = parseFloat(document.getElementById('input-lng').value);
+            if(!isNaN(lat) && !isNaN(lng)) {
+                await setDoc(doc(db, "pengaturan", "sekolah"), { lokasi_lat: lat, lokasi_lng: lng }, { merge: true });
+            }
+        }
+
+        lucide.createIcons();
+    </script>
+</body>
+</html>

@@ -123,7 +123,23 @@
         };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-
+// --- 🛡️ SATPAM WALI MURID ---
+        onSnapshot(doc(db, "pengaturan", "akses_global"), (snap) => {
+            if (snap.exists()) {
+                const akses = snap.data();
+                // Cek kunci 'ortu'
+                if (akses.ortu === false) {
+                    document.body.innerHTML = `
+                        <div style="height:100vh; background:#0f172a; color:white; display:flex; flex-direction:column; justify-content:center; align-items:center; font-family:sans-serif; text-align:center;">
+                            <div style="font-size:4rem; margin-bottom:1rem;">🚫</div>
+                            <h1 style="font-weight:900; font-size:2rem;">AUTO LOCK</h1>
+                            <p style="color:#94a3b8; margin-bottom:2rem;">Akses pantauan ditutup di luar jam operasional.</p>
+                            <button onclick="window.location.href='index.html'" style="background:#3b82f6; color:white; border:none; padding:12px 30px; border-radius:12px; font-weight:bold; cursor:pointer;">KEMBALI</button>
+                        </div>
+                    `;
+                }
+            }
+        });
         let userAnak = null;
         let cacheHariLibur = {};
 
