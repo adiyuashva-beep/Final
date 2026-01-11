@@ -47,7 +47,7 @@
             <div class="flex flex-col items-center justify-center mb-6 mt-4">
                 <div class="relative group cursor-pointer active:scale-95 transition" onclick="pilihFotoGaleri('profil')">
                     <div class="story-ring w-32 h-32 shadow-xl shadow-pink-500/20">
-                        <img id="dash-foto" src="" class="w-full h-full rounded-full object-cover border-4 border-white bg-white">
+                        <img id="dash-foto" src="" class="w-full h-full rounded-full object-cover border-4 border-white bg-white" onerror="this.src='https://ui-avatars.com/api/?background=random&color=fff&name=Siswa'">
                     </div>
                     <div class="absolute bottom-1 right-1 bg-slate-900 text-white p-2 rounded-full border-4 border-white shadow-lg"><i data-lucide="image-plus" class="w-4 h-4"></i></div>
                 </div>
@@ -165,7 +165,7 @@
              <button onclick="kembali()" class="mb-6 flex items-center gap-2 font-bold text-slate-500 text-sm"><i data-lucide="arrow-left" class="w-5 h-5"></i> Kembali</button>
              <div class="flex flex-col items-center mb-8">
                 <div class="w-28 h-28 relative mb-4">
-                     <img id="profil-page-foto" src="" class="w-full h-full rounded-full object-cover border-4 border-slate-100 shadow-xl">
+                     <img id="profil-page-foto" src="" class="w-full h-full rounded-full object-cover border-4 border-slate-100 shadow-xl" onerror="this.src='https://ui-avatars.com/api/?background=random&color=fff&name=Siswa'">
                      <button onclick="pilihFotoGaleri('profil')" class="absolute bottom-0 right-0 bg-blue-600 text-white p-2.5 rounded-full border-4 border-white shadow-sm"><i data-lucide="image-plus" class="w-4 h-4"></i></button>
                 </div>
                 <h3 class="font-black text-xl text-slate-800" id="profil-page-nama">...</h3>
@@ -238,14 +238,19 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
-            const dataLokal = localStorage.getItem('userSiswa'); 
-            if (dataLokal) {
-                userSiswa = JSON.parse(dataLokal);
+            
+            // --- FIX PENTING: Gunakan sessionStorage ('user_siganteng') bukan localStorage ('userSiswa') ---
+            const sessionData = sessionStorage.getItem('user_siganteng'); 
+            
+            if (sessionData) {
+                userSiswa = JSON.parse(sessionData);
                 userSiswa.nisn = String(userSiswa.username || userSiswa.nisn);
+                
                 document.getElementById('dash-nama').innerText = userSiswa.nama;
                 document.getElementById('dash-kelas').innerText = userSiswa.kelas || "SISWA";
                 document.getElementById('profil-page-nama').innerText = userSiswa.nama;
                 document.getElementById('profil-page-nisn').innerText = userSiswa.nisn;
+                
                 syncAdminSettings(); loadFotoProfil(); renderMenu(); mulaiJam(); pantauDataRealtime(); cekGPS(); loadMenuDinamis(); 
                 
                 history.pushState(null, null, location.href); 
@@ -259,22 +264,19 @@
                         history.pushState(null, null, location.href);
                     }
                 };
-            } else { window.location.href = 'index.html'; }
+            } else { 
+                // Kalau tiket session gak ada, tendang ke login
+                window.location.href = 'index.html'; 
+            }
         });
 
-        // FIXED SCOPE: LOAD TIMELINE KBM
         window.loadTimelineKBM = function() { 
-            // Cek flag biar gak load berkali-kali
             if(isTimelineLoaded) return;
             isTimelineLoaded = true;
-
             const container = document.getElementById('timeline-kbm'); 
             const todayStr = getTodayID(); 
             const q = query(collection(db, "jurnal_guru"), where("kelas", "==", userSiswa.kelas), where("tanggal", "==", todayStr), orderBy("waktu", "desc"), limit(20)); 
-            
-            // Set loading text
             container.innerHTML = '<div class="text-center py-10 text-slate-400 text-xs italic">Mengambil data pelajaran...</div>';
-
             onSnapshot(q, (snap) => { 
                 container.innerHTML = ''; 
                 if(snap.empty) { container.innerHTML = '<div class="text-center py-10 text-slate-400 text-xs italic">Belum ada pelajaran hari ini.</div>'; return; } 
@@ -291,7 +293,6 @@
             const menu = [ 
                 { id: 'btnAbsen', label: 'PRESENSI', icon: 'scan-face', color: 'text-blue-500', bg: 'bg-blue-50', action: "bukaHalaman('page-absen'); setTimeout(initMap, 500);" }, 
                 { id: 'btnSakit', label: 'Izin/Sakit', icon: 'thermometer', color: 'text-rose-500', bg: 'bg-rose-50', action: "bukaHalaman('page-sakit')" }, 
-                // TRIGGER LOAD TIMELINE SAAT TOMBOL DIKLIK
                 { id: 'btnRefleksi', label: 'Jurnal KBM', icon: 'book-open', color: 'text-pink-500', bg: 'bg-pink-50', action: "bukaHalaman('page-refleksi'); loadTimelineKBM();" }, 
                 { id: 'btnProfil', label: 'Profil', icon: 'user', color: 'text-indigo-500', bg: 'bg-indigo-50', action: "bukaHalaman('page-profil')" } 
             ];
@@ -304,7 +305,7 @@
         window.kembali = () => { bukaHalaman('page-dashboard'); }
         window.syncAdminSettings = () => { onSnapshot(doc(db, "pengaturan", "sekolah"), (doc) => { if(doc.exists()) { configSekolah = doc.data(); if(configSekolah.lokasi_lat) SEKOLAH_LAT = configSekolah.lokasi_lat; if(configSekolah.lokasi_lng) SEKOLAH_LNG = configSekolah.lokasi_lng; } }); }
         
-        window.loadFotoProfil = async () => { if (userSiswa.foto_profil) { document.getElementById('dash-foto').src = userSiswa.foto_profil; document.getElementById('profil-page-foto').src = userSiswa.foto_profil; const jatah = 2 - (userSiswa.update_foto_count || 0); updateInfoJatah(jatah); return; } try { const docSnap = await getDoc(doc(db, "siswa", userSiswa.nisn)); if (docSnap.exists()) { const data = docSnap.data(); userSiswa.foto_profil = data.foto_profil; userSiswa.update_foto_count = data.update_foto_count || 0; localStorage.setItem('userSiswa', JSON.stringify(userSiswa)); if (data.foto_profil) { document.getElementById('dash-foto').src = data.foto_profil; document.getElementById('profil-page-foto').src = data.foto_profil; } const jatah = 2 - (data.update_foto_count || 0); updateInfoJatah(jatah); } } catch (e) { console.log(e); } }
+        window.loadFotoProfil = async () => { if (userSiswa.foto_profil) { document.getElementById('dash-foto').src = userSiswa.foto_profil; document.getElementById('profil-page-foto').src = userSiswa.foto_profil; const jatah = 2 - (userSiswa.update_foto_count || 0); updateInfoJatah(jatah); return; } try { const docSnap = await getDoc(doc(db, "siswa", userSiswa.nisn)); if (docSnap.exists()) { const data = docSnap.data(); userSiswa.foto_profil = data.foto_profil; userSiswa.update_foto_count = data.update_foto_count || 0; sessionStorage.setItem('user_siganteng', JSON.stringify(userSiswa)); if (data.foto_profil) { document.getElementById('dash-foto').src = data.foto_profil; document.getElementById('profil-page-foto').src = data.foto_profil; } const jatah = 2 - (data.update_foto_count || 0); updateInfoJatah(jatah); } } catch (e) { console.log(e); } }
         function updateInfoJatah(jatah) { const info = document.getElementById('info-jatah-foto'); info.innerText = `Sisa Ganti Foto: ${jatah}x`; info.className = jatah <= 0 ? "text-[10px] text-red-500 font-bold mt-2 bg-red-100 px-3 py-1 rounded-full" : "text-[10px] text-slate-400 font-bold mt-2 bg-slate-100 px-3 py-1 rounded-full"; if(jatah<=0) info.innerText="Jatah Ganti Foto Habis"; }
 
         window.pilihFotoGaleri = (tipe) => { if(tipe === 'profil') { if((userSiswa.update_foto_count || 0) >= 2) { Swal.fire('Jatah Habis', 'Kamu sudah mengganti foto 2x.', 'warning'); return; } document.getElementById('fileInputProfil').click(); } else document.getElementById('fileInputBukti').click(); }
@@ -315,7 +316,7 @@
 
         window.kirimRefleksi = async (idJurnal, mapel, rating) => { if(!userSiswa) return; const elPesan = document.getElementById(`pesan-${idJurnal}`); const pesan = elPesan ? elPesan.value : "-"; document.getElementById('loadingOverlay').classList.remove('hidden'); try { await addDoc(collection(db, "refleksi_siswa"), { nisn: userSiswa.nisn, nama: userSiswa.nama, kelas: userSiswa.kelas, id_jurnal: idJurnal, mapel: mapel, rating: rating, pesan: pesan || "-", tanggal: getTodayID(), waktu: serverTimestamp() }); const pesanRingkas = `${userSiswa.nama}: ${pesan}`; const docJurnalRef = doc(db, "jurnal_guru", idJurnal); const docSnap = await getDoc(docJurnalRef); if (docSnap.exists()) { let komenLama = docSnap.data().rekap_refleksi_string || ""; let komenBaru = komenLama ? (komenLama + " | " + pesanRingkas) : pesanRingkas; await updateDoc(docJurnalRef, { rekap_refleksi_string: komenBaru }); } localStorage.setItem(`rated_${idJurnal}`, 'true'); Swal.fire({ title: 'Mantap!', text: 'Refleksi berhasil dikirim.', icon: 'success', timer: 1500, showConfirmButton: false }); } catch(e) { Swal.fire('Error', e.message, 'error'); } finally { document.getElementById('loadingOverlay').classList.add('hidden'); } }
 
-        async function prosesUpdateProfil(fotoData) { document.getElementById('loadingOverlay').classList.remove('hidden'); try { const snap = await uploadString(ref(storage, `profil_siswa/${userSiswa.nisn}_${Date.now()}.jpg`), fotoData, 'data_url'); const downloadURL = await getDownloadURL(snap.ref); await setDoc(doc(db, "siswa", userSiswa.nisn), { foto_profil: downloadURL, last_update_foto: serverTimestamp(), update_foto_count: increment(1) }, { merge: true }); userSiswa.foto_profil = downloadURL; userSiswa.update_foto_count = (userSiswa.update_foto_count || 0) + 1; localStorage.setItem('userSiswa', JSON.stringify(userSiswa)); loadFotoProfil(); Swal.fire({ title: 'Ganteng Maksimal!', text: 'Foto profil baru.', icon: 'success', timer: 1500, showConfirmButton: false }); } catch (error) { Swal.fire('Gagal', error.message, 'error'); } finally { document.getElementById('loadingOverlay').classList.add('hidden'); } }
+        async function prosesUpdateProfil(fotoData) { document.getElementById('loadingOverlay').classList.remove('hidden'); try { const snap = await uploadString(ref(storage, `profil_siswa/${userSiswa.nisn}_${Date.now()}.jpg`), fotoData, 'data_url'); const downloadURL = await getDownloadURL(snap.ref); await setDoc(doc(db, "siswa", userSiswa.nisn), { foto_profil: downloadURL, last_update_foto: serverTimestamp(), update_foto_count: increment(1) }, { merge: true }); userSiswa.foto_profil = downloadURL; userSiswa.update_foto_count = (userSiswa.update_foto_count || 0) + 1; sessionStorage.setItem('user_siganteng', JSON.stringify(userSiswa)); loadFotoProfil(); Swal.fire({ title: 'Ganteng Maksimal!', text: 'Foto profil baru.', icon: 'success', timer: 1500, showConfirmButton: false }); } catch (error) { Swal.fire('Gagal', error.message, 'error'); } finally { document.getElementById('loadingOverlay').classList.add('hidden'); } }
         window.klikMasuk = () => { if(validasiGPS()) bukaCam("Masuk"); }
         window.klikPulang = () => { if(validasiGPS()) { if (!cekBolehPulang()) { Swal.fire({ title: 'Yakin?', text: "Belum jam pulang.", icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya', confirmButtonColor: '#d33' }).then((r) => { if (r.isConfirmed) bukaCam("Pulang"); }); } else { bukaCam("Pulang"); } } }
         window.klikIzinKeluar = () => { const alasan = prompt("Alasan keluar:"); if(alasan) kirimData("Izin Keluar", alasan, "-"); }
@@ -323,9 +324,9 @@
         window.pilihJenisIzin = (jenis) => { jenisIzinAktif = jenis; document.getElementById('areaUploadFoto').classList.remove('hidden'); document.getElementById('labelWajibFoto').className = jenis === 'Sakit' ? "text-red-500" : "hidden"; }
         window.kirimLaporanIzin = () => { if(!jenisIzinAktif || !document.getElementById('ketIzin').value) return Swal.fire('Lengkapi Data','','warning'); if(jenisIzinAktif === 'Sakit' && !tempFotoBukti) return Swal.fire('Foto Wajib','','warning'); kirimData(jenisIzinAktif, document.getElementById('ketIzin').value, tempFotoBukti||"-"); bukaHalaman('page-dashboard'); }
         window.simpanDataWA = async () => { const waSiswa = document.getElementById('inputWaSiswa').value; const waOrtu = document.getElementById('inputWaOrtu').value; if(!waSiswa && !waOrtu) return Swal.fire('Isi Nomor','','warning'); try { await setDoc(doc(db, "siswa", userSiswa.nisn), { wa_siswa: waSiswa, wa_ortu: waOrtu }, { merge: true }); Swal.fire('Tersimpan','','success'); } catch (e) { Swal.fire('Gagal',e.message,'error'); } }
-        window.gantiPassword = async () => { const passBaru = document.getElementById('inputPassBaru').value; if (passBaru.length < 6) return Swal.fire('Pendek','Minimal 6 karakter','warning'); try { const q = query(collection(db, "users"), where("username", "==", userSiswa.username)); const snap = await getDocs(q); snap.forEach(async (d) => { await updateDoc(doc(db, "users", d.id), { password: passBaru }); }); Swal.fire('Sukses','Login ulang','success').then(()=>{localStorage.clear();window.location.href='index.html';}); } catch (e) { Swal.fire('Gagal',e.message,'error'); } }
+        window.gantiPassword = async () => { const passBaru = document.getElementById('inputPassBaru').value; if (passBaru.length < 6) return Swal.fire('Pendek','Minimal 6 karakter','warning'); try { const q = query(collection(db, "users"), where("username", "==", userSiswa.username)); const snap = await getDocs(q); snap.forEach(async (d) => { await updateDoc(doc(db, "users", d.id), { password: passBaru }); }); Swal.fire('Sukses','Login ulang','success').then(()=>{logout();}); } catch (e) { Swal.fire('Gagal',e.message,'error'); } }
         window.mulaiJam = () => { setInterval(()=>{ document.getElementById('jamDigital').innerText=new Date().toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}); document.getElementById('tanggalDigital').innerText=new Date().toLocaleDateString('id-ID',{weekday: 'long', day:'numeric', month:'long', year:'numeric'}); },1000); }
-        window.logout = () => { if(confirm("Keluar?")) { localStorage.clear(); window.location.href='index.html'; } }
+        window.logout = () => { if(confirm("Keluar?")) { sessionStorage.clear(); localStorage.clear(); window.location.href='index.html'; } }
         window.bukaKartu = () => { document.getElementById('modalKartu').classList.remove('hidden'); document.getElementById('namaDiKartu').innerText=userSiswa.nama; document.getElementById('nisnDiKartu').innerText=userSiswa.nisn; document.getElementById("qrcode").innerHTML=""; new QRCode(document.getElementById("qrcode"), {text:userSiswa.nisn, width:150, height:150}); }
         window.tutupKartu = () => document.getElementById('modalKartu').classList.add('hidden');
         if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js'); }); }
@@ -336,13 +337,10 @@
         function updateMapCircle() { if(!map) return; map.eachLayer((layer) => { if(layer instanceof L.Circle) { map.removeLayer(layer); } }); L.circle([SEKOLAH_LAT, SEKOLAH_LNG], { radius: configSekolah.radius_meter || 50, color: configSekolah.validasi_gps_aktif ? '#ef4444' : '#10b981', fillOpacity: 0.2 }).addTo(map); }
         function cekBolehPulang() { const now = new Date(); const day = now.getDay(); const totalMenit = (now.getHours() * 60) + now.getMinutes(); if (day >= 1 && day <= 4) return totalMenit >= 930; if (day === 5) return totalMenit >= 820; return false; }
         function pantauDataRealtime() { const docID = `${getTodayID()}_${userSiswa.nisn}`; onSnapshot(doc(db, "absensi", docID), (docSnap) => { const btnMasuk = document.getElementById('btnMasuk'); const grpSekolah = document.getElementById('groupDiSekolah'); const statusHero = document.getElementById('hero-status'); document.getElementById('info-jam-masuk').innerText = "--:--"; document.getElementById('info-jam-pulang').innerText = "--:--"; if (docSnap.exists()) { const data = docSnap.data(); const st = data.status_terakhir || ""; statusHero.innerText = st; document.getElementById('sub-status').innerText = "Update: " + new Date().toLocaleTimeString('id-ID'); if(data.jam_masuk) document.getElementById('info-jam-masuk').innerText = new Date(data.jam_masuk.seconds*1000).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}); if(data.jam_pulang) document.getElementById('info-jam-pulang').innerText = new Date(data.jam_pulang.seconds*1000).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}); if(st.includes("Masuk") || st.includes("Hadir") || st === "Kembali") { btnMasuk.classList.add('hidden'); grpSekolah.classList.remove('hidden'); document.getElementById('btnIzinKeluar').classList.remove('hidden'); document.getElementById('btnKembali').classList.add('hidden'); } else if (st.includes("Izin Keluar")) { btnMasuk.classList.add('hidden'); grpSekolah.classList.remove('hidden'); document.getElementById('btnIzinKeluar').classList.add('hidden'); document.getElementById('btnKembali').classList.remove('hidden'); } else if(st.includes("Pulang")) { btnMasuk.classList.add('hidden'); grpSekolah.classList.add('hidden'); statusHero.innerText = "Selesai"; } } else { statusHero.innerText = "Belum Hadir"; btnMasuk.classList.remove('hidden'); grpSekolah.classList.add('hidden'); } }); }
-        async function kirimData(status, ket, foto) { document.getElementById('loadingOverlay').classList.remove('hidden'); const todayStr = getTodayID(); const docID = `${todayStr}_${userSiswa.nisn}`; try { let updateData = { nisn: userSiswa.nisn, nama: userSiswa.nama, kelas: userSiswa.kelas, tanggal: todayStr, status_terakhir: status, riwayat_kegiatan: arrayUnion(`${new Date().toLocaleTimeString()} - ${status} (${ket})`) }; if (foto !== "-") { const snap = await uploadString(ref(storage, `absen/${todayStr}/${userSiswa.nisn}_${status}_${Date.now()}.jpg`), foto, 'data_url'); const url = await getDownloadURL(snap.ref); if(status === "Masuk") { updateData.foto_masuk = url; updateData.jam_masuk = serverTimestamp(); updateData.lokasi_masuk = `${lokasiUser.lat},${lokasiUser.lng}`; } else if(status === "Pulang") { updateData.foto_pulang = url; updateData.jam_pulang = serverTimestamp(); } else { updateData.foto_bukti = url
-            ; } } await
-            setDoc(doc(db, "absensi", docID), updateData, { merge: true }); tutupKamera(); Swal.fire('Berhasil!', status + ' Tercatat', 'success'); } catch (e) { Swal.fire('Error', e.message, 'error'); } finally { document.getElementById('loadingOverlay').classList.add('hidden'); } }
+        async function kirimData(status, ket, foto) { document.getElementById('loadingOverlay').classList.remove('hidden'); const todayStr = getTodayID(); const docID = `${todayStr}_${userSiswa.nisn}`; try { let updateData = { nisn: userSiswa.nisn, nama: userSiswa.nama, kelas: userSiswa.kelas, tanggal: todayStr, status_terakhir: status, riwayat_kegiatan: arrayUnion(`${new Date().toLocaleTimeString()} - ${status} (${ket})`) }; if (foto !== "-") { const snap = await uploadString(ref(storage, `absen/${todayStr}/${userSiswa.nisn}_${status}_${Date.now()}.jpg`), foto, 'data_url'); const url = await getDownloadURL(snap.ref); if(status === "Masuk") { updateData.foto_masuk = url; updateData.jam_masuk = serverTimestamp(); updateData.lokasi_masuk = `${lokasiUser.lat},${lokasiUser.lng}`; } else if(status === "Pulang") { updateData.foto_pulang = url; updateData.jam_pulang = serverTimestamp(); } else { updateData.foto_bukti = url; } } await setDoc(doc(db, "absensi", docID), updateData, { merge: true }); tutupKamera(); Swal.fire('Berhasil!', status + ' Tercatat', 'success'); } catch (e) { Swal.fire('Error', e.message, 'error'); } finally { document.getElementById('loadingOverlay').classList.add('hidden'); } }
         window.bukaCam = (tipe) => { tipeAbsenAktif = tipe; document.getElementById('modalKamera').classList.remove('hidden'); let judul = "KAMERA"; if(tipe === 'BuktiSakit') judul = "BUKTI SAKIT"; document.getElementById('judulKamera').innerText = judul; const imgAnim = document.getElementById('imgAnimasi'); imgAnim.src = ""; imgAnim.classList.add('hidden'); imgAnim.classList.remove('fly-to-server'); navigator.mediaDevices.getUserMedia({video:{facingMode:'user', aspectRatio: 3/4}}).then(s=>{ streamKamera=s; document.getElementById('videoStream').srcObject=s; }); }
         window.tutupKamera = () => { document.getElementById('modalKamera').classList.add('hidden'); if(streamKamera) streamKamera.getTracks().forEach(t=>t.stop()); }
         window.jepretFoto = () => { const vid = document.getElementById('videoStream'); const can = document.getElementById('canvasFoto'); const scale = 480/vid.videoWidth; can.width=480; can.height=vid.videoHeight*scale; can.getContext('2d').drawImage(vid,0,0,can.width,can.height); const fotoData = can.toDataURL('image/jpeg', 0.7); const flash = document.getElementById('cameraFlash'); flash.classList.add('flash-active'); setTimeout(() => flash.classList.remove('flash-active'), 400); if(tipeAbsenAktif === 'UpdateProfil') { prosesUpdateProfil(fotoData); tutupKamera(); } else if(tipeAbsenAktif === 'BuktiSakit') { tempFotoBukti = fotoData; document.getElementById('previewBukti').src = fotoData; document.getElementById('previewBukti').classList.remove('hidden'); document.getElementById('btnAmbilBukti').innerHTML = `<span class="text-green-600 font-bold">Foto Ada!</span>`; tutupKamera(); } else { const imgAnim = document.getElementById('imgAnimasi'); imgAnim.src = fotoData; imgAnim.classList.remove('hidden'); setTimeout(() => { imgAnim.classList.add('fly-to-server'); setTimeout(() => { kirimData(tipeAbsenAktif, "Hadir", fotoData); }, 800); }, 50); } }
     </script>
 </body>
 </html>
-
