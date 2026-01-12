@@ -190,7 +190,6 @@
 
             try {
                 // 1. CARI USER DI DATABASE
-                // Kita coba ambil langsung by ID (lebih hemat reads drpd query where)
                 const docRef = doc(db, "users", u);
                 const docSnap = await getDoc(docRef);
 
@@ -202,32 +201,27 @@
 
                 // 2. CEK PASSWORD
                 const passAsli = String(userData.password);
-                const passOrtu = "ortu" + String(userData.username); // Password pintu belakang Wali Murid
+                const passOrtu = "ortu" + String(userData.username || u); // Gunakan u jika username null
 
                 // Skenario A: Login Pemilik Akun (Siswa/Guru/Admin)
                 if (String(p) === passAsli) {
+                    
+                    // --- PERBAIKAN KRUSIAL DISINI ---
+                    // Paksa simpan username ke dalam object sebelum disimpan ke sesi
+                    userData.username = u;
+                    userData.nisn = u; 
+                    // --------------------------------
+                    
                     saveSession(userData);
                     
-                    // --- ROUTING ENGINE (LOGIKA BARU) ---
                     const role = userData.role ? userData.role.toLowerCase() : 'siswa';
-                    let targetFile = 'siswa.html'; // Default
+                    let targetFile = 'siswa.html';
 
-                    if (role === 'super' || role === 'admin') {
-                        targetFile = 'admin.html';
-                    } 
-                    else if (role === 'bk') {
-                        targetFile = 'adminBK.html';
-                    }
-                    else if (role === 'kurikulum') {
-                        targetFile = 'adminKBM.html';
-                    }
-                    else if (role === 'guru') {
-                        targetFile = 'guru.html';
-                    }
-                    else if (role === 'siswa') {
-                        targetFile = 'siswa.html';
-                    }
-                    // Jika ada role lain (misal: kantin, perpus), tambahkan else if baru
+                    if (role === 'super' || role === 'admin') targetFile = 'admin.html';
+                    else if (role === 'bk') targetFile = 'adminBK.html';
+                    else if (role === 'kurikulum') targetFile = 'adminKBM.html';
+                    else if (role === 'guru') targetFile = 'guru.html';
+                    else if (role === 'siswa') targetFile = 'siswa.html';
 
                     Swal.fire({
                         icon: 'success',
@@ -242,7 +236,7 @@
                 } 
                 // Skenario B: Login Wali Murid
                 else if (String(p) === passOrtu) {
-                    // Simpan data anak tapi tandai mode ortu
+                    userData.username = u; // Fix juga untuk ortu
                     localStorage.setItem('userSiswa', JSON.stringify(userData));
                     sessionStorage.setItem('mode_ortu', 'true');
                     
@@ -254,7 +248,6 @@
                         window.location.href = 'ortu.html';
                     });
                 } 
-                // Skenario C: Password Salah
                 else {
                     throw new Error("Password Salah!");
                 }
@@ -268,15 +261,9 @@
             }
         });
 
-        // FUNGSI SIMPAN SESI BIAR KONSISTEN
         function saveSession(data) {
-            // Simpan objek lengkap di Session (hilang saat browser tutup)
             sessionStorage.setItem('user_siganteng', JSON.stringify(data));
-            
-            // Simpan Role di LocalStorage (Untuk Security Check di file lain)
             localStorage.setItem('app_session_role', data.role);
-            
-            // Khusus Admin lama
             if(data.role === 'super' || data.role === 'admin') {
                 localStorage.setItem('admin_role', 'SUPER');
             }
