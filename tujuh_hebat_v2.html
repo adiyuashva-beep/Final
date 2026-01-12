@@ -250,10 +250,8 @@
             
             // 1. CEK SESI (SATPAM)
             const sessionData = sessionStorage.getItem('user_siganteng');
-            console.log("Cek Sesi Debug:", sessionData); // Cek Console kalo error
-
+            
             if (!sessionData) {
-                // TENDANG JIKA KOSONG
                 Swal.fire({
                     title: 'Sesi Habis',
                     text: 'Silakan login ulang dari halaman awal.',
@@ -263,19 +261,22 @@
                 }).then(() => {
                     window.location.href = 'index.html';
                 });
-                return; // Stop script
+                return;
             }
 
             try {
                 // 2. PARSE DATA SISWA
                 userSiswa = JSON.parse(sessionData);
                 
+                // --- PERBAIKAN PENTING: ID/USERNAME FALLBACK ---
+                userSiswa.username = userSiswa.username || userSiswa.nisn;
+                // -----------------------------------------------
+
                 // 3. UPDATE TAMPILAN
                 document.getElementById('nama-siswa').innerText = userSiswa.nama || "Siswa";
                 if(userSiswa.foto_profil) {
                     document.getElementById('foto-profil').src = userSiswa.foto_profil;
                 } else {
-                    // Fallback avatar pake nama siswa
                     document.getElementById('foto-profil').src = `https://ui-avatars.com/api/?background=random&color=fff&name=${encodeURIComponent(userSiswa.nama)}`;
                 }
 
@@ -355,7 +356,7 @@
             canvas.height = video.videoHeight; 
             canvas.getContext('2d').drawImage(video, 0, 0); 
             
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.7); // Kompresi 0.7
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.7); 
             
             document.getElementById(`preview-${targetFoto}`).src = dataUrl; 
             document.getElementById(`preview-${targetFoto}`).classList.remove('hidden'); 
