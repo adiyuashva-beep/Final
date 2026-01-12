@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Executive Dashboard - 7 Kebiasaan Hebat</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        body { font-family: 'Outfit', sans-serif; background-color: #f1f5f9; }
+        .glass-card { background: white; border: 1px solid #e2e8f0; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+        .loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.8); backdrop-filter: blur(4px); z-index: 50; display: none; align-items: center; justify-content: center; flex-direction: column; }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <div id="loading" class="loading-overlay">
+        <div class="animate-spin w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full mb-3"></div>
+        <p class="font-bold text-indigo-800 animate-pulse">Sedang Menganalisis Data...</p>
+    </div>
+
+    <div class="fixed left-0 top-0 h-full w-20 bg-slate-900 flex flex-col items-center py-6 gap-6 z-40 hidden md:flex">
+        <div class="w-10 h-10 bg-indigo-500 rounded-xl flex items-center justify-center text-white font-bold text-xl">SG</div>
+        <button onclick="window.location.href='admin.html'" class="p-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition"><i data-lucide="layout-dashboard" class="w-6 h-6"></i></button>
+        <button class="p-3 text-white bg-indigo-600 rounded-xl shadow-lg shadow-indigo-500/50"><i data-lucide="activity" class="w-6 h-6"></i></button>
+        <button onclick="logout()" class="mt-auto p-3 text-rose-400 hover:text-rose-200 hover:bg-rose-900/50 rounded-xl"><i data-lucide="log-out" class="w-6 h-6"></i></button>
+    </div>
+
+    <main class="md:ml-20 p-6 min-h-screen">
+        
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-8">
+            <div>
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Monitoring Karakter</span>
+                    <span class="text-slate-400 text-xs font-bold" id="waktu-update">Update: -</span>
+                </div>
+                <h1 class="text-3xl font-black text-slate-900 tracking-tight">7 Kebiasaan Hebat</h1>
+                <p class="text-slate-500 text-sm">Analisis data real-time perkembangan karakter siswa.</p>
+            </div>
+            
+            <div class="flex flex-wrap gap-3 bg-white p-2 rounded-2xl shadow-sm border border-slate-200">
+                <div class="flex items-center px-3 gap-2 border-r border-slate-100">
+                    <i data-lucide="calendar" class="w-4 h-4 text-slate-400"></i>
+                    <input type="date" id="filter-tanggal" class="text-sm font-bold text-slate-700 outline-none bg-transparent cursor-pointer">
+                </div>
+                
+                <button onclick="loadData()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i> Refresh
+                </button>
+                <button onclick="exportExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg shadow-emerald-500/30 transition flex items-center gap-2">
+                    <i data-lucide="sheet" class="w-4 h-4"></i> Download Excel
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="glass-card p-5 relative overflow-hidden group">
+                <div class="relative z-10">
+                    <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Total Responden</p>
+                    <h2 class="text-4xl font-black text-slate-800" id="kpi-total">0</h2>
+                    <p class="text-xs text-emerald-600 font-bold mt-2 flex items-center gap-1"><i data-lucide="users" class="w-3 h-3"></i> Siswa Input Data</p>
+                </div>
+                <div class="absolute right-0 top-0 h-full w-24 bg-gradient-to-l from-indigo-50 to-transparent"></div>
+            </div>
+
+            <div class="glass-card p-5 relative overflow-hidden group">
+                <div class="relative z-10">
+                    <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Rata-rata Skor</p>
+                    <h2 class="text-4xl font-black text-slate-800" id="kpi-avg">0.0</h2>
+                    <p class="text-xs text-slate-400 font-bold mt-2">Dari Skala 7.0</p>
+                </div>
+                <div class="absolute right-0 top-0 h-full w-24 bg-gradient-to-l from-amber-50 to-transparent"></div>
+            </div>
+
+            <div class="glass-card p-5 relative overflow-hidden group">
+                <div class="relative z-10">
+                    <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Kebiasaan Terkuat</p>
+                    <h2 class="text-xl font-black text-emerald-600 leading-tight mt-1" id="kpi-top">-</h2>
+                    <p class="text-xs text-slate-400 mt-2" id="kpi-top-pct">0% Penerapan</p>
+                </div>
+                <div class="absolute right-4 top-4 text-emerald-100"><i data-lucide="thumbs-up" class="w-12 h-12"></i></div>
+            </div>
+
+            <div class="glass-card p-5 relative overflow-hidden group">
+                <div class="relative z-10">
+                    <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Perlu Ditingkatkan</p>
+                    <h2 class="text-xl font-black text-rose-500 leading-tight mt-1" id="kpi-low">-</h2>
+                    <p class="text-xs text-slate-400 mt-2" id="kpi-low-pct">0% Penerapan</p>
+                </div>
+                <div class="absolute right-4 top-4 text-rose-100"><i data-lucide="alert-circle" class="w-12 h-12"></i></div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            
+            <div class="glass-card p-6 lg:col-span-1">
+                <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <i data-lucide="radar" class="w-5 h-5 text-indigo-500"></i> Peta Kekuatan Karakter
+                </h3>
+                <div class="aspect-square relative">
+                    <canvas id="radarChart"></canvas>
+                </div>
+                <p class="text-xs text-center text-slate-400 mt-4 italic">Semakin lebar jaring, semakin seimbang karakter siswa.</p>
+            </div>
+
+            <div class="glass-card p-6 lg:col-span-2 flex flex-col">
+                <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <i data-lucide="bar-chart-3" class="w-5 h-5 text-indigo-500"></i> Partisipasi per Kelas
+                </h3>
+                <div class="flex-1 relative w-full h-64 lg:h-auto">
+                    <canvas id="barChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card overflow-hidden">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center">
+                <h3 class="font-bold text-slate-800">Detail Input Siswa</h3>
+                <div class="relative">
+                    <input type="text" id="searchTable" onkeyup="filterTable()" placeholder="Cari Siswa..." class="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-indigo-500">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-500 text-[10px] uppercase font-bold tracking-wider">
+                            <th class="p-4 border-b border-slate-100">Waktu</th>
+                            <th class="p-4 border-b border-slate-100">Nama Siswa</th>
+                            <th class="p-4 border-b border-slate-100">Kelas</th>
+                            <th class="p-4 border-b border-slate-100 text-center">Skor</th>
+                            <th class="p-4 border-b border-slate-100 text-center">Capaian</th>
+                            <th class="p-4 border-b border-slate-100 text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body" class="text-sm text-slate-700">
+                        <tr><td colspan="6" class="p-8 text-center text-slate-400 italic">Memuat data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="p-4 border-t border-slate-100 bg-slate-50 text-xs text-slate-500 text-center" id="footer-table">
+                Menampilkan 0 data
+            </div>
+        </div>
+
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        // Konfigurasi Firebase
+        const firebaseConfig = { 
+            apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo", 
+            authDomain: "siganteng-absensi.firebaseapp.com", 
+            databaseURL: "https://siganteng-absensi-default-rtdb.asia-southeast1.firebasedatabase.app", 
+            projectId: "siganteng-absensi", 
+            storageBucket: "siganteng-absensi.firebasestorage.app", 
+            messagingSenderId: "917873420012", 
+            appId: "1:917873420012:web:0fe1a9eddc5f94959ba7c9" 
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let globalData = []; // Untuk simpan data mentah biar bisa diexport
+        let radarChartInstance = null;
+        let barChartInstance = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            
+            // Set default date to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('filter-tanggal').value = today;
+
+            // Load Data
+            loadData();
+        });
+
+        window.loadData = async () => {
+            const loading = document.getElementById('loading');
+            loading.style.display = 'flex';
+            
+            const tgl = document.getElementById('filter-tanggal').value;
+            const q = query(collection(db, "jurnal_7_hebat"), where("tanggal", "==", tgl));
+            
+            try {
+                const snap = await getDocs(q);
+                globalData = [];
+                
+                // Variabel Statistik
+                let stats = {
+                    bangun: 0, ibadah: 0, olahraga: 0, makan: 0, belajar: 0, sosial: 0, tidur: 0,
+                    totalSkor: 0,
+                    byKelas: {}
+                };
+
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    d.id = doc.id; // Simpan ID dokumen
+                    globalData.push(d);
+
+                    // Hitung Statistik Radar
+                    if(d.bangun_pagi) stats.bangun++;
+                    if(d.beribadah) stats.ibadah++;
+                    if(d.olahraga) stats.olahraga++;
+                    if(d.makan_sehat) stats.makan++;
+                    if(d.gemar_belajar) stats.belajar++;
+                    if(d.bermasyarakat) stats.sosial++;
+                    if(d.tidur_cepat) stats.tidur++;
+                    
+                    stats.totalSkor += (d.poin_harian || 0);
+
+                    // Hitung Statistik Kelas
+                    const kls = d.kelas || "TIDAK ADA KELAS";
+                    if(!stats.byKelas[kls]) stats.byKelas[kls] = 0;
+                    stats.byKelas[kls]++;
+                });
+
+                updateKPI(globalData.length, stats);
+                renderCharts(globalData.length, stats);
+                renderTable(globalData);
+                
+                document.getElementById('waktu-update').innerText = "Update: " + new Date().toLocaleTimeString();
+
+            } catch (e) {
+                console.error(e);
+                Swal.fire('Error', 'Gagal memuat data: ' + e.message, 'error');
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        function updateKPI(total, stats) {
+            document.getElementById('kpi-total').innerText = total;
+            
+            // Avg Score
+            const avg = total > 0 ? (stats.totalSkor / total).toFixed(1) : 0;
+            document.getElementById('kpi-avg').innerText = avg;
+
+            // Cari Top & Low Habit
+            const habits = [
+                {label: 'Bangun Pagi', val: stats.bangun},
+                {label: 'Ibadah', val: stats.ibadah},
+                {label: 'Olahraga', val: stats.olahraga},
+                {label: 'Makan Sehat', val: stats.makan},
+                {label: 'Belajar', val: stats.belajar},
+                {label: 'Bermasyarakat', val: stats.sosial},
+                {label: 'Tidur Cepat', val: stats.tidur}
+            ];
+            
+            // Sort Descending
+            habits.sort((a,b) => b.val - a.val);
+            
+            const top = habits[0];
+            const low = habits[habits.length - 1];
+
+            document.getElementById('kpi-top').innerText = total > 0 ? top.label : "-";
+            document.getElementById('kpi-top-pct').innerText = total > 0 ? Math.round((top.val/total)*100) + "% Penerapan" : "0%";
+            
+            document.getElementById('kpi-low').innerText = total > 0 ? low.label : "-";
+            document.getElementById('kpi-low-pct').innerText = total > 0 ? Math.round((low.val/total)*100) + "% Penerapan" : "0%";
+        }
+
+        function renderCharts(total, stats) {
+            // 1. RADAR CHART
+            const ctxRadar = document.getElementById('radarChart').getContext('2d');
+            
+            // Data dalam persen
+            const dataRadar = [
+                stats.bangun, stats.ibadah, stats.olahraga, 
+                stats.makan, stats.belajar, stats.sosial, stats.tidur
+            ].map(v => total > 0 ? Math.round((v/total)*100) : 0);
+
+            if(radarChartInstance) radarChartInstance.destroy();
+
+            radarChartInstance = new Chart(ctxRadar, {
+                type: 'radar',
+                data: {
+                    labels: ['Bangun Pagi', 'Ibadah', 'Olahraga', 'Makan Sehat', 'Belajar', 'Sosial', 'Tidur Cepat'],
+                    datasets: [{
+                        label: '% Penerapan',
+                        data: dataRadar,
+                        backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                        borderColor: 'rgba(99, 102, 241, 1)',
+                        pointBackgroundColor: 'rgba(99, 102, 241, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(99, 102, 241, 1)'
+                    }]
+                },
+                options: {
+                    scales: {
+                        r: {
+                            angleLines: { display: true },
+                            suggestedMin: 0,
+                            suggestedMax: 100
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // 2. BAR CHART (KELAS)
+            const ctxBar = document.getElementById('barChart').getContext('2d');
+            
+            // Sort kelas by nama
+            const kelasKeys = Object.keys(stats.byKelas).sort();
+            const kelasVals = kelasKeys.map(k => stats.byKelas[k]);
+
+            if(barChartInstance) barChartInstance.destroy();
+
+            barChartInstance = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: kelasKeys,
+                    datasets: [{
+                        label: 'Jumlah Siswa Input',
+                        data: kelasVals,
+                        backgroundColor: '#10b981',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+
+            if(data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400 italic">Tidak ada data pada tanggal ini.</td></tr>`;
+                document.getElementById('footer-table').innerText = "Menampilkan 0 data";
+                return;
+            }
+
+            // Urutkan berdasarkan waktu update terbaru
+            data.sort((a,b) => (b.waktu_update?.seconds || 0) - (a.waktu_update?.seconds || 0));
+
+            data.forEach(d => {
+                const jam = d.waktu_update ? new Date(d.waktu_update.seconds*1000).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : '-';
+                
+                // Indikator 7 Titik Warna
+                const dot = (active) => `<span class="inline-block w-2.5 h-2.5 rounded-full ${active ? 'bg-emerald-500' : 'bg-slate-200'} mr-1"></span>`;
+                const visualCapaian = `
+                    <div class="flex justify-center" title="Urutan: Bangun, Ibadah, Olahraga, Makan, Belajar, Sosial, Tidur">
+                        ${dot(d.bangun_pagi)}${dot(d.beribadah)}${dot(d.olahraga)}${dot(d.makan_sehat)}${dot(d.gemar_belajar)}${dot(d.bermasyarakat)}${dot(d.tidur_cepat)}
+                    </div>
+                `;
+
+                // Tombol Detail (Menyimpan data di atribut data-json)
+                // Kita encode URI component biar aman
+                const safeData = encodeURIComponent(JSON.stringify(d));
+
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-slate-50 hover:bg-slate-50 transition";
+                tr.innerHTML = `
+                    <td class="p-4 font-mono font-bold text-slate-500">${jam}</td>
+                    <td class="p-4 font-bold text-slate-700">${d.nama}</td>
+                    <td class="p-4"><span class="bg-indigo-50 text-indigo-700 px-2 py-1 rounded text-xs font-bold">${d.kelas}</span></td>
+                    <td class="p-4 text-center font-black text-lg ${d.poin_harian == 7 ? 'text-emerald-500' : 'text-slate-700'}">${d.poin_harian}</td>
+                    <td class="p-4 text-center">${visualCapaian}</td>
+                    <td class="p-4 text-center">
+                        <button onclick="lihatDetail('${safeData}')" class="text-blue-600 hover:bg-blue-50 p-2 rounded-lg font-bold text-xs transition">Lihat</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('footer-table').innerText = `Menampilkan ${data.length} data`;
+        }
+
+        // --- GLOBAL FUNCTIONS FOR BUTTONS ---
+        window.filterTable = () => {
+            const input = document.getElementById('searchTable').value.toUpperCase();
+            const trs = document.getElementById('table-body').getElementsByTagName('tr');
+            for (let i = 0; i < trs.length; i++) {
+                const tdNama = trs[i].getElementsByTagName("td")[1];
+                const tdKelas = trs[i].getElementsByTagName("td")[2];
+                if (tdNama || tdKelas) {
+                    const txtVal = (tdNama.textContent || tdNama.innerText) + " " + (tdKelas.textContent || tdKelas.innerText);
+                    trs[i].style.display = txtVal.toUpperCase().indexOf(input) > -1 ? "" : "none";
+                }       
+            }
+        }
+
+        window.lihatDetail = (encodedJson) => {
+            const d = JSON.parse(decodeURIComponent(encodedJson));
+            
+            // Helper Render
+            const row = (lbl, val) => `<div class="flex justify-between border-b border-slate-100 py-2"><span class="text-slate-500 text-xs uppercase font-bold">${lbl}</span><span class="text-slate-800 font-bold text-sm text-right">${val}</span></div>`;
+            const imgRow = (lbl, url) => {
+                if(!url || url === '-' || !url.includes('http')) return row(lbl, '<span class="text-slate-400 italic">Tidak ada foto</span>');
+                return `<div class="py-2"><p class="text-slate-500 text-xs uppercase font-bold mb-2">${lbl}</p><img src="${url}" class="w-full h-40 object-cover rounded-xl border border-slate-200"></div>`;
+            };
+
+            Swal.fire({
+                title: `<span class="text-lg font-black">${d.nama}</span>`,
+                html: `
+                    <div class="text-left space-y-1 max-h-[60vh] overflow-y-auto pr-2">
+                        ${row('Bangun Pagi', d.jam_bangun)}
+                        ${row('Ibadah', d.jenis_ibadah)}
+                        ${row('Olahraga', d.jenis_olahraga)}
+                        ${row('Menu Makan', d.menu_makan)}
+                        ${imgRow('Foto Makan', d.foto_makan)}
+                        ${row('Mapel Belajar', d.mapel_belajar)}
+                        ${imgRow('Foto Belajar', d.foto_belajar)}
+                        ${row('Kegiatan Sosial', d.keg_sosial)}
+                        ${row('Jam Tidur', d.jam_tidur)}
+                    </div>
+                `,
+                confirmButtonText: 'Tutup',
+                width: 450
+            });
+        }
+
+        window.exportExcel = () => {
+            if(globalData.length === 0) return Swal.fire('Kosong', 'Tidak ada data untuk didownload.', 'info');
+            
+            // Mapping Data Rapi untuk Excel
+            const dataExcel = globalData.map(d => ({
+                "Tanggal": d.tanggal,
+                "Waktu Input": d.waktu_update ? new Date(d.waktu_update.seconds*1000).toLocaleTimeString('id-ID') : '-',
+                "NISN": d.nisn,
+                "Nama Siswa": d.nama,
+                "Kelas": d.kelas,
+                "Skor Total": d.poin_harian,
+                "Jam Bangun": d.jam_bangun,
+                "Jenis Ibadah": d.jenis_ibadah,
+                "Jenis Olahraga": d.jenis_olahraga,
+                "Menu Makan": d.menu_makan,
+                "Link Foto Makan": d.foto_makan || '-',
+                "Mapel Belajar": d.mapel_belajar,
+                "Link Foto Belajar": d.foto_belajar || '-',
+                "Kegiatan Sosial": d.keg_sosial,
+                "Jam Tidur": d.jam_tidur
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(dataExcel);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Rekap 7 Hebat");
+            
+            const tgl = document.getElementById('filter-tanggal').value;
+            XLSX.writeFile(wb, `Rekap_7Hebat_${tgl}.xlsx`);
+        }
+
+        window.logout = () => {
+            if(confirm('Keluar dari Admin?')) window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>
