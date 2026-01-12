@@ -227,15 +227,12 @@
 
         const firebaseConfig = { apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo", authDomain: "siganteng-absensi.firebaseapp.com", databaseURL: "https://siganteng-absensi-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "siganteng-absensi", storageBucket: "siganteng-absensi.firebasestorage.app", messagingSenderId: "917873420012", appId: "1:917873420012:web:0fe1a9eddc5f94959ba7c9" };
         const app = initializeApp(firebaseConfig); const db = getFirestore(app); const storage = getStorage(app);
-// --- 🛡️ SATPAM AKSES (CODE BLOCK START) ---
-        // Pasang ini tepat di bawah 'const db = getFirestore(app);'
-        
+
+        // --- 🛡️ SATPAM AKSES ---
         onSnapshot(doc(db, "pengaturan", "akses_global"), (snap) => {
             if (snap.exists()) {
                 const akses = snap.data();
-                // Cek apakah pintu 'siswa' ditutup?
                 if (akses.siswa === false) {
-                    // JIKA DITUTUP: Hapus seluruh tampilan & ganti pesan maintenance
                     document.body.innerHTML = `
                         <div style="height:100vh; background:#0f172a; color:white; display:flex; flex-direction:column; justify-content:center; align-items:center; font-family:'Outfit',sans-serif; text-align:center;">
                             <div style="font-size:4rem; margin-bottom:1rem;">⛔</div>
@@ -247,7 +244,7 @@
                 }
             }
         });
-        // --- 🛡️ SATPAM AKSES (CODE BLOCK END) ---
+        
         let SEKOLAH_LAT = -7.6739830; let SEKOLAH_LNG = 109.6319560;
         let userSiswa = null; let lokasiUser = null; let map = null; let markerSiswa = null;
         let streamKamera = null; let tipeAbsenAktif = ""; let tempFotoBukti = null;
@@ -259,12 +256,13 @@
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
             
-            // --- FIX PENTING: Gunakan sessionStorage ('user_siganteng') bukan localStorage ('userSiswa') ---
             const sessionData = sessionStorage.getItem('user_siganteng'); 
             
             if (sessionData) {
                 userSiswa = JSON.parse(sessionData);
-                userSiswa.nisn = String(userSiswa.username || userSiswa.nisn);
+                // --- STANDARISASI ID DISINI ---
+                userSiswa.username = userSiswa.username || userSiswa.nisn;
+                userSiswa.nisn = userSiswa.username; // Pastikan sinkron
                 
                 document.getElementById('dash-nama').innerText = userSiswa.nama;
                 document.getElementById('dash-kelas').innerText = userSiswa.kelas || "SISWA";
@@ -285,7 +283,6 @@
                     }
                 };
             } else { 
-                // Kalau tiket session gak ada, tendang ke login
                 window.location.href = 'index.html'; 
             }
         });
@@ -331,8 +328,40 @@
         window.pilihFotoGaleri = (tipe) => { if(tipe === 'profil') { if((userSiswa.update_foto_count || 0) >= 2) { Swal.fire('Jatah Habis', 'Kamu sudah mengganti foto 2x.', 'warning'); return; } document.getElementById('fileInputProfil').click(); } else document.getElementById('fileInputBukti').click(); }
         window.prosesUploadGaleri = (input, tipe) => { if (input.files && input.files[0]) { const file = input.files[0]; Swal.fire({ title: 'Memproses...', text: 'Mengecilkan foto...', allowOutsideClick: false, didOpen: () => Swal.showLoading() }); const reader = new FileReader(); reader.onload = (e) => { const img = new Image(); img.src = e.target.result; img.onload = () => { const canvas = document.createElement('canvas'); const MAX_WIDTH = 300; const scaleSize = MAX_WIDTH / img.width; canvas.width = MAX_WIDTH; canvas.height = img.height * scaleSize; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, canvas.width, canvas.height); const dataUrl = canvas.toDataURL('image/jpeg', 0.5); if(tipe === 'profil') { prosesUpdateProfil(dataUrl); } else { tempFotoBukti = dataUrl; document.getElementById('previewBukti').src = dataUrl; document.getElementById('previewBukti').classList.remove('hidden'); document.getElementById('btnAmbilBukti').innerHTML = `<span class="text-green-600 font-bold">Foto Ada!</span>`; Swal.close(); } } }; reader.readAsDataURL(file); } }
 
-        async function loadMenuDinamis() { const cachedMenu = localStorage.getItem('cache_menu_dinamis'); const sec = document.getElementById('section-menu-dinamis'); if (cachedMenu) { const data = JSON.parse(cachedMenu); if(data.length > 0) { renderMenuDinamis(data); sec.classList.remove('hidden'); return; } } const q = query(collection(db, "menu_dinamis"), orderBy("created_at", "asc")); try { const snap = await getDocs(q); let menuData = []; snap.forEach(d => { const dt = d.data(); if (dt.target === 'siswa' || dt.target === 'umum') menuData.push(dt); }); if(menuData.length > 0) { localStorage.setItem('cache_menu_dinamis', JSON.stringify(menuData)); renderMenuDinamis(menuData); sec.classList.remove('hidden'); } } catch(e) { console.log(e); } }
-        function renderMenuDinamis(dataList) { const container = document.getElementById('grid-menu-dinamis'); container.innerHTML = ''; dataList.forEach(dt => { const style = dt.highlight ? "bg-indigo-50 border-indigo-200 text-indigo-700" : "bg-white border-slate-100 text-slate-700"; container.innerHTML += `<a href="${dt.link}" target="_blank" class="${style} p-4 border rounded-2xl text-center flex flex-col items-center gap-2 active:scale-95 transition shadow-sm"><div class="text-2xl">${dt.icon}</div><span class="text-[10px] font-bold uppercase tracking-tighter">${dt.judul}</span></a>`; }); }
+        async function loadMenuDinamis() { 
+            const cachedMenu = localStorage.getItem('cache_menu_dinamis'); 
+            const sec = document.getElementById('section-menu-dinamis'); 
+            
+            // Render Cache Dulu
+            if (cachedMenu) { 
+                const data = JSON.parse(cachedMenu); 
+                if(data.length > 0) { renderMenuDinamis(data); sec.classList.remove('hidden'); } 
+            } 
+            
+            const q = query(collection(db, "menu_dinamis"), orderBy("created_at", "asc")); 
+            try { 
+                const snap = await getDocs(q); 
+                let menuData = []; 
+                snap.forEach(d => { const dt = d.data(); if (dt.target === 'siswa' || dt.target === 'umum') menuData.push(dt); }); 
+                
+                if(menuData.length > 0) { 
+                    localStorage.setItem('cache_menu_dinamis', JSON.stringify(menuData)); 
+                    renderMenuDinamis(menuData); 
+                    sec.classList.remove('hidden'); 
+                } 
+            } catch(e) { console.log(e); } 
+        }
+        
+        function renderMenuDinamis(dataList) { 
+            const container = document.getElementById('grid-menu-dinamis'); 
+            container.innerHTML = ''; 
+            dataList.forEach(dt => { 
+                const style = dt.highlight ? "bg-indigo-50 border-indigo-200 text-indigo-700" : "bg-white border-slate-100 text-slate-700"; 
+                // --- PERBAIKAN: HAPUS target="_blank" ---
+                // Supaya buka di tab yang sama dan sesi tidak hilang
+                container.innerHTML += `<a href="${dt.link}" class="${style} p-4 border rounded-2xl text-center flex flex-col items-center gap-2 active:scale-95 transition shadow-sm"><div class="text-2xl">${dt.icon}</div><span class="text-[10px] font-bold uppercase tracking-tighter">${dt.judul}</span></a>`; 
+            }); 
+        }
 
         window.kirimRefleksi = async (idJurnal, mapel, rating) => { if(!userSiswa) return; const elPesan = document.getElementById(`pesan-${idJurnal}`); const pesan = elPesan ? elPesan.value : "-"; document.getElementById('loadingOverlay').classList.remove('hidden'); try { await addDoc(collection(db, "refleksi_siswa"), { nisn: userSiswa.nisn, nama: userSiswa.nama, kelas: userSiswa.kelas, id_jurnal: idJurnal, mapel: mapel, rating: rating, pesan: pesan || "-", tanggal: getTodayID(), waktu: serverTimestamp() }); const pesanRingkas = `${userSiswa.nama}: ${pesan}`; const docJurnalRef = doc(db, "jurnal_guru", idJurnal); const docSnap = await getDoc(docJurnalRef); if (docSnap.exists()) { let komenLama = docSnap.data().rekap_refleksi_string || ""; let komenBaru = komenLama ? (komenLama + " | " + pesanRingkas) : pesanRingkas; await updateDoc(docJurnalRef, { rekap_refleksi_string: komenBaru }); } localStorage.setItem(`rated_${idJurnal}`, 'true'); Swal.fire({ title: 'Mantap!', text: 'Refleksi berhasil dikirim.', icon: 'success', timer: 1500, showConfirmButton: false }); } catch(e) { Swal.fire('Error', e.message, 'error'); } finally { document.getElementById('loadingOverlay').classList.add('hidden'); } }
 
