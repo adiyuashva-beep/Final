@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Misi 7 Kebiasaan Hebat</title>
+    <title>7 Kebiasaan Hebat - SiGanteng</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -16,10 +16,16 @@
         .hide-scroll::-webkit-scrollbar { display: none; }
         
         /* Card Styles */
-        .card-misi { background: white; border: 2px solid #e2e8f0; border-radius: 1.5rem; transition: all 0.2s; overflow: hidden; position: relative; }
-        .card-misi.active { border-color: #10b981; background-color: #ecfdf5; transform: scale(1.01); }
-        .check-circle { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #cbd5e1; transition: all 0.3s; display: flex; align-items: center; justify-content: center; }
-        .card-misi.active .check-circle { background: #10b981; border-color: #10b981; color: white; }
+        .card-misi { background: white; border: 2px solid #e2e8f0; border-radius: 1.5rem; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); overflow: hidden; position: relative; }
+        
+        /* State: Active (Valid) */
+        .card-misi.valid { border-color: #10b981; background-color: #ecfdf5; transform: scale(1.01); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1); }
+        
+        /* State: Expanded (Sedang Mengisi) */
+        .card-misi.expanded { border-color: #6366f1; }
+
+        .check-circle { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #cbd5e1; transition: all 0.3s; display: flex; align-items: center; justify-content: center; background: white; }
+        .card-misi.valid .check-circle { background: #10b981; border-color: #10b981; color: white; transform: scale(1.1); }
         
         /* Animation */
         .fade-up { animation: fadeUp 0.5s ease-out forwards; opacity: 0; transform: translateY(20px); }
@@ -29,6 +35,8 @@
         .camera-overlay { background: black; }
         .camera-box { position: relative; width: 100%; height: 100%; overflow: hidden; }
         .preview-img { width: 100%; height: 150px; object-fit: cover; border-radius: 12px; margin-top: 10px; border: 2px dashed #cbd5e1; }
+        .input-custom { transition: all 0.3s; }
+        .hidden-custom { display: none; }
     </style>
 </head>
 <body class="pb-40">
@@ -37,7 +45,7 @@
         <div class="flex justify-between items-center mb-4">
             <button onclick="window.history.back()" class="bg-white/20 p-2 rounded-full hover:bg-white/30"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
             <div class="bg-indigo-800/50 px-3 py-1 rounded-full text-[10px] font-bold border border-indigo-400/30 flex items-center gap-2">
-                🔥 POIN HARI INI: <span id="score-display">0</span>
+                🔥 POIN TERKUMPUL: <span id="score-display">0</span>
             </div>
         </div>
         
@@ -49,7 +57,7 @@
                 <h2 id="nama-siswa" class="text-xl font-black leading-tight">Memuat...</h2>
                 <div class="mt-2">
                     <div class="flex justify-between text-[10px] font-bold opacity-80 mb-1">
-                        <span>Progress</span>
+                        <span>Progress Harian</span>
                         <span id="text-progress">0/7 Selesai</span>
                     </div>
                     <div class="w-full bg-indigo-900/30 h-3 rounded-full overflow-hidden">
@@ -62,131 +70,140 @@
 
     <div class="px-6 -mt-6 relative z-10 space-y-4">
 
-        <div class="card-misi p-4 fade-up" style="animation-delay: 0.1s;" onclick="toggleMisi('ibadah')">
+        <div id="card-bangun" class="card-misi p-4 fade-up" style="animation-delay: 0.1s;" onclick="bukaDetail('bangun')">
             <div class="flex items-center gap-4">
-                <div class="bg-blue-100 text-blue-600 p-3 rounded-xl"><i data-lucide="sun" class="w-6 h-6"></i></div>
+                <div class="bg-amber-100 text-amber-600 p-3 rounded-xl"><i data-lucide="sun" class="w-6 h-6"></i></div>
                 <div class="flex-1">
-                    <h3 class="font-bold text-slate-800">Bangun Pagi & Ibadah</h3>
-                    <p class="text-[10px] text-slate-500">Isi jam bangunmu dengan jujur.</p>
+                    <h3 class="font-bold text-slate-800">1. Bangun Pagi</h3>
+                    <p class="text-[10px] text-slate-500" id="status-bangun">Belum diisi</p>
                 </div>
-                <div class="check-circle" id="check-ibadah"><i data-lucide="check" class="w-4 h-4"></i></div>
+                <div class="check-circle"><i data-lucide="check" class="w-4 h-4"></i></div>
             </div>
-            <div id="detail-ibadah" class="hidden mt-3 pt-3 border-t border-slate-100" onclick="event.stopPropagation()">
+            <div id="detail-bangun" class="hidden mt-3 pt-3 border-t border-slate-100" onclick="event.stopPropagation()">
                 <label class="text-[10px] font-bold text-slate-400 uppercase">Jam Bangun:</label>
-                <input type="time" id="jam-ibadah" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-sm font-bold mt-1">
+                <input type="time" id="val-bangun" onchange="validasi('bangun')" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm font-bold mt-1 focus:ring-2 focus:ring-indigo-500 outline-none">
             </div>
-            <input type="checkbox" id="input-ibadah" class="hidden">
         </div>
 
-        <div class="card-misi p-4 fade-up" style="animation-delay: 0.2s;" onclick="toggleMisi('olahraga')">
+        <div id="card-ibadah" class="card-misi p-4 fade-up" style="animation-delay: 0.2s;" onclick="bukaDetail('ibadah')">
+            <div class="flex items-center gap-4">
+                <div class="bg-blue-100 text-blue-600 p-3 rounded-xl"><i data-lucide="heart" class="w-6 h-6"></i></div>
+                <div class="flex-1">
+                    <h3 class="font-bold text-slate-800">2. Beribadah</h3>
+                    <p class="text-[10px] text-slate-500" id="status-ibadah">Belum diisi</p>
+                </div>
+                <div class="check-circle"><i data-lucide="check" class="w-4 h-4"></i></div>
+            </div>
+            <div id="detail-ibadah" class="hidden mt-3 pt-3 border-t border-slate-100" onclick="event.stopPropagation()">
+                <select id="val-ibadah" onchange="cekDropdown('ibadah')" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs font-bold outline-none mb-2">
+                    <option value="">- Pilih Ibadah -</option>
+                    <option value="Sholat Subuh">Sholat Subuh</option>
+                    <option value="Sholat Dhuha">Sholat Dhuha</option>
+                    <option value="Sholat Zuhur">Sholat Zuhur</option>
+                    <option value="Saat Teduh / Doa Pagi">Saat Teduh / Doa Pagi</option>
+                    <option value="Membaca Kitab Suci">Membaca Kitab Suci</option>
+                    <option value="Lainnya">Lainnya (Isi Sendiri)</option>
+                </select>
+                <input type="text" id="extra-ibadah" onkeyup="validasi('ibadah')" class="hidden-custom w-full bg-indigo-50 border border-indigo-200 rounded-lg p-3 text-xs font-bold text-indigo-700 placeholder-indigo-300" placeholder="Tulis ibadahmu...">
+            </div>
+        </div>
+
+        <div id="card-olahraga" class="card-misi p-4 fade-up" style="animation-delay: 0.3s;" onclick="bukaDetail('olahraga')">
             <div class="flex items-center gap-4">
                 <div class="bg-rose-100 text-rose-600 p-3 rounded-xl"><i data-lucide="activity" class="w-6 h-6"></i></div>
                 <div class="flex-1">
-                    <h3 class="font-bold text-slate-800">Olahraga Ringan</h3>
-                    <p class="text-[10px] text-slate-500">Senam, lari, push-up (min 10 menit).</p>
+                    <h3 class="font-bold text-slate-800">3. Berolahraga</h3>
+                    <p class="text-[10px] text-slate-500" id="status-olahraga">Belum diisi</p>
                 </div>
-                <div class="check-circle" id="check-olahraga"><i data-lucide="check" class="w-4 h-4"></i></div>
+                <div class="check-circle"><i data-lucide="check" class="w-4 h-4"></i></div>
             </div>
             <div id="detail-olahraga" class="hidden mt-3 pt-3 border-t border-slate-100" onclick="event.stopPropagation()">
-                <input type="text" id="ket-olahraga" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold" placeholder="Contoh: Lari Pagi keliling komplek">
+                <select id="val-olahraga" onchange="cekDropdown('olahraga')" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs font-bold outline-none mb-2">
+                    <option value="">- Pilih Olahraga -</option>
+                    <option value="Senam Pagi">Senam Pagi</option>
+                    <option value="Lari / Jogging">Lari / Jogging</option>
+                    <option value="Push Up / Sit Up">Push Up / Sit Up</option>
+                    <option value="Bulu Tangkis">Bulu Tangkis</option>
+                    <option value="Sepak Bola">Sepak Bola</option>
+                    <option value="Lainnya">Lainnya (Isi Sendiri)</option>
+                </select>
+                <input type="text" id="extra-olahraga" onkeyup="validasi('olahraga')" class="hidden-custom w-full bg-indigo-50 border border-indigo-200 rounded-lg p-3 text-xs font-bold text-indigo-700 placeholder-indigo-300" placeholder="Olahraga apa...">
             </div>
-            <input type="checkbox" id="input-olahraga" class="hidden">
         </div>
 
-        <div class="card-misi p-4 fade-up" style="animation-delay: 0.3s;" onclick="toggleMisi('literasi')">
-            <div class="flex items-center gap-4">
-                <div class="bg-amber-100 text-amber-600 p-3 rounded-xl"><i data-lucide="book-open" class="w-6 h-6"></i></div>
-                <div class="flex-1">
-                    <h3 class="font-bold text-slate-800">Gemar Membaca <span class="text-[8px] bg-red-500 text-white px-1 rounded ml-1">FOTO</span></h3>
-                    <p class="text-[10px] text-slate-500">Foto buku yang kamu baca hari ini.</p>
-                </div>
-                <div class="check-circle" id="check-literasi"><i data-lucide="check" class="w-4 h-4"></i></div>
-            </div>
-            <div id="detail-literasi" class="hidden mt-3 pt-3 border-t border-slate-100" onclick="event.stopPropagation()">
-                <input type="text" id="ket-literasi" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold mb-2" placeholder="Judul Buku / Artikel">
-                <button onclick="bukaKamera('literasi')" class="w-full bg-slate-100 text-slate-600 py-2 rounded-lg border border-slate-200 text-xs font-bold flex items-center justify-center gap-2 hover:bg-slate-200">
-                    <i data-lucide="camera" class="w-4 h-4"></i> Foto Halaman Buku
-                </button>
-                <img id="preview-literasi" class="preview-img hidden">
-                <input type="hidden" id="foto-literasi">
-            </div>
-            <input type="checkbox" id="input-literasi" class="hidden">
-        </div>
-
-        <div class="card-misi p-4 fade-up" style="animation-delay: 0.4s;" onclick="toggleMisi('makan')">
+        <div id="card-makan" class="card-misi p-4 fade-up" style="animation-delay: 0.4s;" onclick="bukaDetail('makan')">
             <div class="flex items-center gap-4">
                 <div class="bg-green-100 text-green-600 p-3 rounded-xl"><i data-lucide="apple" class="w-6 h-6"></i></div>
                 <div class="flex-1">
-                    <h3 class="font-bold text-slate-800">Makan Sehat <span class="text-[8px] bg-red-500 text-white px-1 rounded ml-1">FOTO</span></h3>
-                    <p class="text-[10px] text-slate-500">Foto menu makan / bekal sehatmu.</p>
+                    <h3 class="font-bold text-slate-800">4. Makan Bergizi <span class="text-[8px] bg-red-500 text-white px-1 rounded ml-1">FOTO</span></h3>
+                    <p class="text-[10px] text-slate-500" id="status-makan">Foto wajib diupload</p>
                 </div>
-                <div class="check-circle" id="check-makan"><i data-lucide="check" class="w-4 h-4"></i></div>
+                <div class="check-circle"><i data-lucide="check" class="w-4 h-4"></i></div>
             </div>
             <div id="detail-makan" class="hidden mt-3 pt-3 border-t border-slate-100" onclick="event.stopPropagation()">
-                <button onclick="bukaKamera('makan')" class="w-full bg-slate-100 text-slate-600 py-2 rounded-lg border border-slate-200 text-xs font-bold flex items-center justify-center gap-2 hover:bg-slate-200">
-                    <i data-lucide="camera" class="w-4 h-4"></i> Foto Makanan
+                <input type="text" id="val-makan" onkeyup="validasi('makan')" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs font-bold mb-2" placeholder="Tulis menumu (Cth: Nasi + Sayur Sop)">
+                <button onclick="bukaKamera('makan')" class="w-full bg-slate-100 text-slate-600 py-3 rounded-lg border border-slate-200 text-xs font-bold flex items-center justify-center gap-2 hover:bg-slate-200 active:scale-95 transition">
+                    <i data-lucide="camera" class="w-4 h-4"></i> Ambil Foto Makanan
                 </button>
                 <img id="preview-makan" class="preview-img hidden">
                 <input type="hidden" id="foto-makan">
             </div>
-            <input type="checkbox" id="input-makan" class="hidden">
         </div>
 
-        <div class="card-misi p-4 fade-up" style="animation-delay: 0.5s;" onclick="toggleMisi('bantu')">
+        <div id="card-belajar" class="card-misi p-4 fade-up" style="animation-delay: 0.5s;" onclick="bukaDetail('belajar')">
             <div class="flex items-center gap-4">
-                <div class="bg-purple-100 text-purple-600 p-3 rounded-xl"><i data-lucide="home" class="w-6 h-6"></i></div>
+                <div class="bg-cyan-100 text-cyan-600 p-3 rounded-xl"><i data-lucide="book-open" class="w-6 h-6"></i></div>
                 <div class="flex-1">
-                    <h3 class="font-bold text-slate-800">Bantu Orang Tua</h3>
-                    <p class="text-[10px] text-slate-500">Kegiatan positif di rumah.</p>
+                    <h3 class="font-bold text-slate-800">5. Gemar Belajar <span class="text-[8px] bg-red-500 text-white px-1 rounded ml-1">FOTO</span></h3>
+                    <p class="text-[10px] text-slate-500" id="status-belajar">Foto wajib diupload</p>
                 </div>
-                <div class="check-circle" id="check-bantu"><i data-lucide="check" class="w-4 h-4"></i></div>
+                <div class="check-circle"><i data-lucide="check" class="w-4 h-4"></i></div>
             </div>
-            <div id="detail-bantu" class="hidden mt-3 pt-3 border-t border-slate-100" onclick="event.stopPropagation()">
-                <select id="ket-bantu" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold outline-none">
-                    <option value="">- Pilih Aktivitas -</option>
-                    <option value="Menyapu / Mengepel">Menyapu / Mengepel</option>
-                    <option value="Mencuci Piring">Mencuci Piring</option>
-                    <option value="Mencuci Baju / Setrika">Mencuci Baju / Setrika</option>
-                    <option value="Memasak">Memasak / Siapkan Makanan</option>
-                    <option value="Jaga Adik">Menjaga Adik</option>
-                    <option value="Bersih-bersih Kamar">Bersih-bersih Kamar</option>
-                    <option value="Lainnya">Lainnya</option>
+            <div id="detail-belajar" class="hidden mt-3 pt-3 border-t border-slate-100" onclick="event.stopPropagation()">
+                <input type="text" id="val-belajar" onkeyup="validasi('belajar')" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs font-bold mb-2" placeholder="Belajar apa? (Cth: Matematika)">
+                <button onclick="bukaKamera('belajar')" class="w-full bg-slate-100 text-slate-600 py-3 rounded-lg border border-slate-200 text-xs font-bold flex items-center justify-center gap-2 hover:bg-slate-200 active:scale-95 transition">
+                    <i data-lucide="camera" class="w-4 h-4"></i> Foto Aktivitas
+                </button>
+                <img id="preview-belajar" class="preview-img hidden">
+                <input type="hidden" id="foto-belajar">
+            </div>
+        </div>
+
+        <div id="card-sosial" class="card-misi p-4 fade-up" style="animation-delay: 0.6s;" onclick="bukaDetail('sosial')">
+            <div class="flex items-center gap-4">
+                <div class="bg-purple-100 text-purple-600 p-3 rounded-xl"><i data-lucide="users" class="w-6 h-6"></i></div>
+                <div class="flex-1">
+                    <h3 class="font-bold text-slate-800">6. Bermasyarakat</h3>
+                    <p class="text-[10px] text-slate-500" id="status-sosial">Belum diisi</p>
+                </div>
+                <div class="check-circle"><i data-lucide="check" class="w-4 h-4"></i></div>
+            </div>
+            <div id="detail-sosial" class="hidden mt-3 pt-3 border-t border-slate-100" onclick="event.stopPropagation()">
+                <select id="val-sosial" onchange="cekDropdown('sosial')" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs font-bold outline-none mb-2">
+                    <option value="">- Pilih Kegiatan -</option>
+                    <option value="Membantu Orang Tua">Membantu Orang Tua</option>
+                    <option value="Gotong Royong">Gotong Royong</option>
+                    <option value="Piket Kelas">Piket Kelas</option>
+                    <option value="Membantu Teman">Membantu Teman</option>
+                    <option value="Lainnya">Lainnya (Isi Sendiri)</option>
                 </select>
+                <input type="text" id="extra-sosial" onkeyup="validasi('sosial')" class="hidden-custom w-full bg-indigo-50 border border-indigo-200 rounded-lg p-3 text-xs font-bold text-indigo-700 placeholder-indigo-300" placeholder="Kegiatan apa...">
             </div>
-            <input type="checkbox" id="input-bantu" class="hidden">
         </div>
 
-        <div class="card-misi p-4 fade-up" style="animation-delay: 0.6s;" onclick="toggleMisi('karya')">
+        <div id="card-tidur" class="card-misi p-4 fade-up" style="animation-delay: 0.7s;" onclick="bukaDetail('tidur')">
             <div class="flex items-center gap-4">
-                <div class="bg-pink-100 text-pink-600 p-3 rounded-xl"><i data-lucide="palette" class="w-6 h-6"></i></div>
+                <div class="bg-slate-100 text-slate-600 p-3 rounded-xl"><i data-lucide="moon" class="w-6 h-6"></i></div>
                 <div class="flex-1">
-                    <h3 class="font-bold text-slate-800">Berkarya / Hobi</h3>
-                    <p class="text-[10px] text-slate-500">Latihan musik, gambar, koding, dll.</p>
+                    <h3 class="font-bold text-slate-800">7. Tidur Cepat</h3>
+                    <p class="text-[10px] text-slate-500" id="status-tidur">Belum diisi</p>
                 </div>
-                <div class="check-circle" id="check-karya"><i data-lucide="check" class="w-4 h-4"></i></div>
+                <div class="check-circle"><i data-lucide="check" class="w-4 h-4"></i></div>
             </div>
-            <div id="detail-karya" class="hidden mt-3 pt-3 border-t border-slate-100" onclick="event.stopPropagation()">
-                <input type="text" id="ket-karya" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold" placeholder="Kegiatan apa? (Cth: Latihan Gitar)">
+            <div id="detail-tidur" class="hidden mt-3 pt-3 border-t border-slate-100" onclick="event.stopPropagation()">
+                <label class="text-[10px] font-bold text-slate-400 uppercase">Jam Tidur (Rencana/Kemarin):</label>
+                <input type="time" id="val-tidur" onchange="validasi('tidur')" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm font-bold mt-1 focus:ring-2 focus:ring-indigo-500 outline-none">
             </div>
-            <input type="checkbox" id="input-karya" class="hidden">
-        </div>
-
-        <div class="card-misi p-4 fade-up" style="animation-delay: 0.7s;" onclick="toggleMisi('nabung')">
-            <div class="flex items-center gap-4">
-                <div class="bg-emerald-100 text-emerald-600 p-3 rounded-xl"><i data-lucide="coins" class="w-6 h-6"></i></div>
-                <div class="flex-1">
-                    <h3 class="font-bold text-slate-800">Hemat & Menabung</h3>
-                    <p class="text-[10px] text-slate-500">Sisihkan uang jajanmu.</p>
-                </div>
-                <div class="check-circle" id="check-nabung"><i data-lucide="check" class="w-4 h-4"></i></div>
-            </div>
-            <div id="detail-nabung" class="hidden mt-3 pt-3 border-t border-slate-100" onclick="event.stopPropagation()">
-                <div class="flex items-center gap-2">
-                    <span class="text-xs font-bold text-slate-500">Rp</span>
-                    <input type="number" id="ket-nabung" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold" placeholder="Nominal (Cth: 5000)">
-                </div>
-            </div>
-            <input type="checkbox" id="input-nabung" class="hidden">
         </div>
 
     </div>
@@ -223,7 +240,7 @@
         import { getFirestore, doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
-        // Konfigurasi Firebase (Milik Mas Adi)
+        // Konfigurasi Firebase
         const firebaseConfig = { 
             apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo", 
             authDomain: "siganteng-absensi.firebaseapp.com", 
@@ -244,73 +261,118 @@
         let targetFoto = "";
         let facingMode = "environment";
 
-        // --- INISIALISASI HALAMAN ---
+        // Status validasi per item
+        let statusMisi = {
+            bangun: false, ibadah: false, olahraga: false, makan: false, belajar: false, sosial: false, tidur: false
+        };
+
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
-            
-            // 1. CEK SESI (SATPAM)
             const sessionData = sessionStorage.getItem('user_siganteng');
             
             if (!sessionData) {
-                Swal.fire({
-                    title: 'Sesi Habis',
-                    text: 'Silakan login ulang dari halaman awal.',
-                    icon: 'warning',
-                    confirmButtonText: 'Login',
-                    allowOutsideClick: false
-                }).then(() => {
-                    window.location.href = 'index.html';
-                });
+                Swal.fire({ title: 'Sesi Habis', text: 'Silakan login ulang.', icon: 'warning', confirmButtonText: 'Login' }).then(() => { window.location.href = 'index.html'; });
                 return;
             }
 
             try {
-                // 2. PARSE DATA SISWA
                 userSiswa = JSON.parse(sessionData);
-                
-                // --- PERBAIKAN PENTING: ID/USERNAME FALLBACK ---
                 userSiswa.username = userSiswa.username || userSiswa.nisn;
-                // -----------------------------------------------
 
-                // 3. UPDATE TAMPILAN
                 document.getElementById('nama-siswa').innerText = userSiswa.nama || "Siswa";
                 if(userSiswa.foto_profil) {
                     document.getElementById('foto-profil').src = userSiswa.foto_profil;
-                } else {
-                    document.getElementById('foto-profil').src = `https://ui-avatars.com/api/?background=random&color=fff&name=${encodeURIComponent(userSiswa.nama)}`;
                 }
-
-                // 4. LOAD DATA HARI INI DARI FIREBASE
+                
                 cekDataHariIni();
-
             } catch (error) {
-                console.error("Error parsing sesi:", error);
-                alert("Data sesi rusak. Login ulang.");
                 window.location.href = 'index.html';
             }
         });
 
-        // --- FUNGSI UTILITIES ---
-        window.toggleMisi = (id) => {
-            const checkbox = document.getElementById(`input-${id}`);
-            const card = checkbox.closest('.card-misi');
+        // --- UX BARU: BUKA DETAIL (TANPA DAPAT POIN) ---
+        window.bukaDetail = (id) => {
             const detail = document.getElementById(`detail-${id}`);
+            const card = document.getElementById(`card-${id}`);
             
-            checkbox.checked = !checkbox.checked;
-            
-            if (checkbox.checked) {
-                card.classList.add('active'); 
-                card.classList.add('border-emerald-500'); 
-                card.style.backgroundColor = '#ecfdf5';
-                if(detail) detail.classList.remove('hidden'); 
-                scoreHariIni++;
+            // Toggle Visibility
+            if(detail.classList.contains('hidden')) {
+                // Tutup yang lain dulu biar rapi (Optional)
+                document.querySelectorAll('[id^="detail-"]').forEach(el => el.classList.add('hidden'));
+                document.querySelectorAll('.card-misi').forEach(el => el.classList.remove('expanded'));
+                
+                detail.classList.remove('hidden');
+                card.classList.add('expanded');
             } else {
-                card.classList.remove('active'); 
-                card.classList.remove('border-emerald-500'); 
-                card.style.backgroundColor = 'white';
-                if(detail) detail.classList.add('hidden'); 
+                detail.classList.add('hidden');
+                card.classList.remove('expanded');
+            }
+        }
+
+        // --- UX BARU: LOGIC DROPDOWN LAINNYA ---
+        window.cekDropdown = (id) => {
+            const val = document.getElementById(`val-${id}`).value;
+            const extraInput = document.getElementById(`extra-${id}`);
+            
+            if(val === 'Lainnya') {
+                extraInput.classList.remove('hidden-custom');
+                extraInput.focus();
+            } else {
+                extraInput.classList.add('hidden-custom');
+            }
+            validasi(id); // Cek validasi setiap ganti dropdown
+        }
+
+        // --- CORE: VALIDASI OTOMATIS (DAPAT POIN SETELAH ISI) ---
+        window.validasi = (id) => {
+            let isValid = false;
+            const card = document.getElementById(`card-${id}`);
+            const statusTxt = document.getElementById(`status-${id}`);
+            
+            if(id === 'bangun' || id === 'tidur') {
+                // Cek Time Input
+                const val = document.getElementById(`val-${id}`).value;
+                isValid = val !== "";
+                statusTxt.innerText = isValid ? `Jam: ${val}` : "Belum diisi";
+            } 
+            else if(id === 'makan' || id === 'belajar') {
+                // Cek Text + Foto
+                const val = document.getElementById(`val-${id}`).value.trim();
+                const foto = document.getElementById(`foto-${id}`).value;
+                const imgPreview = document.getElementById(`preview-${id}`).src;
+                
+                // Valid jika ada text DAN (ada data foto baru OR ada foto lama dari db)
+                const adaFoto = foto !== "" || (imgPreview && imgPreview.includes('http'));
+                isValid = val !== "" && adaFoto;
+                
+                if(isValid) statusTxt.innerText = "Data Lengkap";
+                else if(val && !adaFoto) statusTxt.innerText = "Kurang Foto";
+                else statusTxt.innerText = "Belum Lengkap";
+            } 
+            else {
+                // Cek Dropdown + Lainnya
+                const selectVal = document.getElementById(`val-${id}`).value;
+                if(selectVal === 'Lainnya') {
+                    const extraVal = document.getElementById(`extra-${id}`).value.trim();
+                    isValid = extraVal !== "";
+                    statusTxt.innerText = isValid ? extraVal : "Isi keterangan...";
+                } else {
+                    isValid = selectVal !== "";
+                    statusTxt.innerText = isValid ? selectVal : "Belum dipilih";
+                }
+            }
+
+            // Update State & Score
+            if(isValid && !statusMisi[id]) {
+                statusMisi[id] = true;
+                card.classList.add('valid');
+                scoreHariIni++;
+            } else if(!isValid && statusMisi[id]) {
+                statusMisi[id] = false;
+                card.classList.remove('valid');
                 scoreHariIni--;
             }
+            
             updateProgressBar();
         }
 
@@ -322,96 +384,43 @@
             document.getElementById('score-display').innerText = scoreHariIni;
         }
 
-        // --- KAMERA LOGIC ---
-        window.bukaKamera = (target) => { 
-            targetFoto = target; 
-            document.getElementById('modalKamera').classList.remove('hidden'); 
-            startCamera(); 
-        }
-
-        function startCamera() { 
-            if (streamKamera) streamKamera.getTracks().forEach(t => t.stop()); 
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode } })
-                .then(s => { 
-                    streamKamera = s; 
-                    document.getElementById('videoStream').srcObject = s; 
-                })
-                .catch(e => Swal.fire('Error', 'Izinkan akses kamera di browser Anda.', 'error')); 
-        }
-
-        window.switchCamera = () => { 
-            facingMode = facingMode === "user" ? "environment" : "user"; 
-            startCamera(); 
-        }
-
-        window.tutupKamera = () => { 
-            document.getElementById('modalKamera').classList.add('hidden'); 
-            if (streamKamera) streamKamera.getTracks().forEach(t => t.stop()); 
-        }
-
-        window.jepret = () => { 
-            const video = document.getElementById('videoStream'); 
-            const canvas = document.getElementById('canvasFoto'); 
-            canvas.width = video.videoWidth; 
-            canvas.height = video.videoHeight; 
-            canvas.getContext('2d').drawImage(video, 0, 0); 
-            
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.7); 
-            
-            document.getElementById(`preview-${targetFoto}`).src = dataUrl; 
-            document.getElementById(`preview-${targetFoto}`).classList.remove('hidden'); 
-            document.getElementById(`foto-${targetFoto}`).value = dataUrl; 
-            tutupKamera(); 
-        }
-
-        // --- SIMPAN KE FIREBASE ---
+        // --- SIMPAN DATA ---
         window.simpanMisi = async () => {
             if (scoreHariIni <= 0) return Swal.fire('Masih Kosong', 'Kerjakan minimal 1 misi!', 'warning');
             
-            // Validasi Input
-            const cekLit = document.getElementById('input-literasi').checked;
-            const fotoLit = document.getElementById('foto-literasi').value;
-            const ketLit = document.getElementById('ket-literasi').value;
-            if(cekLit) { 
-                if(!ketLit) return Swal.fire('Lengkapi', 'Judul Buku wajib diisi!', 'warning'); 
-                if(!fotoLit && !document.getElementById(`preview-literasi`).src.includes('http')) return Swal.fire('Bukti', 'Literasi wajib foto!', 'warning'); 
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+            const todayStr = new Date().toLocaleDateString('fr-CA');
+            const docID = `${todayStr}_${userSiswa.username}`;
+            
+            // Helper untuk ambil value dropdown/lainnya
+            const getVal = (id) => {
+                const s = document.getElementById(`val-${id}`).value;
+                if(s === 'Lainnya') return document.getElementById(`extra-${id}`).value.trim();
+                return s;
             }
 
-            const cekMakan = document.getElementById('input-makan').checked;
-            const fotoMakan = document.getElementById('foto-makan').value;
-            if(cekMakan && !fotoMakan && !document.getElementById(`preview-makan`).src.includes('http')) return Swal.fire('Bukti', 'Makan Sehat wajib foto!', 'warning');
-
-            const cekIbadah = document.getElementById('input-ibadah').checked;
-            const jamIbadah = document.getElementById('jam-ibadah').value;
-            if(cekIbadah && !jamIbadah) return Swal.fire('Lengkapi', 'Jam Bangun Pagi wajib diisi!', 'warning');
-
-            // Proses Upload
-            document.getElementById('loadingOverlay').classList.remove('hidden');
-            
-            const todayStr = new Date().toLocaleDateString('fr-CA'); // Format YYYY-MM-DD
-            const docID = `${todayStr}_${userSiswa.username}`; // ID Unik per hari per siswa
-            
-            let urlLiterasi = "-"; 
-            let urlMakan = "-";
+            // Helper ambil URL foto
+            const getUrl = (id) => {
+                const src = document.getElementById(`preview-${id}`).src;
+                return src.includes('http') ? src : "-";
+            }
 
             try {
-                // Upload Foto Literasi jika ada baru
-                if(cekLit && fotoLit) { 
-                    const snap = await uploadString(ref(storage, `7_hebat/${todayStr}/${userSiswa.username}_literasi.jpg`), fotoLit, 'data_url'); 
-                    urlLiterasi = await getDownloadURL(snap.ref); 
-                } else if(cekLit) {
-                    urlLiterasi = document.getElementById(`preview-literasi`).src; // Pake URL lama
+                // Upload Foto Baru (Jika ada)
+                let urlMakan = getUrl('makan');
+                const fMakan = document.getElementById('foto-makan').value;
+                if(statusMisi.makan && fMakan) {
+                    const snap = await uploadString(ref(storage, `7_hebat/${todayStr}/${userSiswa.username}_makan.jpg`), fMakan, 'data_url');
+                    urlMakan = await getDownloadURL(snap.ref);
                 }
 
-                // Upload Foto Makan jika ada baru
-                if(cekMakan && fotoMakan) { 
-                    const snap = await uploadString(ref(storage, `7_hebat/${todayStr}/${userSiswa.username}_makan.jpg`), fotoMakan, 'data_url'); 
-                    urlMakan = await getDownloadURL(snap.ref); 
-                } else if(cekMakan) {
-                    urlMakan = document.getElementById(`preview-makan`).src; // Pake URL lama
+                let urlBelajar = getUrl('belajar');
+                const fBelajar = document.getElementById('foto-belajar').value;
+                if(statusMisi.belajar && fBelajar) {
+                    const snap = await uploadString(ref(storage, `7_hebat/${todayStr}/${userSiswa.username}_belajar.jpg`), fBelajar, 'data_url');
+                    urlBelajar = await getDownloadURL(snap.ref);
                 }
 
-                // Data Object
                 const dataSimpan = { 
                     nisn: userSiswa.username, 
                     nama: userSiswa.nama, 
@@ -420,100 +429,94 @@
                     waktu_update: serverTimestamp(), 
                     poin_harian: scoreHariIni, 
                     
-                    ibadah: cekIbadah, 
-                    jam_ibadah: jamIbadah || '-', 
+                    bangun_pagi: statusMisi.bangun, jam_bangun: statusMisi.bangun ? document.getElementById('val-bangun').value : '-',
+                    beribadah: statusMisi.ibadah, jenis_ibadah: statusMisi.ibadah ? getVal('ibadah') : '-',
+                    olahraga: statusMisi.olahraga, jenis_olahraga: statusMisi.olahraga ? getVal('olahraga') : '-',
                     
-                    olahraga: document.getElementById('input-olahraga').checked, 
-                    ket_olahraga: document.getElementById('ket-olahraga').value || '-', 
+                    makan_sehat: statusMisi.makan, menu_makan: statusMisi.makan ? document.getElementById('val-makan').value : '-', foto_makan: urlMakan,
+                    gemar_belajar: statusMisi.belajar, mapel_belajar: statusMisi.belajar ? document.getElementById('val-belajar').value : '-', foto_belajar: urlBelajar,
                     
-                    literasi: cekLit, 
-                    ket_literasi: ketLit, 
-                    foto_literasi: urlLiterasi, 
-                    
-                    makan: cekMakan, 
-                    foto_makan: urlMakan, 
-                    
-                    bantu: document.getElementById('input-bantu').checked, 
-                    ket_bantu: document.getElementById('ket-bantu').value || '-', 
-                    
-                    karya: document.getElementById('input-karya').checked, 
-                    ket_karya: document.getElementById('ket-karya').value || '-', 
-                    
-                    nabung: document.getElementById('input-nabung').checked, 
-                    ket_nabung: document.getElementById('ket-nabung').value || 0 
+                    bermasyarakat: statusMisi.sosial, keg_sosial: statusMisi.sosial ? getVal('sosial') : '-',
+                    tidur_cepat: statusMisi.tidur, jam_tidur: statusMisi.tidur ? document.getElementById('val-tidur').value : '-'
                 };
 
-                // Save to Firestore
                 await setDoc(doc(db, "jurnal_7_hebat", docID), dataSimpan, { merge: true });
-                
                 document.getElementById('loadingOverlay').classList.add('hidden');
-                
                 try { confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } }); } catch(e){}
                 Swal.fire({ title: 'Hebat!', text: `Data berhasil disimpan.`, icon: 'success' });
             
             } catch (e) {
                 document.getElementById('loadingOverlay').classList.add('hidden');
-                console.error(e);
                 Swal.fire('Error', e.message, 'error');
             }
         }
 
-        // --- LOAD DATA (REFILL CHECKBOX) ---
+        // --- LOAD DATA HARI INI ---
         async function cekDataHariIni() {
             if(!userSiswa) return;
-            
             const todayStr = new Date().toLocaleDateString('fr-CA'); 
             const docID = `${todayStr}_${userSiswa.username}`;
             
             try { 
                 const docSnap = await getDoc(doc(db, "jurnal_7_hebat", docID)); 
-                
                 if (docSnap.exists()) { 
                     const d = docSnap.data(); 
-                    console.log("Data hari ini ditemukan:", d);
+                    
+                    // Fungsi Helper isi Form
+                    const setVal = (id, val) => {
+                        const sel = document.getElementById(`val-${id}`);
+                        // Cek apakah value ada di option dropdown
+                        let found = false;
+                        for(let i=0; i<sel.options.length; i++) { if(sel.options[i].value === val) found = true; }
+                        
+                        if(found) {
+                            sel.value = val;
+                        } else {
+                            sel.value = 'Lainnya';
+                            cekDropdown(id); // Munculkan input custom
+                            document.getElementById(`extra-${id}`).value = val;
+                        }
+                    }
 
-                    if(d.ibadah) { setChecked('ibadah'); document.getElementById('jam-ibadah').value = d.jam_ibadah; } 
-                    if(d.olahraga) { setChecked('olahraga'); document.getElementById('ket-olahraga').value = d.ket_olahraga; } 
+                    if(d.bangun_pagi) { document.getElementById('val-bangun').value = d.jam_bangun; validasi('bangun'); }
                     
-                    if(d.literasi) { 
-                        setChecked('literasi'); 
-                        document.getElementById('ket-literasi').value = d.ket_literasi; 
-                        if(d.foto_literasi && d.foto_literasi.includes('http')) { 
-                            document.getElementById('preview-literasi').src = d.foto_literasi; 
-                            document.getElementById('preview-literasi').classList.remove('hidden'); 
-                        } 
-                    } 
-                    
-                    if(d.makan) { 
-                        setChecked('makan'); 
+                    if(d.beribadah) { setVal('ibadah', d.jenis_ibadah); validasi('ibadah'); }
+                    if(d.olahraga) { setVal('olahraga', d.jenis_olahraga); validasi('olahraga'); }
+                    if(d.bermasyarakat) { setVal('sosial', d.keg_sosial); validasi('sosial'); }
+
+                    if(d.makan_sehat) { 
+                        document.getElementById('val-makan').value = d.menu_makan;
                         if(d.foto_makan && d.foto_makan.includes('http')) { 
                             document.getElementById('preview-makan').src = d.foto_makan; 
                             document.getElementById('preview-makan').classList.remove('hidden'); 
-                        } 
-                    } 
-                    
-                    if(d.bantu) { setChecked('bantu'); document.getElementById('ket-bantu').value = d.ket_bantu; } 
-                    if(d.karya) { setChecked('karya'); document.getElementById('ket-karya').value = d.ket_karya; } 
-                    if(d.nabung) { setChecked('nabung'); document.getElementById('ket-nabung').value = d.ket_nabung; } 
+                        }
+                        validasi('makan');
+                    }
+
+                    if(d.gemar_belajar) { 
+                        document.getElementById('val-belajar').value = d.mapel_belajar;
+                        if(d.foto_belajar && d.foto_belajar.includes('http')) { 
+                            document.getElementById('preview-belajar').src = d.foto_belajar; 
+                            document.getElementById('preview-belajar').classList.remove('hidden'); 
+                        }
+                        validasi('belajar');
+                    }
+
+                    if(d.tidur_cepat) { document.getElementById('val-tidur').value = d.jam_tidur; validasi('tidur'); }
                 } 
-            } catch(e) { 
-                console.error("Gagal ambil data hari ini:", e); 
-            }
+            } catch(e) { console.log(e); }
         }
 
-        function setChecked(id) { 
-            const checkbox = document.getElementById(`input-${id}`); 
-            if(checkbox) { 
-                checkbox.checked = true; 
-                const card = checkbox.closest('.card-misi'); 
-                card.classList.add('active'); 
-                card.classList.add('border-emerald-500'); 
-                card.style.backgroundColor = '#ecfdf5'; 
-                const detail = document.getElementById(`detail-${id}`); 
-                if(detail) detail.classList.remove('hidden'); 
-                scoreHariIni++; 
-                updateProgressBar(); 
-            } 
+        // --- CAMERA UTILS ---
+        window.bukaKamera = (target) => { targetFoto = target; document.getElementById('modalKamera').classList.remove('hidden'); startCamera(); }
+        function startCamera() { if (streamKamera) streamKamera.getTracks().forEach(t => t.stop()); navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode } }).then(s => { streamKamera = s; document.getElementById('videoStream').srcObject = s; }).catch(e => Swal.fire('Error', 'Izin kamera ditolak.', 'error')); }
+        window.switchCamera = () => { facingMode = facingMode === "user" ? "environment" : "user"; startCamera(); }
+        window.tutupKamera = () => { document.getElementById('modalKamera').classList.add('hidden'); if (streamKamera) streamKamera.getTracks().forEach(t => t.stop()); }
+        window.jepret = () => { 
+            const v = document.getElementById('videoStream'); const c = document.getElementById('canvasFoto'); c.width=v.videoWidth; c.height=v.videoHeight; c.getContext('2d').drawImage(v,0,0); const d = c.toDataURL('image/jpeg', 0.7); 
+            document.getElementById(`preview-${targetFoto}`).src=d; document.getElementById(`preview-${targetFoto}`).classList.remove('hidden'); document.getElementById(`foto-${targetFoto}`).value=d; 
+            tutupKamera(); 
+            validasi(targetFoto); // Validasi ulang setelah foto diambil
         }
     </script>
 </body>
