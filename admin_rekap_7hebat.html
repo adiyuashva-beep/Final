@@ -102,25 +102,33 @@
             </div>
         </div>
 
+        <div class="glass-card p-6 mb-6">
+            <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <i data-lucide="trending-up" class="w-5 h-5 text-indigo-500"></i> Tren Rata-rata Skor Harian
+            </h3>
+            <div class="relative w-full h-64">
+                <canvas id="lineChart"></canvas>
+            </div>
+        </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
             
             <div class="glass-card p-6 lg:col-span-2 flex flex-col">
                 <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                    <i data-lucide="trending-up" class="w-5 h-5 text-indigo-500"></i> Tren Rata-rata Skor Harian
+                    <i data-lucide="bar-chart-3" class="w-5 h-5 text-emerald-500"></i> Partisipasi per Kelas
                 </h3>
                 <div class="flex-1 relative w-full h-64 lg:h-auto">
-                    <canvas id="lineChart"></canvas>
+                    <canvas id="barChart"></canvas>
                 </div>
             </div>
 
             <div class="glass-card p-6 lg:col-span-1">
                 <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                    <i data-lucide="radar" class="w-5 h-5 text-indigo-500"></i> Peta Kekuatan Karakter
+                    <i data-lucide="radar" class="w-5 h-5 text-indigo-500"></i> Peta Karakter
                 </h3>
                 <div class="aspect-square relative">
                     <canvas id="radarChart"></canvas>
                 </div>
-                <p class="text-xs text-center text-slate-400 mt-4 italic">Semakin lebar jaring, semakin seimbang karakter siswa.</p>
             </div>
         </div>
 
@@ -177,16 +185,13 @@
         let globalData = []; 
         let radarChartInstance = null;
         let lineChartInstance = null;
+        let barChartInstance = null;
 
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
-            
-            // Default: Hari ini
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('tgl-mulai').value = today;
             document.getElementById('tgl-selesai').value = today;
-
-            // Load Data Awal
             loadDataRange();
         });
 
@@ -203,20 +208,17 @@
             }
 
             // Query Rentang Tanggal
-            // Note: Firebase range filter harus hati-hati. 
-            // Kita pakai filter client-side untuk fleksibilitas jika index belum dibuat.
-            // Atau query >= start dan <= end.
             const q = query(collection(db, "jurnal_7_hebat"), where("tanggal", ">=", start), where("tanggal", "<=", end));
             
             try {
                 const snap = await getDocs(q);
                 globalData = [];
                 
-                // Variabel Statistik
                 let stats = {
                     bangun: 0, ibadah: 0, olahraga: 0, makan: 0, belajar: 0, sosial: 0, tidur: 0,
                     totalSkor: 0,
-                    dailyAvg: {} // Untuk Grafik Tren
+                    dailyAvg: {}, // Untuk Line Chart (Tren)
+                    byKelas: {}   // Untuk Bar Chart (Kelas)
                 };
 
                 snap.forEach(doc => {
@@ -224,7 +226,7 @@
                     d.id = doc.id;
                     globalData.push(d);
 
-                    // Hitung Statistik Radar
+                    // Radar Stats
                     if(d.bangun_pagi) stats.bangun++;
                     if(d.beribadah) stats.ibadah++;
                     if(d.olahraga) stats.olahraga++;
@@ -235,12 +237,17 @@
                     
                     stats.totalSkor += (d.poin_harian || 0);
 
-                    // Hitung Rata-rata Harian (Untuk Line Chart)
+                    // Daily Avg Stats
                     if(!stats.dailyAvg[d.tanggal]) {
                         stats.dailyAvg[d.tanggal] = { total: 0, count: 0 };
                     }
                     stats.dailyAvg[d.tanggal].total += (d.poin_harian || 0);
                     stats.dailyAvg[d.tanggal].count++;
+
+                    // Class Stats
+                    const kls = d.kelas || "TIDAK ADA KELAS";
+                    if(!stats.byKelas[kls]) stats.byKelas[kls] = 0;
+                    stats.byKelas[kls]++;
                 });
 
                 updateKPI(globalData.length, stats);
@@ -259,19 +266,13 @@
 
         function updateKPI(total, stats) {
             document.getElementById('kpi-total').innerText = total;
-            
-            // Avg Score Total
             const avg = total > 0 ? (stats.totalSkor / total).toFixed(1) : 0;
             document.getElementById('kpi-avg').innerText = avg;
 
-            // Cari Top & Low Habit
             const habits = [
-                {label: 'Bangun Pagi', val: stats.bangun},
-                {label: 'Ibadah', val: stats.ibadah},
-                {label: 'Olahraga', val: stats.olahraga},
-                {label: 'Makan Sehat', val: stats.makan},
-                {label: 'Belajar', val: stats.belajar},
-                {label: 'Bermasyarakat', val: stats.sosial},
+                {label: 'Bangun Pagi', val: stats.bangun}, {label: 'Ibadah', val: stats.ibadah},
+                {label: 'Olahraga', val: stats.olahraga}, {label: 'Makan Sehat', val: stats.makan},
+                {label: 'Belajar', val: stats.belajar}, {label: 'Bermasyarakat', val: stats.sosial},
                 {label: 'Tidur Cepat', val: stats.tidur}
             ];
             
@@ -296,11 +297,10 @@
             ].map(v => total > 0 ? Math.round((v/total)*100) : 0);
 
             if(radarChartInstance) radarChartInstance.destroy();
-
             radarChartInstance = new Chart(ctxRadar, {
                 type: 'radar',
                 data: {
-                    labels: ['Bangun Pagi', 'Ibadah', 'Olahraga', 'Makan Sehat', 'Belajar', 'Sosial', 'Tidur Cepat'],
+                    labels: ['Bangun', 'Ibadah', 'Olahraga', 'Makan', 'Belajar', 'Sosial', 'Tidur'],
                     datasets: [{
                         label: '% Penerapan',
                         data: dataRadar,
@@ -310,16 +310,11 @@
                         pointBorderColor: '#fff',
                     }]
                 },
-                options: {
-                    scales: { r: { suggestedMin: 0, suggestedMax: 100 } },
-                    plugins: { legend: { display: false } }
-                }
+                options: { scales: { r: { suggestedMin: 0, suggestedMax: 100 } }, plugins: { legend: { display: false } } }
             });
 
             // 2. LINE CHART (TREN HARIAN)
             const ctxLine = document.getElementById('lineChart').getContext('2d');
-            
-            // Siapkan Data Harian
             const sortedDates = Object.keys(stats.dailyAvg).sort();
             const dailyScores = sortedDates.map(date => {
                 const dayStat = stats.dailyAvg[date];
@@ -327,7 +322,6 @@
             });
 
             if(lineChartInstance) lineChartInstance.destroy();
-
             lineChartInstance = new Chart(ctxLine, {
                 type: 'line',
                 data: {
@@ -335,23 +329,33 @@
                     datasets: [{
                         label: 'Rata-rata Skor',
                         data: dailyScores,
-                        borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
                         tension: 0.4,
-                        fill: true,
-                        pointRadius: 4,
-                        pointHoverRadius: 6
+                        fill: true
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: { beginAtZero: true, max: 7, title: { display: true, text: 'Skor (Maks 7)' } },
-                        x: { title: { display: true, text: 'Tanggal' } }
-                    },
-                    plugins: { legend: { display: false } }
-                }
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 7 } }, plugins: { legend: { display: false } } }
+            });
+
+            // 3. BAR CHART (PARTISIPASI KELAS)
+            const ctxBar = document.getElementById('barChart').getContext('2d');
+            const kelasKeys = Object.keys(stats.byKelas).sort();
+            const kelasVals = kelasKeys.map(k => stats.byKelas[k]);
+
+            if(barChartInstance) barChartInstance.destroy();
+            barChartInstance = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: kelasKeys,
+                    datasets: [{
+                        label: 'Jml Laporan',
+                        data: kelasVals,
+                        backgroundColor: '#10b981',
+                        borderRadius: 6
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
             });
         }
 
@@ -365,19 +369,12 @@
                 return;
             }
 
-            // Urutkan berdasarkan waktu (terbaru diatas)
             data.sort((a,b) => (b.waktu_update?.seconds || 0) - (a.waktu_update?.seconds || 0));
 
-            data.slice(0, 100).forEach(d => { // Batasi 100 baris biar gak berat
+            data.slice(0, 100).forEach(d => { 
                 const jam = d.waktu_update ? new Date(d.waktu_update.seconds*1000).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : '-';
-                
                 const dot = (active) => `<span class="inline-block w-2.5 h-2.5 rounded-full ${active ? 'bg-emerald-500' : 'bg-slate-200'} mr-1"></span>`;
-                const visualCapaian = `
-                    <div class="flex justify-center">
-                        ${dot(d.bangun_pagi)}${dot(d.beribadah)}${dot(d.olahraga)}${dot(d.makan_sehat)}${dot(d.gemar_belajar)}${dot(d.bermasyarakat)}${dot(d.tidur_cepat)}
-                    </div>
-                `;
-
+                const visualCapaian = `<div class="flex justify-center">${dot(d.bangun_pagi)}${dot(d.beribadah)}${dot(d.olahraga)}${dot(d.makan_sehat)}${dot(d.gemar_belajar)}${dot(d.bermasyarakat)}${dot(d.tidur_cepat)}</div>`;
                 const safeData = encodeURIComponent(JSON.stringify(d));
 
                 const tr = document.createElement('tr');
@@ -388,13 +385,10 @@
                     <td class="p-4"><span class="bg-indigo-50 text-indigo-700 px-2 py-1 rounded text-xs font-bold">${d.kelas}</span></td>
                     <td class="p-4 text-center font-black text-lg ${d.poin_harian == 7 ? 'text-emerald-500' : 'text-slate-700'}">${d.poin_harian}</td>
                     <td class="p-4 text-center">${visualCapaian}</td>
-                    <td class="p-4 text-center">
-                        <button onclick="lihatDetail('${safeData}')" class="text-blue-600 hover:bg-blue-50 p-2 rounded-lg font-bold text-xs transition">Lihat</button>
-                    </td>
+                    <td class="p-4 text-center"><button onclick="lihatDetail('${safeData}')" class="text-blue-600 hover:bg-blue-50 p-2 rounded-lg font-bold text-xs transition">Lihat</button></td>
                 `;
                 tbody.appendChild(tr);
             });
-
             document.getElementById('footer-table').innerText = `Menampilkan ${Math.min(data.length, 100)} dari ${data.length} data`;
         }
 
