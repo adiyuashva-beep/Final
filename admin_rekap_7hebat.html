@@ -42,20 +42,24 @@
                     <span class="text-slate-400 text-xs font-bold" id="waktu-update">Update: -</span>
                 </div>
                 <h1 class="text-3xl font-black text-slate-900 tracking-tight">7 Kebiasaan Hebat</h1>
-                <p class="text-slate-500 text-sm">Analisis data real-time perkembangan karakter siswa.</p>
+                <p class="text-slate-500 text-sm">Analisis data perkembangan karakter siswa dalam periode tertentu.</p>
             </div>
             
-            <div class="flex flex-wrap gap-3 bg-white p-2 rounded-2xl shadow-sm border border-slate-200">
-                <div class="flex items-center px-3 gap-2 border-r border-slate-100">
-                    <i data-lucide="calendar" class="w-4 h-4 text-slate-400"></i>
-                    <input type="date" id="filter-tanggal" class="text-sm font-bold text-slate-700 outline-none bg-transparent cursor-pointer">
+            <div class="flex flex-wrap gap-3 bg-white p-2 rounded-2xl shadow-sm border border-slate-200 items-end">
+                <div class="px-3 border-r border-slate-100">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">DARI TANGGAL</label>
+                    <input type="date" id="tgl-mulai" class="text-sm font-bold text-slate-700 outline-none bg-transparent cursor-pointer w-full">
+                </div>
+                <div class="px-3 border-r border-slate-100">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">SAMPAI TANGGAL</label>
+                    <input type="date" id="tgl-selesai" class="text-sm font-bold text-slate-700 outline-none bg-transparent cursor-pointer w-full">
                 </div>
                 
-                <button onclick="loadData()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2">
-                    <i data-lucide="refresh-cw" class="w-4 h-4"></i> Refresh
+                <button onclick="loadDataRange()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg shadow-indigo-500/20 transition flex items-center gap-2 h-10">
+                    <i data-lucide="search" class="w-4 h-4"></i> Tampilkan
                 </button>
-                <button onclick="exportExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg shadow-emerald-500/30 transition flex items-center gap-2">
-                    <i data-lucide="sheet" class="w-4 h-4"></i> Download Excel
+                <button onclick="exportExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg shadow-emerald-500/30 transition flex items-center gap-2 h-10">
+                    <i data-lucide="sheet" class="w-4 h-4"></i> Excel
                 </button>
             </div>
         </div>
@@ -63,16 +67,16 @@
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div class="glass-card p-5 relative overflow-hidden group">
                 <div class="relative z-10">
-                    <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Total Responden</p>
+                    <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Total Laporan</p>
                     <h2 class="text-4xl font-black text-slate-800" id="kpi-total">0</h2>
-                    <p class="text-xs text-emerald-600 font-bold mt-2 flex items-center gap-1"><i data-lucide="users" class="w-3 h-3"></i> Siswa Input Data</p>
+                    <p class="text-xs text-emerald-600 font-bold mt-2 flex items-center gap-1"><i data-lucide="file-check" class="w-3 h-3"></i> Data Masuk</p>
                 </div>
                 <div class="absolute right-0 top-0 h-full w-24 bg-gradient-to-l from-indigo-50 to-transparent"></div>
             </div>
 
             <div class="glass-card p-5 relative overflow-hidden group">
                 <div class="relative z-10">
-                    <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Rata-rata Skor</p>
+                    <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Skor Rata-rata</p>
                     <h2 class="text-4xl font-black text-slate-800" id="kpi-avg">0.0</h2>
                     <p class="text-xs text-slate-400 font-bold mt-2">Dari Skala 7.0</p>
                 </div>
@@ -100,6 +104,15 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
             
+            <div class="glass-card p-6 lg:col-span-2 flex flex-col">
+                <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <i data-lucide="trending-up" class="w-5 h-5 text-indigo-500"></i> Tren Rata-rata Skor Harian
+                </h3>
+                <div class="flex-1 relative w-full h-64 lg:h-auto">
+                    <canvas id="lineChart"></canvas>
+                </div>
+            </div>
+
             <div class="glass-card p-6 lg:col-span-1">
                 <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
                     <i data-lucide="radar" class="w-5 h-5 text-indigo-500"></i> Peta Kekuatan Karakter
@@ -109,30 +122,21 @@
                 </div>
                 <p class="text-xs text-center text-slate-400 mt-4 italic">Semakin lebar jaring, semakin seimbang karakter siswa.</p>
             </div>
-
-            <div class="glass-card p-6 lg:col-span-2 flex flex-col">
-                <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                    <i data-lucide="bar-chart-3" class="w-5 h-5 text-indigo-500"></i> Partisipasi per Kelas
-                </h3>
-                <div class="flex-1 relative w-full h-64 lg:h-auto">
-                    <canvas id="barChart"></canvas>
-                </div>
-            </div>
         </div>
 
         <div class="glass-card overflow-hidden">
             <div class="p-6 border-b border-slate-100 flex justify-between items-center">
-                <h3 class="font-bold text-slate-800">Detail Input Siswa</h3>
+                <h3 class="font-bold text-slate-800">Detail Input Siswa (Terbaru)</h3>
                 <div class="relative">
                     <input type="text" id="searchTable" onkeyup="filterTable()" placeholder="Cari Siswa..." class="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-indigo-500">
                     <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
                 </div>
             </div>
-            <div class="overflow-x-auto">
+            <div class="overflow-x-auto max-h-[500px]">
                 <table class="w-full text-left border-collapse">
-                    <thead>
+                    <thead class="sticky top-0 bg-white z-20">
                         <tr class="bg-slate-50 text-slate-500 text-[10px] uppercase font-bold tracking-wider">
-                            <th class="p-4 border-b border-slate-100">Waktu</th>
+                            <th class="p-4 border-b border-slate-100">Tanggal</th>
                             <th class="p-4 border-b border-slate-100">Nama Siswa</th>
                             <th class="p-4 border-b border-slate-100">Kelas</th>
                             <th class="p-4 border-b border-slate-100 text-center">Skor</th>
@@ -141,7 +145,7 @@
                         </tr>
                     </thead>
                     <tbody id="table-body" class="text-sm text-slate-700">
-                        <tr><td colspan="6" class="p-8 text-center text-slate-400 italic">Memuat data...</td></tr>
+                        <tr><td colspan="6" class="p-8 text-center text-slate-400 italic">Pilih tanggal dan klik Tampilkan.</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -170,27 +174,39 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        let globalData = []; // Untuk simpan data mentah biar bisa diexport
+        let globalData = []; 
         let radarChartInstance = null;
-        let barChartInstance = null;
+        let lineChartInstance = null;
 
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
             
-            // Set default date to today
+            // Default: Hari ini
             const today = new Date().toISOString().split('T')[0];
-            document.getElementById('filter-tanggal').value = today;
+            document.getElementById('tgl-mulai').value = today;
+            document.getElementById('tgl-selesai').value = today;
 
-            // Load Data
-            loadData();
+            // Load Data Awal
+            loadDataRange();
         });
 
-        window.loadData = async () => {
+        window.loadDataRange = async () => {
             const loading = document.getElementById('loading');
             loading.style.display = 'flex';
             
-            const tgl = document.getElementById('filter-tanggal').value;
-            const q = query(collection(db, "jurnal_7_hebat"), where("tanggal", "==", tgl));
+            const start = document.getElementById('tgl-mulai').value;
+            const end = document.getElementById('tgl-selesai').value;
+            
+            if(!start || !end) {
+                loading.style.display = 'none';
+                return Swal.fire('Tanggal Belum Dipilih', 'Silakan pilih rentang tanggal.', 'warning');
+            }
+
+            // Query Rentang Tanggal
+            // Note: Firebase range filter harus hati-hati. 
+            // Kita pakai filter client-side untuk fleksibilitas jika index belum dibuat.
+            // Atau query >= start dan <= end.
+            const q = query(collection(db, "jurnal_7_hebat"), where("tanggal", ">=", start), where("tanggal", "<=", end));
             
             try {
                 const snap = await getDocs(q);
@@ -200,12 +216,12 @@
                 let stats = {
                     bangun: 0, ibadah: 0, olahraga: 0, makan: 0, belajar: 0, sosial: 0, tidur: 0,
                     totalSkor: 0,
-                    byKelas: {}
+                    dailyAvg: {} // Untuk Grafik Tren
                 };
 
                 snap.forEach(doc => {
                     const d = doc.data();
-                    d.id = doc.id; // Simpan ID dokumen
+                    d.id = doc.id;
                     globalData.push(d);
 
                     // Hitung Statistik Radar
@@ -219,10 +235,12 @@
                     
                     stats.totalSkor += (d.poin_harian || 0);
 
-                    // Hitung Statistik Kelas
-                    const kls = d.kelas || "TIDAK ADA KELAS";
-                    if(!stats.byKelas[kls]) stats.byKelas[kls] = 0;
-                    stats.byKelas[kls]++;
+                    // Hitung Rata-rata Harian (Untuk Line Chart)
+                    if(!stats.dailyAvg[d.tanggal]) {
+                        stats.dailyAvg[d.tanggal] = { total: 0, count: 0 };
+                    }
+                    stats.dailyAvg[d.tanggal].total += (d.poin_harian || 0);
+                    stats.dailyAvg[d.tanggal].count++;
                 });
 
                 updateKPI(globalData.length, stats);
@@ -242,7 +260,7 @@
         function updateKPI(total, stats) {
             document.getElementById('kpi-total').innerText = total;
             
-            // Avg Score
+            // Avg Score Total
             const avg = total > 0 ? (stats.totalSkor / total).toFixed(1) : 0;
             document.getElementById('kpi-avg').innerText = avg;
 
@@ -257,7 +275,6 @@
                 {label: 'Tidur Cepat', val: stats.tidur}
             ];
             
-            // Sort Descending
             habits.sort((a,b) => b.val - a.val);
             
             const top = habits[0];
@@ -273,8 +290,6 @@
         function renderCharts(total, stats) {
             // 1. RADAR CHART
             const ctxRadar = document.getElementById('radarChart').getContext('2d');
-            
-            // Data dalam persen
             const dataRadar = [
                 stats.bangun, stats.ibadah, stats.olahraga, 
                 stats.makan, stats.belajar, stats.sosial, stats.tidur
@@ -293,48 +308,49 @@
                         borderColor: 'rgba(99, 102, 241, 1)',
                         pointBackgroundColor: 'rgba(99, 102, 241, 1)',
                         pointBorderColor: '#fff',
-                        pointHoverBackgroundColor: '#fff',
-                        pointHoverBorderColor: 'rgba(99, 102, 241, 1)'
                     }]
                 },
                 options: {
-                    scales: {
-                        r: {
-                            angleLines: { display: true },
-                            suggestedMin: 0,
-                            suggestedMax: 100
-                        }
-                    },
+                    scales: { r: { suggestedMin: 0, suggestedMax: 100 } },
                     plugins: { legend: { display: false } }
                 }
             });
 
-            // 2. BAR CHART (KELAS)
-            const ctxBar = document.getElementById('barChart').getContext('2d');
+            // 2. LINE CHART (TREN HARIAN)
+            const ctxLine = document.getElementById('lineChart').getContext('2d');
             
-            // Sort kelas by nama
-            const kelasKeys = Object.keys(stats.byKelas).sort();
-            const kelasVals = kelasKeys.map(k => stats.byKelas[k]);
+            // Siapkan Data Harian
+            const sortedDates = Object.keys(stats.dailyAvg).sort();
+            const dailyScores = sortedDates.map(date => {
+                const dayStat = stats.dailyAvg[date];
+                return (dayStat.total / dayStat.count).toFixed(2);
+            });
 
-            if(barChartInstance) barChartInstance.destroy();
+            if(lineChartInstance) lineChartInstance.destroy();
 
-            barChartInstance = new Chart(ctxBar, {
-                type: 'bar',
+            lineChartInstance = new Chart(ctxLine, {
+                type: 'line',
                 data: {
-                    labels: kelasKeys,
+                    labels: sortedDates,
                     datasets: [{
-                        label: 'Jumlah Siswa Input',
-                        data: kelasVals,
-                        backgroundColor: '#10b981',
-                        borderRadius: 6
+                        label: 'Rata-rata Skor',
+                        data: dailyScores,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        y: { beginAtZero: true }
-                    }
+                        y: { beginAtZero: true, max: 7, title: { display: true, text: 'Skor (Maks 7)' } },
+                        x: { title: { display: true, text: 'Tanggal' } }
+                    },
+                    plugins: { legend: { display: false } }
                 }
             });
         }
@@ -344,33 +360,30 @@
             tbody.innerHTML = '';
 
             if(data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400 italic">Tidak ada data pada tanggal ini.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400 italic">Tidak ada data.</td></tr>`;
                 document.getElementById('footer-table').innerText = "Menampilkan 0 data";
                 return;
             }
 
-            // Urutkan berdasarkan waktu update terbaru
+            // Urutkan berdasarkan waktu (terbaru diatas)
             data.sort((a,b) => (b.waktu_update?.seconds || 0) - (a.waktu_update?.seconds || 0));
 
-            data.forEach(d => {
+            data.slice(0, 100).forEach(d => { // Batasi 100 baris biar gak berat
                 const jam = d.waktu_update ? new Date(d.waktu_update.seconds*1000).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : '-';
                 
-                // Indikator 7 Titik Warna
                 const dot = (active) => `<span class="inline-block w-2.5 h-2.5 rounded-full ${active ? 'bg-emerald-500' : 'bg-slate-200'} mr-1"></span>`;
                 const visualCapaian = `
-                    <div class="flex justify-center" title="Urutan: Bangun, Ibadah, Olahraga, Makan, Belajar, Sosial, Tidur">
+                    <div class="flex justify-center">
                         ${dot(d.bangun_pagi)}${dot(d.beribadah)}${dot(d.olahraga)}${dot(d.makan_sehat)}${dot(d.gemar_belajar)}${dot(d.bermasyarakat)}${dot(d.tidur_cepat)}
                     </div>
                 `;
 
-                // Tombol Detail (Menyimpan data di atribut data-json)
-                // Kita encode URI component biar aman
                 const safeData = encodeURIComponent(JSON.stringify(d));
 
                 const tr = document.createElement('tr');
                 tr.className = "border-b border-slate-50 hover:bg-slate-50 transition";
                 tr.innerHTML = `
-                    <td class="p-4 font-mono font-bold text-slate-500">${jam}</td>
+                    <td class="p-4 font-mono font-bold text-slate-500">${d.tanggal}<br><span class="text-xs font-normal">${jam}</span></td>
                     <td class="p-4 font-bold text-slate-700">${d.nama}</td>
                     <td class="p-4"><span class="bg-indigo-50 text-indigo-700 px-2 py-1 rounded text-xs font-bold">${d.kelas}</span></td>
                     <td class="p-4 text-center font-black text-lg ${d.poin_harian == 7 ? 'text-emerald-500' : 'text-slate-700'}">${d.poin_harian}</td>
@@ -382,10 +395,9 @@
                 tbody.appendChild(tr);
             });
 
-            document.getElementById('footer-table').innerText = `Menampilkan ${data.length} data`;
+            document.getElementById('footer-table').innerText = `Menampilkan ${Math.min(data.length, 100)} dari ${data.length} data`;
         }
 
-        // --- GLOBAL FUNCTIONS FOR BUTTONS ---
         window.filterTable = () => {
             const input = document.getElementById('searchTable').value.toUpperCase();
             const trs = document.getElementById('table-body').getElementsByTagName('tr');
@@ -395,73 +407,41 @@
                 if (tdNama || tdKelas) {
                     const txtVal = (tdNama.textContent || tdNama.innerText) + " " + (tdKelas.textContent || tdKelas.innerText);
                     trs[i].style.display = txtVal.toUpperCase().indexOf(input) > -1 ? "" : "none";
-                }       
+                }        
             }
         }
 
         window.lihatDetail = (encodedJson) => {
             const d = JSON.parse(decodeURIComponent(encodedJson));
-            
-            // Helper Render
             const row = (lbl, val) => `<div class="flex justify-between border-b border-slate-100 py-2"><span class="text-slate-500 text-xs uppercase font-bold">${lbl}</span><span class="text-slate-800 font-bold text-sm text-right">${val}</span></div>`;
             const imgRow = (lbl, url) => {
                 if(!url || url === '-' || !url.includes('http')) return row(lbl, '<span class="text-slate-400 italic">Tidak ada foto</span>');
                 return `<div class="py-2"><p class="text-slate-500 text-xs uppercase font-bold mb-2">${lbl}</p><img src="${url}" class="w-full h-40 object-cover rounded-xl border border-slate-200"></div>`;
             };
-
             Swal.fire({
                 title: `<span class="text-lg font-black">${d.nama}</span>`,
-                html: `
-                    <div class="text-left space-y-1 max-h-[60vh] overflow-y-auto pr-2">
-                        ${row('Bangun Pagi', d.jam_bangun)}
-                        ${row('Ibadah', d.jenis_ibadah)}
-                        ${row('Olahraga', d.jenis_olahraga)}
-                        ${row('Menu Makan', d.menu_makan)}
-                        ${imgRow('Foto Makan', d.foto_makan)}
-                        ${row('Mapel Belajar', d.mapel_belajar)}
-                        ${imgRow('Foto Belajar', d.foto_belajar)}
-                        ${row('Kegiatan Sosial', d.keg_sosial)}
-                        ${row('Jam Tidur', d.jam_tidur)}
-                    </div>
-                `,
-                confirmButtonText: 'Tutup',
-                width: 450
+                html: `<div class="text-left space-y-1 max-h-[60vh] overflow-y-auto pr-2">${row('Bangun Pagi', d.jam_bangun)}${row('Ibadah', d.jenis_ibadah)}${row('Olahraga', d.jenis_olahraga)}${row('Menu Makan', d.menu_makan)}${imgRow('Foto Makan', d.foto_makan)}${row('Mapel Belajar', d.mapel_belajar)}${imgRow('Foto Belajar', d.foto_belajar)}${row('Kegiatan Sosial', d.keg_sosial)}${row('Jam Tidur', d.jam_tidur)}</div>`,
+                confirmButtonText: 'Tutup', width: 450
             });
         }
 
         window.exportExcel = () => {
             if(globalData.length === 0) return Swal.fire('Kosong', 'Tidak ada data untuk didownload.', 'info');
-            
-            // Mapping Data Rapi untuk Excel
             const dataExcel = globalData.map(d => ({
-                "Tanggal": d.tanggal,
-                "Waktu Input": d.waktu_update ? new Date(d.waktu_update.seconds*1000).toLocaleTimeString('id-ID') : '-',
-                "NISN": d.nisn,
-                "Nama Siswa": d.nama,
-                "Kelas": d.kelas,
-                "Skor Total": d.poin_harian,
-                "Jam Bangun": d.jam_bangun,
-                "Jenis Ibadah": d.jenis_ibadah,
-                "Jenis Olahraga": d.jenis_olahraga,
-                "Menu Makan": d.menu_makan,
-                "Link Foto Makan": d.foto_makan || '-',
-                "Mapel Belajar": d.mapel_belajar,
-                "Link Foto Belajar": d.foto_belajar || '-',
-                "Kegiatan Sosial": d.keg_sosial,
-                "Jam Tidur": d.jam_tidur
+                "Tanggal": d.tanggal, "Waktu Input": d.waktu_update ? new Date(d.waktu_update.seconds*1000).toLocaleTimeString('id-ID') : '-',
+                "NISN": d.nisn, "Nama Siswa": d.nama, "Kelas": d.kelas, "Skor Total": d.poin_harian,
+                "Jam Bangun": d.jam_bangun, "Jenis Ibadah": d.jenis_ibadah, "Jenis Olahraga": d.jenis_olahraga,
+                "Menu Makan": d.menu_makan, "Link Foto Makan": d.foto_makan || '-',
+                "Mapel Belajar": d.mapel_belajar, "Link Foto Belajar": d.foto_belajar || '-',
+                "Kegiatan Sosial": d.keg_sosial, "Jam Tidur": d.jam_tidur
             }));
-
             const ws = XLSX.utils.json_to_sheet(dataExcel);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Rekap 7 Hebat");
-            
-            const tgl = document.getElementById('filter-tanggal').value;
-            XLSX.writeFile(wb, `Rekap_7Hebat_${tgl}.xlsx`);
+            XLSX.writeFile(wb, `Rekap_7Hebat_${document.getElementById('tgl-mulai').value}_sd_${document.getElementById('tgl-selesai').value}.xlsx`);
         }
 
-        window.logout = () => {
-            if(confirm('Keluar dari Admin?')) window.location.href = 'index.html';
-        }
+        window.logout = () => { if(confirm('Keluar dari Admin?')) window.location.href = 'index.html'; }
     </script>
 </body>
 </html>
