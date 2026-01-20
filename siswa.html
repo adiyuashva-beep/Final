@@ -366,7 +366,30 @@
         window.kirimRefleksi = async (idJurnal, mapel, rating) => { if(!userSiswa) return; const elPesan = document.getElementById(`pesan-${idJurnal}`); const pesan = elPesan ? elPesan.value : "-"; document.getElementById('loadingOverlay').classList.remove('hidden'); try { await addDoc(collection(db, "refleksi_siswa"), { nisn: userSiswa.nisn, nama: userSiswa.nama, kelas: userSiswa.kelas, id_jurnal: idJurnal, mapel: mapel, rating: rating, pesan: pesan || "-", tanggal: getTodayID(), waktu: serverTimestamp() }); const pesanRingkas = `${userSiswa.nama}: ${pesan}`; const docJurnalRef = doc(db, "jurnal_guru", idJurnal); const docSnap = await getDoc(docJurnalRef); if (docSnap.exists()) { let komenLama = docSnap.data().rekap_refleksi_string || ""; let komenBaru = komenLama ? (komenLama + " | " + pesanRingkas) : pesanRingkas; await updateDoc(docJurnalRef, { rekap_refleksi_string: komenBaru }); } localStorage.setItem(`rated_${idJurnal}`, 'true'); Swal.fire({ title: 'Mantap!', text: 'Refleksi berhasil dikirim.', icon: 'success', timer: 1500, showConfirmButton: false }); } catch(e) { Swal.fire('Error', e.message, 'error'); } finally { document.getElementById('loadingOverlay').classList.add('hidden'); } }
 
         async function prosesUpdateProfil(fotoData) { document.getElementById('loadingOverlay').classList.remove('hidden'); try { const snap = await uploadString(ref(storage, `profil_siswa/${userSiswa.nisn}_${Date.now()}.jpg`), fotoData, 'data_url'); const downloadURL = await getDownloadURL(snap.ref); await setDoc(doc(db, "siswa", userSiswa.nisn), { foto_profil: downloadURL, last_update_foto: serverTimestamp(), update_foto_count: increment(1) }, { merge: true }); userSiswa.foto_profil = downloadURL; userSiswa.update_foto_count = (userSiswa.update_foto_count || 0) + 1; sessionStorage.setItem('user_siganteng', JSON.stringify(userSiswa)); loadFotoProfil(); Swal.fire({ title: 'Ganteng Maksimal!', text: 'Foto profil baru.', icon: 'success', timer: 1500, showConfirmButton: false }); } catch (error) { Swal.fire('Gagal', error.message, 'error'); } finally { document.getElementById('loadingOverlay').classList.add('hidden'); } }
-        window.klikMasuk = () => { if(validasiGPS()) bukaCam("Masuk"); }
+        
+        // --- KLIK MASUK: ADA VALIDASI JAM DISINI ---
+        window.klikMasuk = () => { 
+            // 1. CEK JAM (SATPAM WAKTU)
+            const now = new Date();
+            const jamSekarang = now.getHours();
+            const menitSekarang = now.getMinutes();
+
+            // Aturan: Harus jam 5:55 atau lebih
+            if (jamSekarang < 5 || (jamSekarang === 5 && menitSekarang < 55)) {
+                Swal.fire({
+                    title: 'Belum Waktunya!',
+                    text: 'Absensi baru dibuka tepat pukul 05:55 WIB.',
+                    icon: 'warning',
+                    confirmButtonText: 'Siap Nunggu',
+                    confirmButtonColor: '#f59e0b'
+                });
+                return; // ⛔ STOP! JANGAN LANJUT KE GPS
+            }
+
+            // 2. LANJUT KE GPS (Kalau lolos jam)
+            if(validasiGPS()) bukaCam("Masuk"); 
+        }
+
         window.klikPulang = () => { if(validasiGPS()) { if (!cekBolehPulang()) { Swal.fire({ title: 'Yakin?', text: "Belum jam pulang.", icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya', confirmButtonColor: '#d33' }).then((r) => { if (r.isConfirmed) bukaCam("Pulang"); }); } else { bukaCam("Pulang"); } } }
         window.klikIzinKeluar = () => { const alasan = prompt("Alasan keluar:"); if(alasan) kirimData("Izin Keluar", alasan, "-"); }
         window.klikKembali = () => { if(validasiGPS() && confirm("Kembali ke sekolah?")) kirimData("Kembali", "Kembali ke Sekolah", "-"); }
