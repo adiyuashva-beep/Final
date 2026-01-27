@@ -100,6 +100,11 @@
             </h3>
             
             <div class="space-y-3">
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 ml-1">TANGGAL MENGAJAR</label>
+                    <input type="date" id="jurnal-tanggal" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs font-bold text-slate-600 outline-none focus:border-blue-500 transition">
+                </div>
+
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="text-[10px] font-bold text-slate-400 ml-1">MULAI JAM KE-</label>
@@ -249,6 +254,9 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
+            // SET TANGGAL HARI INI SECARA DEFAULT DI INPUT
+            document.getElementById('jurnal-tanggal').valueAsDate = new Date();
+
             const sess = sessionStorage.getItem('user_siganteng');
             if (sess) {
                 userGuru = JSON.parse(sess);
@@ -458,12 +466,19 @@
         window.kirimJurnal = async () => { 
             const kls = document.getElementById('jurnal-kelas').value; const mapel = document.getElementById('jurnal-mapel').value; const materi = document.getElementById('jurnal-materi').value; 
             const jamMulai = document.getElementById('jam-mulai').value; const jamSelesai = document.getElementById('jam-selesai').value;
+            // UPDATE: AMBIL TANGGAL DARI INPUTAN
+            const tglManual = document.getElementById('jurnal-tanggal').value;
+
             if(!kls || !mapel || !materi) return Swal.fire('Lengkapi','Kelas, Mapel, dan Materi wajib diisi','warning'); 
+            if(!tglManual) return Swal.fire('Tanggal Kosong','Pilih tanggal mengajar','warning');
             if(!fotoBuktiJurnal) return Swal.fire('Wajib Foto','Lampirkan foto bukti KBM','warning'); 
+
             let absensiSiswa = []; document.querySelectorAll('.siswa-item').forEach(el => { const nisn = el.getAttribute('data-nisn'); const nama = el.getAttribute('data-nama'); const status = document.querySelector(`input[name="absen_${nisn}"]:checked`).value; absensiSiswa.push({ nisn, nama, status }); });
             document.getElementById('loading').classList.remove('hidden'); 
             try { 
-                const todayStr = new Date().toLocaleDateString('fr-CA'); 
+                // UPDATE: GUNAKAN TANGGAL YANG DIPILIH GURU (BUKAN OTOMATIS HARI INI)
+                const todayStr = tglManual; 
+                
                 const snap = await uploadString(ref(storage, `jurnal_guru/${todayStr}/${userGuru.username}_${Date.now()}.jpg`), fotoBuktiJurnal, 'data_url'); 
                 const urlFoto = await getDownloadURL(snap.ref); 
                 await addDoc(collection(db, "jurnal_guru"), { nip: userGuru.username, nama_guru: userGuru.nama, kelas: kls, mapel: mapel, materi: materi, foto_bukti: urlFoto, waktu: serverTimestamp(), tanggal: todayStr, absensi_mapel: absensiSiswa, jam_ke: `${jamMulai} - ${jamSelesai}`, rekap_refleksi_string: "" }); 
