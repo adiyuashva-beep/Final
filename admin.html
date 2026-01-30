@@ -431,18 +431,38 @@
         window.editUser = (username) => {
             const user = listUsers.find(u => u.username === username);
             if(!user) return;
+
             document.getElementById('editUsername').value = user.username;
             document.getElementById('editNama').value = user.nama;
             document.getElementById('editPassword').value = user.password;
+
             const divKelas = document.getElementById('divEditKelas');
             const selectKelas = document.getElementById('editKelas');
-            if(user.role === 'siswa') {
+            
+            // --- PERBAIKAN DI SINI ---
+            // Tampilkan Kolom Kelas untuk SISWA dan GURU
+            if(user.role === 'siswa' || user.role === 'guru') {
                 divKelas.classList.remove('hidden');
+                
+                // Ambil daftar kelas dari dropdown manual
                 selectKelas.innerHTML = document.getElementById('manualKelas').innerHTML;
-                selectKelas.value = user.kelas;
-            } else {
-                divKelas.classList.add('hidden');
+                
+                // Tambahkan Opsi 'Bukan Wali Kelas' khusus untuk Guru
+                if(user.role === 'guru') {
+                     const option = document.createElement("option");
+                     option.text = "- Bukan Wali Kelas -";
+                     option.value = "-";
+                     selectKelas.add(option, selectKelas[0]); // Taruh di paling atas
+                }
+
+                // Set nilai kelas saat ini (kalau kosong/undefined jadi strip)
+                selectKelas.value = user.kelas || "-"; 
+            } else { 
+                // Kalau Admin/Kepsek, baru disembunyikan
+                divKelas.classList.add('hidden'); 
             }
+            // -------------------------
+
             const modal = document.getElementById('modalEdit');
             modal.classList.remove('opacity-0', 'pointer-events-none');
             document.body.classList.add('modal-active');
@@ -656,3 +676,4 @@
     </script>
 </body>
 </html>
+
