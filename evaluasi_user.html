@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8"><title>Evaluasi 1 Bulan SiGanteng</title>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluasi 1 Bulan SiGanteng</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -16,7 +17,7 @@
 
         <div class="p-8 space-y-6">
             <div class="text-center">
-                <p class="font-bold text-slate-400 text-xs uppercase mb-3">Tingkat Kepuasan Anda</p>
+                <p class="font-bold text-slate-400 text-xs uppercase mb-3 text-[10px]">Tingkat Kepuasan Anda</p>
                 <div class="flex justify-center gap-2" id="star-container">
                     <i data-lucide="star" onclick="setStar(1)" class="w-10 h-10 text-slate-200 cursor-pointer transition star-btn" data-index="1"></i>
                     <i data-lucide="star" onclick="setStar(2)" class="w-10 h-10 text-slate-200 cursor-pointer transition star-btn" data-index="2"></i>
@@ -49,7 +50,15 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-        const firebaseConfig = { /* API KEY SMANSAKRA MAS */ };
+        // CONFIG SMANSAKRA PEJAGOAN
+        const firebaseConfig = {
+            apiKey: "AIzaSyBTanYQQ-oPkO_Zw9cg_H5V0jIJvt_x72c",
+            authDomain: "edugate-smansakra.firebaseapp.com",
+            projectId: "edugate-smansakra",
+            storageBucket: "edugate-smansakra.firebasestorage.app",
+            messagingSenderId: "181623194937",
+            appId: "1:181623194937:web:d494810276000dceda14e8"
+        };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
@@ -63,21 +72,25 @@
         };
 
         window.kirimData = async () => {
-            const user = JSON.parse(sessionStorage.getItem('user_siganteng'));
-            if(!user || selectedRating === 0) return Swal.fire('Eits!', 'Beri bintang dulu Mas/Mbak', 'warning');
+            const userSesi = sessionStorage.getItem('user_siganteng');
+            if(!userSesi) return Swal.fire('Error', 'Sesi login tidak ditemukan', 'error');
+            
+            const user = JSON.parse(userSesi);
+            if(selectedRating === 0) return Swal.fire('Eits!', 'Beri bintang dulu Mas/Mbak', 'warning');
 
             Swal.fire({ title: 'Mengirim...', didOpen: () => Swal.showLoading() });
             
-            await setDoc(doc(db, "testimoni", user.username), {
-                nama: user.nama, username: user.username, role: user.role,
-                rating: selectedRating,
-                kesan: document.getElementById('kesan').value,
-                harapan: document.getElementById('harapan').value,
-                masukan: document.getElementById('masukan').value,
-                waktu: serverTimestamp()
-            });
-
-            Swal.fire('Terima Kasih!', 'Data evaluasi sudah kami terima.', 'success').then(() => window.close());
+            try {
+                await setDoc(doc(db, "testimoni", user.username), {
+                    nama: user.nama, username: user.username, role: user.role,
+                    rating: selectedRating,
+                    kesan: document.getElementById('kesan').value,
+                    harapan: document.getElementById('harapan').value,
+                    masukan: document.getElementById('masukan').value,
+                    waktu: serverTimestamp()
+                });
+                Swal.fire('Terima Kasih!', 'Data evaluasi sudah kami terima.', 'success').then(() => window.history.back());
+            } catch (e) { Swal.fire('Gagal', e.message, 'error'); }
         };
         lucide.createIcons();
     </script>
