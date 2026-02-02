@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8"><title>Analytics - Evaluasi SiGanteng</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-slate-900 text-slate-200 p-8 font-sans">
+    <div class="max-w-6xl mx-auto space-y-8">
+        <header class="flex justify-between items-end">
+            <div>
+                <h1 class="text-4xl font-black tracking-tighter text-white uppercase italic">Analytics Monitor</h1>
+                <p class="text-slate-500 font-bold uppercase text-xs tracking-[0.3em]">Pejagoan SiGanteng Report - 2026</p>
+            </div>
+            <div class="bg-yellow-500 p-4 rounded-3xl text-slate-900 text-center shadow-xl min-w-[120px]">
+                <p class="text-[9px] font-black uppercase tracking-widest">Avg. Rating</p>
+                <h2 id="avg-rating" class="text-3xl font-black">0.0</h2>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="md:col-span-2 bg-slate-800 p-8 rounded-[3rem] border border-slate-700 shadow-2xl">
+                <h3 class="font-bold mb-6 flex items-center gap-2 text-white uppercase text-xs tracking-widest"><i data-lucide="bar-chart-3" class="text-yellow-500"></i> Distribusi Kepuasan</h3>
+                <canvas id="chartRating" height="150"></canvas>
+            </div>
+            
+            <div class="bg-yellow-500 p-8 rounded-[3rem] text-slate-900 flex flex-col justify-center shadow-2xl">
+                <h3 class="text-7xl font-black" id="total-respon">0</h3>
+                <p class="font-bold uppercase tracking-widest text-xs opacity-70">Responden</p>
+                <hr class="my-6 border-slate-900/10">
+                <p class="text-[10px] font-bold leading-relaxed italic opacity-80">"Data kepuasan pengguna SMAN 1 Pejagoan selama masa percobaan 1 bulan."</p>
+            </div>
+        </div>
+
+        <div class="bg-slate-800 rounded-[3rem] border border-slate-700 overflow-hidden shadow-2xl">
+            <div class="p-8 border-b border-slate-700 flex justify-between bg-slate-800/50">
+                <h3 class="font-bold flex items-center gap-2 text-white uppercase text-xs tracking-widest"><i data-lucide="message-square-quote" class="text-yellow-500"></i> Feedback Terbaru</h3>
+            </div>
+            <div id="testi-list" class="grid grid-cols-1 md:grid-cols-2 gap-6 p-8 max-h-[600px] overflow-y-auto">
+                </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBTanYQQ-oPkO_Zw9cg_H5V0jIJvt_x72c",
+            authDomain: "edugate-smansakra.firebaseapp.com",
+            projectId: "edugate-smansakra",
+            storageBucket: "edugate-smansakra.firebasestorage.app",
+            messagingSenderId: "181623194937",
+            appId: "1:181623194937:web:d494810276000dceda14e8"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let myChart;
+
+        onSnapshot(query(collection(db, "testimoni"), orderBy("waktu", "desc")), (snap) => {
+            let ratings = [0, 0, 0, 0, 0];
+            let totalBintang = 0;
+            const list = document.getElementById('testi-list');
+            list.innerHTML = "";
+
+            snap.forEach(doc => {
+                const d = doc.data();
+                ratings[d.rating - 1]++;
+                totalBintang += d.rating;
+
+                list.innerHTML += `
+                    <div class="bg-slate-900 p-6 rounded-[2rem] border border-slate-800 space-y-4 shadow-xl">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h4 class="text-white font-bold text-sm">${d.nama}</h4>
+                                <p class="text-[9px] uppercase font-black text-yellow-500 tracking-widest">${d.role}</p>
+                            </div>
+                            <div class="flex text-yellow-500 text-xs">${'⭐'.repeat(d.rating)}</div>
+                        </div>
+                        <p class="text-[11px] text-slate-400 italic">"${d.kesan}"</p>
+                        <div class="pt-4 border-t border-slate-800/50 flex flex-col gap-2">
+                            <p class="text-[9px] font-bold text-slate-500 uppercase"><span class="text-blue-400">Harapan:</span> ${d.harapan || '-'}</p>
+                            <p class="text-[9px] font-bold text-slate-500 uppercase"><span class="text-red-400 text-[8px]">Masukan:</span> ${d.masukan || '-'}</p>
+                        </div>
+                    </div>`;
+            });
+
+            const total = snap.size || 1;
+            document.getElementById('total-respon').innerText = snap.size;
+            document.getElementById('avg-rating').innerText = (totalBintang / total).toFixed(1);
+
+            updateChart(ratings);
+            lucide.createIcons();
+        });
+
+        function updateChart(dataRating) {
+            const ctx = document.getElementById('chartRating').getContext('2d');
+            if (myChart) myChart.destroy();
+            myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['⭐1', '⭐2', '⭐3', '⭐4', '⭐5'],
+                    datasets: [{
+                        label: 'Jumlah User',
+                        data: dataRating,
+                        backgroundColor: '#f59e0b',
+                        borderRadius: 10
+                    }]
+                },
+                options: { 
+                    scales: { 
+                        y: { beginAtZero: true, grid: { color: '#1e293b' }, ticks: { color: '#64748b' } }, 
+                        x: { grid: { display: false }, ticks: { color: '#f8fafc', font: { weight: 'bold' } } } 
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
