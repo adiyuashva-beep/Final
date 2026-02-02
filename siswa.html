@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dashboard Siswa - SiGanteng</title>
+    <title>Dashboard Siswa - SiGanteng Pejagoan</title>
 
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="logo.png">
@@ -27,13 +27,14 @@
         .story-ring { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); padding: 3px; border-radius: 50%; }
         .glass-panel { background: white; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border-radius: 1.5rem; }
         
-        /* --- STYLE KAMERA --- */
         .camera-overlay { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(8px); }
         .camera-box { position: relative; width: 85%; aspect-ratio: 3/4; background: black; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); border: 4px solid white; }
         .flash-effect { position: absolute; inset: 0; background: white; opacity: 0; pointer-events: none; z-index: 50; }
         .flash-active { animation: flashAnim 0.4s ease-out; }
         @keyframes flashAnim { 0% { opacity: 1; } 100% { opacity: 0; } }
         .focus-grid { position: absolute; inset: 0; pointer-events: none; z-index: 10; background-image: linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px); background-size: 33% 33%; }
+        .fly-to-server { animation: flyOut 0.8s ease-in forwards; }
+        @keyframes flyOut { to { transform: scale(0) translateY(-500px); opacity: 0; } }
     </style>
 </head>
 <body class="text-slate-800 h-screen flex flex-col overflow-hidden bg-slate-50">
@@ -51,14 +52,13 @@
                     </div>
                     <div class="absolute bottom-1 right-1 bg-slate-900 text-white p-2 rounded-full border-4 border-white shadow-lg"><i data-lucide="image-plus" class="w-4 h-4"></i></div>
                 </div>
-                <p id="info-jatah-foto" class="text-[10px] text-slate-400 font-bold mt-2 bg-slate-100 px-3 py-1 rounded-full">Cek Jatah...</p>
-                <div class="text-center mt-2">
+                <div class="text-center mt-4">
                     <p class="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Sugeng Enjang,</p>
                     <h2 class="text-2xl font-black text-slate-800 leading-tight" id="dash-nama">...</h2>
                     <div class="flex items-center justify-center gap-2 mt-2">
                         <span id="dash-kelas" class="text-[10px] font-black bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full uppercase tracking-wider">...</span>
                         <div class="h-1 w-1 bg-slate-300 rounded-full"></div>
-                        <span class="text-[10px] font-bold text-slate-500 uppercase">SISWA AKTIF</span>
+                        <span class="text-[10px] font-bold text-slate-500 uppercase italic">SISWA PEJAGOAN</span>
                     </div>
                 </div>
             </div>
@@ -66,9 +66,9 @@
             <div class="bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl mb-4 relative overflow-hidden">
                 <div class="relative z-10 flex justify-between items-end">
                     <div>
-                        <p class="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] mb-2">Status Terakhir</p>
+                        <p class="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] mb-2">Status Presensi</p>
                         <h1 class="text-3xl font-black tracking-tighter" id="hero-status">...</h1>
-                        <p class="text-[10px] text-slate-400 mt-2 font-mono" id="sub-status">Syncing...</p>
+                        <p class="text-[10px] text-slate-400 mt-2 font-mono" id="sub-status">Syncing Data...</p>
                     </div>
                     <div class="bg-white/10 p-3 rounded-2xl backdrop-blur-sm"><i data-lucide="activity" class="w-6 h-6 text-emerald-400"></i></div>
                 </div>
@@ -78,21 +78,19 @@
             <div class="glass-panel p-4 mb-8 grid grid-cols-2 gap-4">
                 <div class="flex items-center gap-3 border-r border-slate-100">
                     <div class="bg-emerald-100 p-2 rounded-xl text-emerald-600"><i data-lucide="log-in" class="w-5 h-5"></i></div>
-                    <div><p class="text-[10px] text-slate-400 font-bold uppercase">Masuk</p><p id="info-jam-masuk" class="text-lg font-black text-slate-800">--:--</p></div>
+                    <div><p class="text-[10px] text-slate-400 font-bold uppercase">Jam Masuk</p><p id="info-jam-masuk" class="text-lg font-black text-slate-800">--:--</p></div>
                 </div>
                 <div class="flex items-center gap-3 pl-2">
                     <div class="bg-rose-100 p-2 rounded-xl text-rose-600"><i data-lucide="log-out" class="w-5 h-5"></i></div>
-                    <div><p class="text-[10px] text-slate-400 font-bold uppercase">Pulang</p><p id="info-jam-pulang" class="text-lg font-black text-slate-800">--:--</p></div>
+                    <div><p class="text-[10px] text-slate-400 font-bold uppercase">Jam Pulang</p><p id="info-jam-pulang" class="text-lg font-black text-slate-800">--:--</p></div>
                 </div>
             </div>
 
             <div id="wadah-menu" class="grid grid-cols-3 gap-3 mb-8"></div>
 
             <div id="section-menu-dinamis" class="mt-4 hidden">
-                <h3 class="font-bold text-slate-700 text-sm mb-4 ml-1 flex items-center gap-2"><i data-lucide="sparkles" class="w-4 h-4 text-orange-500"></i> Pintasan Layanan</h3>
-                <div id="grid-menu-dinamis" class="grid grid-cols-2 gap-3">
-                    <div class="col-span-2 text-center text-xs text-slate-400 italic py-4">Memuat layanan...</div>
-                </div>
+                <h3 class="font-bold text-slate-700 text-sm mb-4 ml-1 flex items-center gap-2 uppercase tracking-tighter"><i data-lucide="sparkles" class="w-4 h-4 text-orange-500"></i> Layanan Sekolah</h3>
+                <div id="grid-menu-dinamis" class="grid grid-cols-2 gap-3"></div>
             </div>
         </div>
 
@@ -105,23 +103,22 @@
             <div class="relative w-full h-52 rounded-[2.5rem] overflow-hidden border-4 border-slate-50 shadow-inner mb-6 shrink-0">
                 <div id="mapMini" class="h-full w-full z-0"></div>
                 <div class="absolute bottom-3 left-3 right-3 z-10 text-center">
-                    <div id="jarakBox" class="inline-block bg-slate-900/80 backdrop-blur text-white text-[10px] font-bold py-2 px-4 rounded-xl shadow-lg border border-white/10">GPS Mendeteksi...</div>
+                    <div id="jarakBox" class="inline-block bg-slate-900/80 backdrop-blur text-white text-[10px] font-bold py-2 px-4 rounded-xl shadow-lg border border-white/10 italic">Mendeteksi GPS...</div>
                 </div>
             </div>
             <div class="space-y-3 mb-8 flex-1 overflow-y-auto">
-                <button id="btnMasuk" onclick="klikMasuk()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-5 rounded-[2rem] shadow-xl flex items-center gap-4 active:scale-95 transition group">
+                <button id="btnMasuk" onclick="klikMasuk()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-5 rounded-[2rem] shadow-xl flex items-center gap-4 active:scale-95 transition">
                     <div class="bg-white/20 p-3 rounded-2xl"><i data-lucide="scan-face" class="w-8 h-8"></i></div>
-                    <div class="text-left flex-1"><span class="text-blue-100 text-[10px] font-bold uppercase block">Sudah Sampai?</span><span class="font-black text-2xl">ABSEN MASUK</span></div>
+                    <div class="text-left flex-1"><span class="text-blue-100 text-[10px] font-bold uppercase block tracking-widest">READY?</span><span class="font-black text-2xl uppercase">Absen Masuk</span></div>
                 </button>
                 <div id="groupDiSekolah" class="hidden space-y-3">
                     <button id="btnPulang" onclick="klikPulang()" class="w-full bg-slate-800 text-white p-5 rounded-[2rem] shadow-xl flex items-center gap-4 active:scale-95 transition">
                         <div class="bg-white/10 p-3 rounded-2xl"><i data-lucide="log-out" class="w-8 h-8"></i></div>
-                        <div class="text-left flex-1"><span class="text-slate-400 text-[10px] font-bold uppercase block">Waktunya Pulang?</span><span class="font-black text-2xl">ABSEN PULANG</span></div>
+                        <div class="text-left flex-1"><span class="text-slate-400 text-[10px] font-bold uppercase block tracking-widest">WAKTUNYA PULANG?</span><span class="font-black text-2xl uppercase">Absen Pulang</span></div>
                     </button>
-                    <div id="msgBelumPulang" class="hidden text-center bg-orange-50 p-3 rounded-xl border border-orange-200 text-[10px] font-bold text-orange-600 uppercase tracking-widest">⚠️ Belum Jam Pulang</div>
                     <div class="grid grid-cols-2 gap-3 mt-3">
-                        <button id="btnIzinKeluar" onclick="klikIzinKeluar()" class="bg-orange-50 text-orange-600 p-4 rounded-[1.5rem] font-bold text-xs flex flex-col items-center gap-2"><i data-lucide="door-open" class="w-6 h-6"></i> Izin Keluar</button>
-                        <button id="btnKembali" onclick="klikKembali()" class="hidden bg-emerald-50 text-emerald-600 p-4 rounded-[1.5rem] font-bold text-xs flex flex-col items-center gap-2"><i data-lucide="map-pin" class="w-6 h-6"></i> Saya Kembali</button>
+                        <button id="btnIzinKeluar" onclick="klikIzinKeluar()" class="bg-orange-50 text-orange-600 p-4 rounded-[1.5rem] font-bold text-xs flex flex-col items-center gap-2 border border-orange-100"><i data-lucide="door-open" class="w-6 h-6"></i> Izin Keluar</button>
+                        <button id="btnKembali" onclick="klikKembali()" class="hidden bg-emerald-50 text-emerald-600 p-4 rounded-[1.5rem] font-bold text-xs flex flex-col items-center gap-2 border border-emerald-100"><i data-lucide="map-pin" class="w-6 h-6"></i> Saya Kembali</button>
                     </div>
                 </div>
                 <button onclick="bukaKartu()" class="w-full bg-white text-slate-800 border border-slate-200 p-4 rounded-[1.5rem] font-bold flex items-center justify-center gap-3"><i data-lucide="qr-code" class="w-5 h-5 text-slate-400"></i><span class="text-sm">Kartu Digital</span></button>
@@ -130,35 +127,29 @@
 
         <div id="page-sakit" class="hidden-page p-6 fade-in h-full bg-white flex flex-col overflow-y-auto">
              <button onclick="kembali()" class="mb-6 flex items-center gap-2 font-bold text-slate-500 text-sm"><i data-lucide="arrow-left" class="w-5 h-5"></i> Kembali</button>
-             <h2 class="text-2xl font-black text-slate-800 mb-6">Lapor Izin / Sakit</h2>
+             <h2 class="text-2xl font-black text-slate-800 mb-6 uppercase tracking-tighter italic">Lapor Sakit / Izin</h2>
              <div class="grid grid-cols-2 gap-4 mb-6">
                  <button id="btnOptSakit" onclick="pilihJenisIzin('Sakit')" class="p-4 rounded-2xl border-2 border-slate-100 font-bold text-slate-400 flex flex-col items-center gap-2 transition active:scale-95"><i data-lucide="thermometer" class="w-8 h-8"></i><span>SAKIT</span></button>
                  <button id="btnOptIzin" onclick="pilihJenisIzin('Izin')" class="p-4 rounded-2xl border-2 border-slate-100 font-bold text-slate-400 flex flex-col items-center gap-2 transition active:scale-95"><i data-lucide="mail-open" class="w-8 h-8"></i><span>IZIN</span></button>
              </div>
              <div id="areaUploadFoto" class="hidden space-y-4">
-                 <div><label class="block text-sm font-bold text-slate-600 mb-2">Keterangan</label><textarea id="ketIzin" rows="3" class="w-full p-4 rounded-2xl border border-slate-200 font-bold text-slate-700 outline-none focus:border-blue-500" placeholder="Contoh: Demam tinggi / Ada acara keluarga..."></textarea></div>
-                 <div>
-                     <label class="block text-sm font-bold text-slate-600 mb-2">Bukti Foto <span id="labelWajibFoto" class="text-red-500 hidden">(Wajib)</span></label>
-                     <div class="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center">
-                         <img id="previewBukti" src="" class="hidden w-full h-48 object-cover rounded-xl mb-4">
-                         <div class="flex gap-2 justify-center">
-                             <button id="btnAmbilBukti" onclick="bukaCam('BuktiSakit')" class="bg-blue-50 text-blue-600 px-4 py-3 rounded-xl font-bold text-xs flex items-center gap-2 hover:bg-blue-100"><i data-lucide="camera" class="w-4 h-4"></i> Kamera</button>
-                             <button onclick="pilihFotoGaleri('bukti')" class="bg-indigo-50 text-indigo-600 px-4 py-3 rounded-xl font-bold text-xs flex items-center gap-2 hover:bg-indigo-100"><i data-lucide="image-plus" class="w-4 h-4"></i> Galeri</button>
-                         </div>
-                         <p class="text-[10px] text-slate-400 mt-2">Upload bukti jika ada (opsional untuk Izin).</p>
+                 <textarea id="ketIzin" rows="3" class="w-full p-4 rounded-2xl border border-slate-200 font-bold text-slate-700 outline-none focus:border-blue-500" placeholder="Berikan alasan..."></textarea>
+                 <div class="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center">
+                     <img id="previewBukti" src="" class="hidden w-full h-48 object-cover rounded-xl mb-4">
+                     <div class="flex gap-2 justify-center">
+                         <button id="btnAmbilBukti" onclick="bukaCam('BuktiSakit')" class="bg-blue-50 text-blue-600 px-4 py-3 rounded-xl font-bold text-xs flex items-center gap-2"><i data-lucide="camera" class="w-4 h-4"></i> Kamera</button>
+                         <button onclick="pilihFotoGaleri('bukti')" class="bg-indigo-50 text-indigo-600 px-4 py-3 rounded-xl font-bold text-xs flex items-center gap-2"><i data-lucide="image-plus" class="w-4 h-4"></i> Galeri</button>
                      </div>
                  </div>
-                 <button onclick="kirimLaporanIzin()" class="w-full bg-slate-800 text-white p-5 rounded-[2rem] shadow-xl font-bold text-lg mt-8 active:scale-95 transition">KIRIM LAPORAN</button>
+                 <button onclick="kirimLaporanIzin()" class="w-full bg-slate-800 text-white p-5 rounded-[2rem] shadow-xl font-bold text-lg mt-8 uppercase tracking-widest">Kirim Laporan</button>
              </div>
         </div>
 
         <div id="page-refleksi" class="hidden-page p-6 fade-in h-full bg-white flex flex-col overflow-y-auto">
             <button onclick="kembali()" class="mb-6 flex items-center gap-2 font-bold text-slate-500 text-sm"><i data-lucide="arrow-left" class="w-5 h-5"></i> Kembali</button>
-            <div class="flex justify-between items-end mb-6">
-                <div><h2 class="text-2xl font-black text-slate-800">Timeline KBM</h2><p class="text-slate-400 text-xs">Pelajaran di kelasmu hari ini.</p></div>
-                <div class="bg-pink-50 p-3 rounded-2xl"><i data-lucide="brain-circuit" class="w-6 h-6 text-pink-500"></i></div>
-            </div>
-            <div id="timeline-kbm" class="space-y-4"><div class="text-center py-10 text-slate-400 text-xs italic">Memuat jadwal...</div></div>
+            <h2 class="text-2xl font-black text-slate-800 leading-tight">Timeline KBM</h2>
+            <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-6">Jurnal & Refleksi Belajar</p>
+            <div id="timeline-kbm" class="space-y-4"></div>
         </div>
 
         <div id="page-profil" class="hidden-page p-6 fade-in h-full bg-white overflow-y-auto">
@@ -172,25 +163,25 @@
                 <p class="text-slate-400 text-sm font-mono" id="profil-page-nisn">...</p>
              </div>
              <div class="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 space-y-4 mb-6">
-                <h4 class="font-bold text-slate-700 text-sm flex items-center gap-2"><i data-lucide="lock" class="w-4 h-4 text-rose-600"></i> Keamanan Akun</h4>
-                <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Password Baru</label><input type="password" id="inputPassBaru" class="w-full p-4 rounded-2xl border border-slate-200 font-bold text-slate-700 outline-none transition focus:border-rose-500" placeholder="Minimal 6 karakter..."></div>
-                <button onclick="gantiPassword()" class="w-full bg-rose-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-rose-500/20 active:scale-95 transition">Ganti Password</button>
+                <h4 class="font-bold text-slate-700 text-sm flex items-center gap-2 italic"><i data-lucide="lock" class="w-4 h-4 text-rose-600"></i> Pengaturan Password</h4>
+                <input type="password" id="inputPassBaru" class="w-full p-4 rounded-2xl border border-slate-200 font-bold text-slate-700 outline-none focus:border-rose-500" placeholder="Password Baru...">
+                <button onclick="gantiPassword()" class="w-full bg-rose-600 text-white py-4 rounded-2xl font-bold">Update Data</button>
              </div>
              <div class="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 space-y-4 mb-6">
-                <h4 class="font-bold text-slate-700 text-sm flex items-center gap-2"><i data-lucide="smartphone" class="w-4 h-4 text-green-600"></i> Database WhatsApp</h4>
-                <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">No. WA Siswa</label><input type="tel" id="inputWaSiswa" class="w-full p-4 rounded-2xl border border-slate-200 font-bold text-slate-700 outline-none transition focus:border-blue-500" placeholder="0812..."></div>
-                <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">No. WA Orang Tua</label><input type="tel" id="inputWaOrtu" class="w-full p-4 rounded-2xl border border-slate-200 font-bold text-slate-700 outline-none transition focus:border-blue-500" placeholder="0813..."></div>
-                <button onclick="simpanDataWA()" class="w-full bg-green-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-green-500/20 active:scale-95 transition">Simpan Kontak WA</button>
+                <h4 class="font-bold text-slate-700 text-sm flex items-center gap-2 italic"><i data-lucide="smartphone" class="w-4 h-4 text-green-600"></i> Kontak WhatsApp</h4>
+                <input type="tel" id="inputWaSiswa" class="w-full p-4 rounded-2xl border border-slate-200 font-bold text-slate-700" placeholder="WhatsApp Siswa...">
+                <input type="tel" id="inputWaOrtu" class="w-full p-4 rounded-2xl border border-slate-200 font-bold text-slate-700" placeholder="WhatsApp Orang Tua...">
+                <button onclick="simpanDataWA()" class="w-full bg-green-600 text-white py-4 rounded-2xl font-bold">Simpan Kontak</button>
              </div>
-             <button onclick="logout()" class="w-full text-red-500 font-bold bg-red-50 py-4 rounded-2xl border border-red-100">Logout</button>
+             <button onclick="logout()" class="w-full text-red-500 font-bold bg-red-50 py-4 rounded-2xl border border-red-100 italic">Logout Akun</button>
         </div>
 
     </main>
 
     <div id="modalKamera" class="hidden fixed inset-0 z-50 camera-overlay flex flex-col items-center justify-center fade-in">
         <div class="absolute top-6 w-full flex justify-between items-center px-6 z-30">
-            <h3 class="text-white font-bold text-sm bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/20" id="judulKamera">KAMERA</h3>
-            <button onclick="tutupKamera()" class="p-3 rounded-full bg-white/10 text-white backdrop-blur border border-white/20 hover:bg-white/20 transition"><i data-lucide="x" class="w-6 h-6"></i></button>
+            <h3 class="text-white font-bold text-sm bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/20 uppercase" id="judulKamera">KAMERA</h3>
+            <button onclick="tutupKamera()" class="p-3 rounded-full bg-white/10 text-white backdrop-blur border border-white/20"><i data-lucide="x" class="w-6 h-6"></i></button>
         </div>
         <div class="camera-box relative">
             <video id="videoStream" autoplay playsinline muted class="w-full h-full object-cover transform -scale-x-100"></video>
@@ -205,19 +196,18 @@
     </div>
 
     <div id="modalKartu" class="hidden fixed inset-0 z-50 bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-6">
-        <div class="bg-white p-8 rounded-[2.5rem] w-full max-w-xs text-center shadow-2xl relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-indigo-500"></div>
-            <h3 class="font-black text-slate-800 text-xl mb-1 mt-4">KARTU PELAJAR</h3>
-            <div class="bg-slate-50 p-4 rounded-3xl border-2 border-dashed border-slate-200 mb-6 inline-block mt-4"><div id="qrcode"></div></div>
-            <h2 id="namaDiKartu" class="font-black text-slate-800 text-lg leading-tight mb-1">...</h2>
+        <div class="bg-white p-8 rounded-[2.5rem] w-full max-w-xs text-center shadow-2xl relative">
+            <h3 class="font-black text-slate-800 text-xl mb-4 uppercase italic">Kartu Pelajar</h3>
+            <div class="bg-slate-50 p-4 rounded-3xl border-2 border-dashed border-slate-200 mb-6 inline-block"><div id="qrcode"></div></div>
+            <h2 id="namaDiKartu" class="font-black text-slate-800 text-lg leading-tight mb-1 uppercase tracking-tighter">...</h2>
             <p id="nisnDiKartu" class="font-mono text-slate-600 font-bold text-xs tracking-widest">...</p>
-            <button onclick="tutupKartu()" class="mt-8 w-full py-3 text-slate-400 font-bold text-xs uppercase hover:text-red-500">Tutup</button>
+            <button onclick="tutupKartu()" class="mt-8 text-slate-400 font-bold text-xs uppercase hover:text-red-500">Kembali</button>
         </div>
     </div>
 
     <div id="loadingOverlay" class="hidden fixed inset-0 z-[60] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center">
         <div class="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <h5 class="font-black text-slate-800 text-xs tracking-[0.2em] animate-pulse">MEMPROSES...</h5>
+        <h5 class="font-black text-slate-800 text-[10px] tracking-[0.3em] animate-pulse uppercase">Memproses Data...</h5>
     </div>
 
     <script type="module">
@@ -228,91 +218,42 @@
         const firebaseConfig = { apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo", authDomain: "siganteng-absensi.firebaseapp.com", databaseURL: "https://siganteng-absensi-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "siganteng-absensi", storageBucket: "siganteng-absensi.firebasestorage.app", messagingSenderId: "917873420012", appId: "1:917873420012:web:0fe1a9eddc5f94959ba7c9" };
         const app = initializeApp(firebaseConfig); const db = getFirestore(app); const storage = getStorage(app);
 
-        // --- 🛡️ SATPAM AKSES ---
-        onSnapshot(doc(db, "pengaturan", "akses_global"), (snap) => {
-            if (snap.exists()) {
-                const akses = snap.data();
-                if (akses.siswa === false) {
-                    document.body.innerHTML = `
-                        <div style="height:100vh; background:#0f172a; color:white; display:flex; flex-direction:column; justify-content:center; align-items:center; font-family:'Outfit',sans-serif; text-align:center;">
-                            <div style="font-size:4rem; margin-bottom:1rem;">⛔</div>
-                            <h1 style="font-weight:900; font-size:2rem;">AKSES DITUTUP</h1>
-                            <p style="color:#94a3b8; margin-bottom:2rem;">Sistem sedang istirahat atau maintenance.<br>Silakan kembali nanti.</p>
-                            <button onclick="window.location.href='index.html'" style="background:#3b82f6; color:white; border:none; padding:12px 30px; border-radius:12px; font-weight:bold; cursor:pointer;">KEMBALI LOGIN</button>
-                        </div>
-                    `;
-                }
-            }
-        });
-        
         let SEKOLAH_LAT = -7.6739830; let SEKOLAH_LNG = 109.6319560;
         let userSiswa = null; let lokasiUser = null; let map = null; let markerSiswa = null;
         let streamKamera = null; let tipeAbsenAktif = ""; let tempFotoBukti = null;
         let configSekolah = { validasi_gps_aktif: true, radius_meter: 50 }; let jenisIzinAktif = "";
-        let isTimelineLoaded = false; 
+        let isTimelineLoaded = false; let currentStatusSiswa = "Belum Hadir";
 
         const getTodayID = () => { const now = new Date(); return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`; };
 
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
-            
             const sessionData = sessionStorage.getItem('user_siganteng'); 
-            
             if (sessionData) {
                 userSiswa = JSON.parse(sessionData);
-                // --- STANDARISASI ID DISINI ---
                 userSiswa.username = userSiswa.username || userSiswa.nisn;
-                userSiswa.nisn = userSiswa.username; // Pastikan sinkron
-                
+                userSiswa.nisn = userSiswa.username; 
                 document.getElementById('dash-nama').innerText = userSiswa.nama;
                 document.getElementById('dash-kelas').innerText = userSiswa.kelas || "SISWA";
                 document.getElementById('profil-page-nama').innerText = userSiswa.nama;
                 document.getElementById('profil-page-nisn').innerText = userSiswa.nisn;
-                
-                syncAdminSettings(); loadFotoProfil(); renderMenu(); mulaiJam(); pantauDataRealtime(); cekGPS(); loadMenuDinamis(); 
-                
-                history.pushState(null, null, location.href); 
-                window.onpopstate = function () {
-                    if(!document.getElementById('modalKamera').classList.contains('hidden')) { tutupKamera(); history.pushState(null, null, location.href); return; }
-                    if(!document.getElementById('modalKartu').classList.contains('hidden')) { tutupKartu(); history.pushState(null, null, location.href); return; }
-                    if(document.getElementById('page-dashboard').classList.contains('hidden-page')) { 
-                        kembali(); 
-                        history.pushState(null, null, location.href); 
-                    } else {
-                        history.pushState(null, null, location.href);
-                    }
-                };
-            } else { 
-                window.location.href = 'index.html'; 
-            }
+                syncAdminSettings(); loadFotoProfil(); mulaiJam(); pantauDataRealtime(); cekGPS(); loadMenuDinamis(); 
+            } else { window.location.href = 'index.html'; }
         });
 
-        window.loadTimelineKBM = function() { 
-            if(isTimelineLoaded) return;
-            isTimelineLoaded = true;
-            const container = document.getElementById('timeline-kbm'); 
-            const todayStr = getTodayID(); 
-            const q = query(collection(db, "jurnal_guru"), where("kelas", "==", userSiswa.kelas), where("tanggal", "==", todayStr), orderBy("waktu", "desc"), limit(20)); 
-            container.innerHTML = '<div class="text-center py-10 text-slate-400 text-xs italic">Mengambil data pelajaran...</div>';
-            onSnapshot(q, (snap) => { 
-                container.innerHTML = ''; 
-                if(snap.empty) { container.innerHTML = '<div class="text-center py-10 text-slate-400 text-xs italic">Belum ada pelajaran hari ini.</div>'; return; } 
-                snap.forEach(doc => { 
-                    const d = doc.data(); const jam = d.waktu ? new Date(d.waktu.toDate()).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : '-'; const docIdJurnal = doc.id; const isRated = localStorage.getItem(`rated_${docIdJurnal}`); const mapelSafe = (d.mapel || "Mapel").replace(/'/g, "\\'"); 
-                    const ratingArea = isRated ? `<div class="mt-3 text-[10px] text-emerald-600 font-bold bg-emerald-50 p-2 rounded-lg text-center flex items-center justify-center gap-2"><i data-lucide="check-circle" class="w-3 h-3"></i> Refleksi Terkirim</div>` : `<div class="mt-3 pt-3 border-t border-slate-100"><textarea id="pesan-${docIdJurnal}" maxlength="150" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-bold text-slate-700 outline-none focus:border-blue-500 mb-3 transition" rows="2" placeholder="Tulis catatan (Maks 150 huruf)..."></textarea><p class="text-[9px] text-slate-400 mb-2 text-center uppercase font-bold tracking-widest">Bagaimana pelajaran ini?</p><div class="grid grid-cols-4 gap-2 mt-3"><button onclick="kirimRefleksi('${docIdJurnal}', '${mapelSafe}', 4)" class="group bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 rounded-xl p-2 transition active:scale-95 flex flex-col items-center"><span class="text-2xl group-hover:scale-125 transition transform">🥰</span><span class="text-[8px] font-black text-emerald-600 uppercase mt-1">Senang</span></button><button onclick="kirimRefleksi('${docIdJurnal}', '${mapelSafe}', 3)" class="group bg-amber-50 hover:bg-amber-100 border border-amber-100 rounded-xl p-2 transition active:scale-95 flex flex-col items-center"><span class="text-2xl group-hover:scale-125 transition transform">💡</span><span class="text-[8px] font-black text-amber-600 uppercase mt-1">Trinspirasi</span></button><button onclick="kirimRefleksi('${docIdJurnal}', '${mapelSafe}', 2)" class="group bg-orange-50 hover:bg-orange-100 border border-orange-100 rounded-xl p-2 transition active:scale-95 flex flex-col items-center"><span class="text-2xl group-hover:scale-125 transition transform">😵‍💫</span><span class="text-[8px] font-black text-orange-600 uppercase mt-1">Krg Paham</span></button><button onclick="kirimRefleksi('${docIdJurnal}', '${mapelSafe}', 1)" class="group bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl p-2 transition active:scale-95 flex flex-col items-center"><span class="text-2xl group-hover:scale-125 transition transform">😴</span><span class="text-[8px] font-black text-slate-500 uppercase mt-1">Ngantuk</span></button></div></div>`; 
-                    container.innerHTML += `<div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm mb-4"><div class="flex justify-between items-start mb-2"><span class="bg-indigo-50 text-indigo-600 text-[10px] font-bold px-2 py-1 rounded shadow-sm">${jam}</span><span class="text-[10px] text-slate-400 font-bold uppercase tracking-wide">${d.nama_guru || 'Guru'}</span></div><h4 class="font-bold text-slate-800 text-sm leading-tight">${d.mapel}</h4><p class="text-xs text-slate-500 mt-1 line-clamp-2">${d.materi || '-'}</p>${ratingArea}</div>`; 
-                }); 
-                lucide.createIcons(); 
-            }); 
-        }
-
+        // --- RENDER MENU ADAPTIF (TOMBOL IZIN HILANG JIKA HADIR) ---
         window.renderMenu = () => {
             const menu = [ 
                 { id: 'btnAbsen', label: 'PRESENSI', icon: 'scan-face', color: 'text-blue-500', bg: 'bg-blue-50', action: "bukaHalaman('page-absen'); setTimeout(initMap, 500);" }, 
-                { id: 'btnSakit', label: 'Izin/Sakit', icon: 'thermometer', color: 'text-rose-500', bg: 'bg-rose-50', action: "bukaHalaman('page-sakit')" }, 
                 { id: 'btnRefleksi', label: 'Jurnal KBM', icon: 'book-open', color: 'text-pink-500', bg: 'bg-pink-50', action: "bukaHalaman('page-refleksi'); loadTimelineKBM();" }, 
                 { id: 'btnProfil', label: 'Profil', icon: 'user', color: 'text-indigo-500', bg: 'bg-indigo-50', action: "bukaHalaman('page-profil')" } 
             ];
+            
+            // Aturan: Hanya tampilkan Izin/Sakit kalau BELUM presensi
+            if (currentStatusSiswa === "Belum Hadir") {
+                menu.splice(1, 0, { id: 'btnSakit', label: 'Izin/Sakit', icon: 'thermometer', color: 'text-rose-500', bg: 'bg-rose-50', action: "bukaHalaman('page-sakit')" });
+            }
+
             const c = document.getElementById('wadah-menu'); c.innerHTML = '';
             menu.forEach(m => { c.innerHTML += `<button onclick="${m.action}" class="flex flex-col items-center gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm active:scale-95 transition"><div class="${m.bg} ${m.color} p-3 rounded-xl"><i data-lucide="${m.icon}" class="w-6 h-6"></i></div><span class="text-[10px] font-bold text-slate-600 uppercase tracking-tight">${m.label}</span></button>`; });
             lucide.createIcons();
@@ -322,97 +263,137 @@
         window.kembali = () => { bukaHalaman('page-dashboard'); }
         window.syncAdminSettings = () => { onSnapshot(doc(db, "pengaturan", "sekolah"), (doc) => { if(doc.exists()) { configSekolah = doc.data(); if(configSekolah.lokasi_lat) SEKOLAH_LAT = configSekolah.lokasi_lat; if(configSekolah.lokasi_lng) SEKOLAH_LNG = configSekolah.lokasi_lng; } }); }
         
-        window.loadFotoProfil = async () => { if (userSiswa.foto_profil) { document.getElementById('dash-foto').src = userSiswa.foto_profil; document.getElementById('profil-page-foto').src = userSiswa.foto_profil; const jatah = 2 - (userSiswa.update_foto_count || 0); updateInfoJatah(jatah); return; } try { const docSnap = await getDoc(doc(db, "siswa", userSiswa.nisn)); if (docSnap.exists()) { const data = docSnap.data(); userSiswa.foto_profil = data.foto_profil; userSiswa.update_foto_count = data.update_foto_count || 0; sessionStorage.setItem('user_siganteng', JSON.stringify(userSiswa)); if (data.foto_profil) { document.getElementById('dash-foto').src = data.foto_profil; document.getElementById('profil-page-foto').src = data.foto_profil; } const jatah = 2 - (data.update_foto_count || 0); updateInfoJatah(jatah); } } catch (e) { console.log(e); } }
-        function updateInfoJatah(jatah) { const info = document.getElementById('info-jatah-foto'); info.innerText = `Sisa Ganti Foto: ${jatah}x`; info.className = jatah <= 0 ? "text-[10px] text-red-500 font-bold mt-2 bg-red-100 px-3 py-1 rounded-full" : "text-[10px] text-slate-400 font-bold mt-2 bg-slate-100 px-3 py-1 rounded-full"; if(jatah<=0) info.innerText="Jatah Ganti Foto Habis"; }
+        window.loadFotoProfil = async () => { 
+            if (userSiswa.foto_profil) { 
+                document.getElementById('dash-foto').src = userSiswa.foto_profil; 
+                document.getElementById('profil-page-foto').src = userSiswa.foto_profil; 
+                return; 
+            } 
+            const docSnap = await getDoc(doc(db, "siswa", userSiswa.nisn)); 
+            if (docSnap.exists() && docSnap.data().foto_profil) { 
+                const url = docSnap.data().foto_profil;
+                userSiswa.foto_profil = url; 
+                sessionStorage.setItem('user_siganteng', JSON.stringify(userSiswa)); 
+                document.getElementById('dash-foto').src = url; 
+                document.getElementById('profil-page-foto').src = url; 
+            } 
+        }
 
-        window.pilihFotoGaleri = (tipe) => { if(tipe === 'profil') { if((userSiswa.update_foto_count || 0) >= 2) { Swal.fire('Jatah Habis', 'Kamu sudah mengganti foto 2x.', 'warning'); return; } document.getElementById('fileInputProfil').click(); } else document.getElementById('fileInputBukti').click(); }
-        window.prosesUploadGaleri = (input, tipe) => { if (input.files && input.files[0]) { const file = input.files[0]; Swal.fire({ title: 'Memproses...', text: 'Mengecilkan foto...', allowOutsideClick: false, didOpen: () => Swal.showLoading() }); const reader = new FileReader(); reader.onload = (e) => { const img = new Image(); img.src = e.target.result; img.onload = () => { const canvas = document.createElement('canvas'); const MAX_WIDTH = 300; const scaleSize = MAX_WIDTH / img.width; canvas.width = MAX_WIDTH; canvas.height = img.height * scaleSize; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, canvas.width, canvas.height); const dataUrl = canvas.toDataURL('image/jpeg', 0.5); if(tipe === 'profil') { prosesUpdateProfil(dataUrl); } else { tempFotoBukti = dataUrl; document.getElementById('previewBukti').src = dataUrl; document.getElementById('previewBukti').classList.remove('hidden'); document.getElementById('btnAmbilBukti').innerHTML = `<span class="text-green-600 font-bold">Foto Ada!</span>`; Swal.close(); } } }; reader.readAsDataURL(file); } }
+        window.pilihFotoGaleri = (tipe) => { document.getElementById(tipe === 'profil' ? 'fileInputProfil' : 'fileInputBukti').click(); }
 
+        window.prosesUploadGaleri = (input, tipe) => { if (input.files && input.files[0]) { const file = input.files[0]; Swal.fire({ title: 'Optimasi Foto...', allowOutsideClick: false, didOpen: () => Swal.showLoading() }); const reader = new FileReader(); reader.onload = (e) => { const img = new Image(); img.src = e.target.result; img.onload = () => { const can = document.createElement('canvas'); const max = 400; const sc = max / img.width; can.width = max; can.height = img.height * sc; can.getContext('2d').drawImage(img, 0, 0, can.width, can.height); const url = can.toDataURL('image/jpeg', 0.6); if(tipe === 'profil') prosesUpdateProfil(url); else { tempFotoBukti = url; document.getElementById('previewBukti').src = url; document.getElementById('previewBukti').classList.remove('hidden'); Swal.close(); } } }; reader.readAsDataURL(file); } }
+
+        async function prosesUpdateProfil(fotoData) { document.getElementById('loadingOverlay').classList.remove('hidden'); try { const snap = await uploadString(ref(storage, `profil_siswa/${userSiswa.nisn}_${Date.now()}.jpg`), fotoData, 'data_url'); const url = await getDownloadURL(snap.ref); await setDoc(doc(db, "siswa", userSiswa.nisn), { foto_profil: url, last_update_foto: serverTimestamp() }, { merge: true }); userSiswa.foto_profil = url; sessionStorage.setItem('user_siganteng', JSON.stringify(userSiswa)); loadFotoProfil(); Swal.fire({ title: 'Joss!', text: 'Profil diperbarui', icon: 'success', timer: 1500, showConfirmButton: false }); } catch (e) { Swal.fire('Gagal', e.message, 'error'); } finally { document.getElementById('loadingOverlay').classList.add('hidden'); } }
+
+        // --- LAYANAN DINAMIS (EVALUASI, APP STORE, DLL) ---
         async function loadMenuDinamis() { 
             const cachedMenu = localStorage.getItem('cache_menu_dinamis'); 
             const sec = document.getElementById('section-menu-dinamis'); 
+            const container = document.getElementById('grid-menu-dinamis');
             
-            // Render Cache Dulu
             if (cachedMenu) { 
                 const data = JSON.parse(cachedMenu); 
                 if(data.length > 0) { renderMenuDinamis(data); sec.classList.remove('hidden'); } 
             } 
-            
+
             const q = query(collection(db, "menu_dinamis"), orderBy("created_at", "asc")); 
             try { 
                 const snap = await getDocs(q); 
                 let menuData = []; 
-                snap.forEach(d => { const dt = d.data(); if (dt.target === 'siswa' || dt.target === 'umum') menuData.push(dt); }); 
+                snap.forEach(d => { 
+                    const dt = d.data(); 
+                    if (dt.target === 'siswa' || dt.target === 'umum') menuData.push(dt); 
+                });
                 
                 if(menuData.length > 0) { 
                     localStorage.setItem('cache_menu_dinamis', JSON.stringify(menuData)); 
                     renderMenuDinamis(menuData); 
                     sec.classList.remove('hidden'); 
                 } 
-            } catch(e) { console.log(e); } 
+            } catch(e) { console.error(e); } 
         }
-        
+
         function renderMenuDinamis(dataList) { 
             const container = document.getElementById('grid-menu-dinamis'); 
             container.innerHTML = ''; 
             dataList.forEach(dt => { 
                 const style = dt.highlight ? "bg-indigo-50 border-indigo-200 text-indigo-700" : "bg-white border-slate-100 text-slate-700"; 
-                // --- PERBAIKAN: HAPUS target="_blank" ---
-                // Supaya buka di tab yang sama dan sesi tidak hilang
                 container.innerHTML += `<a href="${dt.link}" class="${style} p-4 border rounded-2xl text-center flex flex-col items-center gap-2 active:scale-95 transition shadow-sm"><div class="text-2xl">${dt.icon}</div><span class="text-[10px] font-bold uppercase tracking-tighter">${dt.judul}</span></a>`; 
             }); 
         }
 
-        window.kirimRefleksi = async (idJurnal, mapel, rating) => { if(!userSiswa) return; const elPesan = document.getElementById(`pesan-${idJurnal}`); const pesan = elPesan ? elPesan.value : "-"; document.getElementById('loadingOverlay').classList.remove('hidden'); try { await addDoc(collection(db, "refleksi_siswa"), { nisn: userSiswa.nisn, nama: userSiswa.nama, kelas: userSiswa.kelas, id_jurnal: idJurnal, mapel: mapel, rating: rating, pesan: pesan || "-", tanggal: getTodayID(), waktu: serverTimestamp() }); const pesanRingkas = `${userSiswa.nama}: ${pesan}`; const docJurnalRef = doc(db, "jurnal_guru", idJurnal); const docSnap = await getDoc(docJurnalRef); if (docSnap.exists()) { let komenLama = docSnap.data().rekap_refleksi_string || ""; let komenBaru = komenLama ? (komenLama + " | " + pesanRingkas) : pesanRingkas; await updateDoc(docJurnalRef, { rekap_refleksi_string: komenBaru }); } localStorage.setItem(`rated_${idJurnal}`, 'true'); Swal.fire({ title: 'Mantap!', text: 'Refleksi berhasil dikirim.', icon: 'success', timer: 1500, showConfirmButton: false }); } catch(e) { Swal.fire('Error', e.message, 'error'); } finally { document.getElementById('loadingOverlay').classList.add('hidden'); } }
-
-        async function prosesUpdateProfil(fotoData) { document.getElementById('loadingOverlay').classList.remove('hidden'); try { const snap = await uploadString(ref(storage, `profil_siswa/${userSiswa.nisn}_${Date.now()}.jpg`), fotoData, 'data_url'); const downloadURL = await getDownloadURL(snap.ref); await setDoc(doc(db, "siswa", userSiswa.nisn), { foto_profil: downloadURL, last_update_foto: serverTimestamp(), update_foto_count: increment(1) }, { merge: true }); userSiswa.foto_profil = downloadURL; userSiswa.update_foto_count = (userSiswa.update_foto_count || 0) + 1; sessionStorage.setItem('user_siganteng', JSON.stringify(userSiswa)); loadFotoProfil(); Swal.fire({ title: 'Ganteng Maksimal!', text: 'Foto profil baru.', icon: 'success', timer: 1500, showConfirmButton: false }); } catch (error) { Swal.fire('Gagal', error.message, 'error'); } finally { document.getElementById('loadingOverlay').classList.add('hidden'); } }
-        
-        // --- KLIK MASUK: ADA VALIDASI JAM DISINI ---
+        // --- ABSENSI & GPS ---
         window.klikMasuk = () => { 
-            // 1. CEK JAM (SATPAM WAKTU)
-            const now = new Date();
-            const jamSekarang = now.getHours();
-            const menitSekarang = now.getMinutes();
-
-            // Aturan: Harus jam 5:55 atau lebih
-            if (jamSekarang < 5 || (jamSekarang === 5 && menitSekarang < 55)) {
-                Swal.fire({
-                    title: 'Belum Waktunya!',
-                    text: 'Absensi baru dibuka tepat pukul 05:55 WIB.',
-                    icon: 'warning',
-                    confirmButtonText: 'Siap Nunggu',
-                    confirmButtonColor: '#f59e0b'
-                });
-                return; // ⛔ STOP! JANGAN LANJUT KE GPS
-            }
-
-            // 2. LANJUT KE GPS (Kalau lolos jam)
+            const now = new Date(); const h = now.getHours(); const m = now.getMinutes();
+            if (h < 5 || (h === 5 && m < 55)) return Swal.fire('Sabar!', 'Absen dibuka 05:55 WIB', 'warning');
             if(validasiGPS()) bukaCam("Masuk"); 
         }
 
-        window.klikPulang = () => { if(validasiGPS()) { if (!cekBolehPulang()) { Swal.fire({ title: 'Yakin?', text: "Belum jam pulang.", icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya', confirmButtonColor: '#d33' }).then((r) => { if (r.isConfirmed) bukaCam("Pulang"); }); } else { bukaCam("Pulang"); } } }
-        window.klikIzinKeluar = () => { const alasan = prompt("Alasan keluar:"); if(alasan) kirimData("Izin Keluar", alasan, "-"); }
-        window.klikKembali = () => { if(validasiGPS() && confirm("Kembali ke sekolah?")) kirimData("Kembali", "Kembali ke Sekolah", "-"); }
-        window.pilihJenisIzin = (jenis) => { jenisIzinAktif = jenis; document.getElementById('areaUploadFoto').classList.remove('hidden'); document.getElementById('labelWajibFoto').className = jenis === 'Sakit' ? "text-red-500" : "hidden"; }
-        window.kirimLaporanIzin = () => { if(!jenisIzinAktif || !document.getElementById('ketIzin').value) return Swal.fire('Lengkapi Data','','warning'); if(jenisIzinAktif === 'Sakit' && !tempFotoBukti) return Swal.fire('Foto Wajib','','warning'); kirimData(jenisIzinAktif, document.getElementById('ketIzin').value, tempFotoBukti||"-"); bukaHalaman('page-dashboard'); }
-        window.simpanDataWA = async () => { const waSiswa = document.getElementById('inputWaSiswa').value; const waOrtu = document.getElementById('inputWaOrtu').value; if(!waSiswa && !waOrtu) return Swal.fire('Isi Nomor','','warning'); try { await setDoc(doc(db, "siswa", userSiswa.nisn), { wa_siswa: waSiswa, wa_ortu: waOrtu }, { merge: true }); Swal.fire('Tersimpan','','success'); } catch (e) { Swal.fire('Gagal',e.message,'error'); } }
-        window.gantiPassword = async () => { const passBaru = document.getElementById('inputPassBaru').value; if (passBaru.length < 6) return Swal.fire('Pendek','Minimal 6 karakter','warning'); try { const q = query(collection(db, "users"), where("username", "==", userSiswa.username)); const snap = await getDocs(q); snap.forEach(async (d) => { await updateDoc(doc(db, "users", d.id), { password: passBaru }); }); Swal.fire('Sukses','Login ulang','success').then(()=>{logout();}); } catch (e) { Swal.fire('Gagal',e.message,'error'); } }
+        window.klikPulang = () => { if(validasiGPS()) { if (!cekBolehPulang()) { Swal.fire({ title: 'Yakin?', text: "Belum jam pulang.", icon: 'warning', showCancelButton: true }).then((r) => { if (r.isConfirmed) bukaCam("Pulang"); }); } else bukaCam("Pulang"); } }
+        window.klikIzinKeluar = () => { const a = prompt("Alasan keluar gerbang:"); if(a) kirimData("Izin Keluar", a, "-"); }
+        window.klikKembali = () => { if(validasiGPS()) kirimData("Kembali", "Masuk Gerbang", "-"); }
+
+        function cekGPS() { if(navigator.geolocation) { navigator.geolocation.watchPosition((p) => { lokasiUser = {lat: p.coords.latitude, lng: p.coords.longitude}; if(map) { if(!markerSiswa) markerSiswa = L.marker(lokasiUser).addTo(map); else markerSiswa.setLatLng(lokasiUser); const d = map.distance(lokasiUser, [SEKOLAH_LAT, SEKOLAH_LNG]); const r = configSekolah.radius_meter || 50; const box = document.getElementById('jarakBox'); if (d > r) { box.innerText = `JAUH: ${Math.round(d)}m (MAX ${r}m)`; box.className = "bg-rose-500 text-white text-[10px] font-bold py-2 px-4 rounded-xl shadow-lg animate-pulse"; } else { box.innerText = "DALAM RADIUS"; box.className = "bg-emerald-500 text-white text-[10px] font-bold py-2 px-4 rounded-xl shadow-lg"; } } }, (e) => console.log(e), { enableHighAccuracy: true }); } }
+        window.initMap = () => { if(map) return; map = L.map('mapMini', {zoomControl:false, attributionControl: false}).setView([SEKOLAH_LAT,SEKOLAH_LNG], 17); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map); L.circle([SEKOLAH_LAT, SEKOLAH_LNG], { radius: configSekolah.radius_meter || 50, color: '#ef4444', fillOpacity: 0.15 }).addTo(map); }
+        window.validasiGPS = () => { if(!lokasiUser) return false; const d = map.distance(lokasiUser, [SEKOLAH_LAT, SEKOLAH_LNG]); if (d > (configSekolah.radius_meter || 50)) { Swal.fire('Kejauhan!', `Jarak: ${Math.round(d)}m.`, 'error'); return false; } return true; }
+
+        function pantauDataRealtime() {
+            const id = `${getTodayID()}_${userSiswa.nisn}`;
+            onSnapshot(doc(db, "absensi", id), (snap) => {
+                const data = snap.exists() ? snap.data() : null;
+                currentStatusSiswa = snap.exists() ? data.status_terakhir : "Belum Hadir";
+                document.getElementById('hero-status').innerText = currentStatusSiswa;
+                renderMenu(); 
+
+                if(snap.exists()) {
+                    if(data.jam_masuk) document.getElementById('info-jam-masuk').innerText = new Date(data.jam_masuk.seconds*1000).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+                    if(data.jam_pulang) document.getElementById('info-jam-pulang').innerText = new Date(data.jam_pulang.seconds*1000).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+                    
+                    const st = currentStatusSiswa;
+                    if(st.includes("Masuk") || st.includes("Hadir") || st.includes("Kiosk") || st === "Kembali") {
+                        document.getElementById('btnMasuk').classList.add('hidden');
+                        document.getElementById('groupDiSekolah').classList.remove('hidden');
+                        document.getElementById('btnIzinKeluar').classList.remove('hidden');
+                        document.getElementById('btnKembali').classList.add('hidden');
+                    } else if (st.includes("Izin Keluar")) {
+                        document.getElementById('btnMasuk').classList.add('hidden');
+                        document.getElementById('groupDiSekolah').classList.remove('hidden');
+                        document.getElementById('btnIzinKeluar').classList.add('hidden');
+                        document.getElementById('btnKembali').classList.remove('hidden');
+                    } else if(st.includes("Pulang")) {
+                        document.getElementById('btnMasuk').classList.add('hidden');
+                        document.getElementById('groupDiSekolah').classList.add('hidden');
+                        document.getElementById('hero-status').innerText = "Sudah Pulang";
+                    }
+                } else {
+                    document.getElementById('btnMasuk').classList.remove('hidden');
+                    document.getElementById('groupDiSekolah').classList.add('hidden');
+                }
+            });
+        }
+
+        async function kirimData(status, ket, foto) { document.getElementById('loadingOverlay').classList.remove('hidden'); const tgl = getTodayID(); const id = `${tgl}_${userSiswa.nisn}`; try { let up = { nisn: userSiswa.nisn, nama: userSiswa.nama, kelas: userSiswa.kelas, tanggal: tgl, status_terakhir: status, riwayat_kegiatan: arrayUnion(`${new Date().toLocaleTimeString()} - ${status} (${ket})`) }; if (foto !== "-") { const s = await uploadString(ref(storage, `absen/${tgl}/${userSiswa.nisn}_${status}_${Date.now()}.jpg`), foto, 'data_url'); const url = await getDownloadURL(s.ref); if(status === "Masuk") { up.foto_masuk = url; up.jam_masuk = serverTimestamp(); up.lokasi_masuk = `${lokasiUser.lat},${lokasiUser.lng}`; } else if(status === "Pulang") { up.foto_pulang = url; up.jam_pulang = serverTimestamp(); } else { up.foto_bukti = url; } } await setDoc(doc(db, "absensi", id), up, { merge: true }); tutupKamera(); Swal.fire('Berhasil!', status, 'success'); } catch (e) { console.log(e); } finally { document.getElementById('loadingOverlay').classList.add('hidden'); } }
+        window.bukaCam = (tipe) => { tipeAbsenAktif = tipe; document.getElementById('modalKamera').classList.remove('hidden'); document.getElementById('judulKamera').innerText = tipe; navigator.mediaDevices.getUserMedia({video:{facingMode:'user', aspectRatio: 3/4}}).then(s=>{ streamKamera=s; document.getElementById('videoStream').srcObject=s; }); }
+        window.tutupKamera = () => { document.getElementById('modalKamera').classList.add('hidden'); if(streamKamera) streamKamera.getTracks().forEach(t=>t.stop()); }
+        window.jepretFoto = () => { const vid = document.getElementById('videoStream'); const can = document.getElementById('canvasFoto'); const sc = 480/vid.videoWidth; can.width=480; can.height=vid.videoHeight*sc; can.getContext('2d').drawImage(vid,0,0,can.width,can.height); const data = can.toDataURL('image/jpeg', 0.7); const fl = document.getElementById('cameraFlash'); fl.classList.add('flash-active'); setTimeout(() => fl.classList.remove('flash-active'), 400); const img = document.getElementById('imgAnimasi'); img.src = data; img.classList.remove('hidden'); setTimeout(() => { img.classList.add('fly-to-server'); setTimeout(() => { kirimData(tipeAbsenAktif, "Hadir", data); }, 600); }, 50); }
         window.mulaiJam = () => { setInterval(()=>{ document.getElementById('jamDigital').innerText=new Date().toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}); document.getElementById('tanggalDigital').innerText=new Date().toLocaleDateString('id-ID',{weekday: 'long', day:'numeric', month:'long', year:'numeric'}); },1000); }
-        window.logout = () => { if(confirm("Keluar?")) { sessionStorage.clear(); localStorage.clear(); window.location.href='index.html'; } }
+        window.logout = () => { sessionStorage.clear(); localStorage.clear(); window.location.href='index.html'; }
         window.bukaKartu = () => { document.getElementById('modalKartu').classList.remove('hidden'); document.getElementById('namaDiKartu').innerText=userSiswa.nama; document.getElementById('nisnDiKartu').innerText=userSiswa.nisn; document.getElementById("qrcode").innerHTML=""; new QRCode(document.getElementById("qrcode"), {text:userSiswa.nisn, width:150, height:150}); }
         window.tutupKartu = () => document.getElementById('modalKartu').classList.add('hidden');
-        if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js'); }); }
-        
-        function cekGPS() { if(navigator.geolocation) { navigator.geolocation.watchPosition((p) => { lokasiUser = {lat: p.coords.latitude, lng: p.coords.longitude}; if(map) { if(!markerSiswa) markerSiswa = L.marker(lokasiUser).addTo(map); else markerSiswa.setLatLng(lokasiUser); const d = map.distance(lokasiUser, [SEKOLAH_LAT, SEKOLAH_LNG]); const r = configSekolah.radius_meter || 50; const box = document.getElementById('jarakBox'); if (configSekolah.validasi_gps_aktif && d > r) { box.innerText = `JAUH: ${Math.round(d)}m (Max: ${r}m)`; box.className = "bg-rose-500 text-white text-[10px] font-bold py-2.5 px-4 rounded-xl shadow-lg"; } else { box.innerText = "DALAM JANGKAUAN"; box.className = "bg-emerald-500 text-white text-[10px] font-bold py-2.5 px-4 rounded-xl shadow-lg"; } } }, (error) => console.error(error), { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }); } }
-        window.initMap = () => { if(map) return; map = L.map('mapMini', {zoomControl:false, attributionControl: false}).setView([SEKOLAH_LAT,SEKOLAH_LNG], 17); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map); updateMapCircle(); }
-        window.validasiGPS = () => { if(!lokasiUser) { Swal.fire('Tunggu GPS','Mencari lokasi...','info'); return false; } const d = map.distance(lokasiUser, [SEKOLAH_LAT, SEKOLAH_LNG]); if (configSekolah.validasi_gps_aktif && d > (configSekolah.radius_meter || 50)) { Swal.fire({icon: 'error', title: 'Kejauhan!', text: `Jarakmu ${Math.round(d)}m.`, confirmButtonColor: '#f43f5e'}); return false; } return true; }
-        function updateMapCircle() { if(!map) return; map.eachLayer((layer) => { if(layer instanceof L.Circle) { map.removeLayer(layer); } }); L.circle([SEKOLAH_LAT, SEKOLAH_LNG], { radius: configSekolah.radius_meter || 50, color: configSekolah.validasi_gps_aktif ? '#ef4444' : '#10b981', fillOpacity: 0.2 }).addTo(map); }
-        function cekBolehPulang() { const now = new Date(); const day = now.getDay(); const totalMenit = (now.getHours() * 60) + now.getMinutes(); if (day >= 1 && day <= 4) return totalMenit >= 930; if (day === 5) return totalMenit >= 820; return false; }
-        function pantauDataRealtime() { const docID = `${getTodayID()}_${userSiswa.nisn}`; onSnapshot(doc(db, "absensi", docID), (docSnap) => { const btnMasuk = document.getElementById('btnMasuk'); const grpSekolah = document.getElementById('groupDiSekolah'); const statusHero = document.getElementById('hero-status'); document.getElementById('info-jam-masuk').innerText = "--:--"; document.getElementById('info-jam-pulang').innerText = "--:--"; if (docSnap.exists()) { const data = docSnap.data(); const st = data.status_terakhir || ""; statusHero.innerText = st; document.getElementById('sub-status').innerText = "Update: " + new Date().toLocaleTimeString('id-ID'); if(data.jam_masuk) document.getElementById('info-jam-masuk').innerText = new Date(data.jam_masuk.seconds*1000).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}); if(data.jam_pulang) document.getElementById('info-jam-pulang').innerText = new Date(data.jam_pulang.seconds*1000).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}); if(st.includes("Masuk") || st.includes("Hadir") || st === "Kembali") { btnMasuk.classList.add('hidden'); grpSekolah.classList.remove('hidden'); document.getElementById('btnIzinKeluar').classList.remove('hidden'); document.getElementById('btnKembali').classList.add('hidden'); } else if (st.includes("Izin Keluar")) { btnMasuk.classList.add('hidden'); grpSekolah.classList.remove('hidden'); document.getElementById('btnIzinKeluar').classList.add('hidden'); document.getElementById('btnKembali').classList.remove('hidden'); } else if(st.includes("Pulang")) { btnMasuk.classList.add('hidden'); grpSekolah.classList.add('hidden'); statusHero.innerText = "Selesai"; } } else { statusHero.innerText = "Belum Hadir"; btnMasuk.classList.remove('hidden'); grpSekolah.classList.add('hidden'); } }); }
-        async function kirimData(status, ket, foto) { document.getElementById('loadingOverlay').classList.remove('hidden'); const todayStr = getTodayID(); const docID = `${todayStr}_${userSiswa.nisn}`; try { let updateData = { nisn: userSiswa.nisn, nama: userSiswa.nama, kelas: userSiswa.kelas, tanggal: todayStr, status_terakhir: status, riwayat_kegiatan: arrayUnion(`${new Date().toLocaleTimeString()} - ${status} (${ket})`) }; if (foto !== "-") { const snap = await uploadString(ref(storage, `absen/${todayStr}/${userSiswa.nisn}_${status}_${Date.now()}.jpg`), foto, 'data_url'); const url = await getDownloadURL(snap.ref); if(status === "Masuk") { updateData.foto_masuk = url; updateData.jam_masuk = serverTimestamp(); updateData.lokasi_masuk = `${lokasiUser.lat},${lokasiUser.lng}`; } else if(status === "Pulang") { updateData.foto_pulang = url; updateData.jam_pulang = serverTimestamp(); } else { updateData.foto_bukti = url; } } await setDoc(doc(db, "absensi", docID), updateData, { merge: true }); tutupKamera(); Swal.fire('Berhasil!', status + ' Tercatat', 'success'); } catch (e) { Swal.fire('Error', e.message, 'error'); } finally { document.getElementById('loadingOverlay').classList.add('hidden'); } }
-        window.bukaCam = (tipe) => { tipeAbsenAktif = tipe; document.getElementById('modalKamera').classList.remove('hidden'); let judul = "KAMERA"; if(tipe === 'BuktiSakit') judul = "BUKTI SAKIT"; document.getElementById('judulKamera').innerText = judul; const imgAnim = document.getElementById('imgAnimasi'); imgAnim.src = ""; imgAnim.classList.add('hidden'); imgAnim.classList.remove('fly-to-server'); navigator.mediaDevices.getUserMedia({video:{facingMode:'user', aspectRatio: 3/4}}).then(s=>{ streamKamera=s; document.getElementById('videoStream').srcObject=s; }); }
-        window.tutupKamera = () => { document.getElementById('modalKamera').classList.add('hidden'); if(streamKamera) streamKamera.getTracks().forEach(t=>t.stop()); }
-        window.jepretFoto = () => { const vid = document.getElementById('videoStream'); const can = document.getElementById('canvasFoto'); const scale = 480/vid.videoWidth; can.width=480; can.height=vid.videoHeight*scale; can.getContext('2d').drawImage(vid,0,0,can.width,can.height); const fotoData = can.toDataURL('image/jpeg', 0.7); const flash = document.getElementById('cameraFlash'); flash.classList.add('flash-active'); setTimeout(() => flash.classList.remove('flash-active'), 400); if(tipeAbsenAktif === 'UpdateProfil') { prosesUpdateProfil(fotoData); tutupKamera(); } else if(tipeAbsenAktif === 'BuktiSakit') { tempFotoBukti = fotoData; document.getElementById('previewBukti').src = fotoData; document.getElementById('previewBukti').classList.remove('hidden'); document.getElementById('btnAmbilBukti').innerHTML = `<span class="text-green-600 font-bold">Foto Ada!</span>`; tutupKamera(); } else { const imgAnim = document.getElementById('imgAnimasi'); imgAnim.src = fotoData; imgAnim.classList.remove('hidden'); setTimeout(() => { imgAnim.classList.add('fly-to-server'); setTimeout(() => { kirimData(tipeAbsenAktif, "Hadir", fotoData); }, 800); }, 50); } }
+        window.loadTimelineKBM = function() { 
+            const container = document.getElementById('timeline-kbm'); 
+            const todayStr = getTodayID(); 
+            const q = query(collection(db, "jurnal_guru"), where("kelas", "==", userSiswa.kelas), where("tanggal", "==", todayStr), orderBy("waktu", "desc"), limit(20)); 
+            onSnapshot(q, (snap) => { 
+                container.innerHTML = ''; 
+                if(snap.empty) { container.innerHTML = '<div class="text-center py-10 text-slate-400 text-xs italic font-bold">BELUM ADA PELAJARAN</div>'; return; } 
+                snap.forEach(doc => { 
+                    const d = doc.data(); const jam = d.waktu ? new Date(d.waktu.toDate()).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : '-';
+                    container.innerHTML += `<div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm mb-4"><div class="flex justify-between items-start mb-2"><span class="bg-indigo-50 text-indigo-600 text-[10px] font-bold px-2 py-1 rounded">${jam}</span><span class="text-[10px] text-slate-400 font-bold uppercase">${d.nama_guru}</span></div><h4 class="font-bold text-slate-800 text-sm">${d.mapel}</h4><p class="text-xs text-slate-500 mt-1">${d.materi || '-'}</p></div>`; 
+                }); 
+                lucide.createIcons(); 
+            }); 
+        }
     </script>
 </body>
 </html>
