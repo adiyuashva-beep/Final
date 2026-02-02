@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8"><title>Evaluasi 1 Bulan SiGanteng</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-slate-50 min-h-screen p-6 font-sans">
+    <div class="max-w-md mx-auto bg-white rounded-[2.5rem] shadow-xl overflow-hidden border border-slate-100">
+        <div class="bg-yellow-500 p-8 text-center text-white">
+            <h1 class="text-2xl font-black uppercase italic tracking-tighter">Evaluasi SiGanteng</h1>
+            <p class="text-xs font-bold opacity-80 uppercase tracking-widest mt-1">Satu Bulan Pemakaian (Jan - Feb)</p>
+        </div>
+
+        <div class="p-8 space-y-6">
+            <div class="text-center">
+                <p class="font-bold text-slate-400 text-xs uppercase mb-3">Tingkat Kepuasan Anda</p>
+                <div class="flex justify-center gap-2" id="star-container">
+                    <i data-lucide="star" onclick="setStar(1)" class="w-10 h-10 text-slate-200 cursor-pointer transition star-btn" data-index="1"></i>
+                    <i data-lucide="star" onclick="setStar(2)" class="w-10 h-10 text-slate-200 cursor-pointer transition star-btn" data-index="2"></i>
+                    <i data-lucide="star" onclick="setStar(3)" class="w-10 h-10 text-slate-200 cursor-pointer transition star-btn" data-index="3"></i>
+                    <i data-lucide="star" onclick="setStar(4)" class="w-10 h-10 text-slate-200 cursor-pointer transition star-btn" data-index="4"></i>
+                    <i data-lucide="star" onclick="setStar(5)" class="w-10 h-10 text-slate-200 cursor-pointer transition star-btn" data-index="5"></i>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Kesan Selama 1 Bulan</label>
+                    <textarea id="kesan" class="w-full p-4 bg-slate-50 border-none rounded-2xl h-24 text-sm outline-none focus:ring-2 focus:ring-yellow-500" placeholder="Apa yang Anda rasakan?"></textarea>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Harapan Kedepan</label>
+                    <textarea id="harapan" class="w-full p-4 bg-slate-50 border-none rounded-2xl h-24 text-sm outline-none focus:ring-2 focus:ring-yellow-500" placeholder="Mau fitur apa lagi?"></textarea>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Masukan / Kritik</label>
+                    <textarea id="masukan" class="w-full p-4 bg-slate-50 border-none rounded-2xl h-24 text-sm outline-none focus:ring-2 focus:ring-yellow-500" placeholder="Ada kendala teknis?"></textarea>
+                </div>
+            </div>
+
+            <button onclick="kirimData()" class="w-full bg-yellow-500 text-white py-5 rounded-3xl font-black uppercase tracking-widest shadow-lg shadow-yellow-500/30 hover:scale-[1.02] transition active:scale-95">Kirim Evaluasi</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        const firebaseConfig = { /* API KEY SMANSAKRA MAS */ };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let selectedRating = 0;
+        window.setStar = (num) => {
+            selectedRating = num;
+            document.querySelectorAll('.star-btn').forEach((s, i) => {
+                s.style.fill = (i < num) ? "#f59e0b" : "none";
+                s.style.color = (i < num) ? "#f59e0b" : "#e2e8f0";
+            });
+        };
+
+        window.kirimData = async () => {
+            const user = JSON.parse(sessionStorage.getItem('user_siganteng'));
+            if(!user || selectedRating === 0) return Swal.fire('Eits!', 'Beri bintang dulu Mas/Mbak', 'warning');
+
+            Swal.fire({ title: 'Mengirim...', didOpen: () => Swal.showLoading() });
+            
+            await setDoc(doc(db, "testimoni", user.username), {
+                nama: user.nama, username: user.username, role: user.role,
+                rating: selectedRating,
+                kesan: document.getElementById('kesan').value,
+                harapan: document.getElementById('harapan').value,
+                masukan: document.getElementById('masukan').value,
+                waktu: serverTimestamp()
+            });
+
+            Swal.fire('Terima Kasih!', 'Data evaluasi sudah kami terima.', 'success').then(() => window.close());
+        };
+        lucide.createIcons();
+    </script>
+</body>
+</html>
