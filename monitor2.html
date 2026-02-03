@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor Live - SiGanteng (Full Command Center v6)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+
+    <style>
+        :root { 
+            --bg-dark: #0b1120; --card-bg: #151e32; 
+            --neon-blue: #0ea5e9; --neon-green: #10b981; 
+            --neon-red: #ef4444; --neon-gold: #f59e0b; --neon-cyan: #22d3ee;
+        }
+        body { margin: 0; font-family: 'Outfit', sans-serif; background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%); color: white; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+        body::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: linear-gradient(rgba(14, 165, 233, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(14, 165, 233, 0.03) 1px, transparent 1px); background-size: 40px 40px; z-index: -1; pointer-events: none; }
+        
+        /* HEADER COMMAND CENTER */
+        .header { height: 12vh; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); display: flex; justify-content: space-between; align-items: center; padding: 0 30px; border-bottom: 1px solid rgba(14, 165, 233, 0.3); z-index: 20; position: relative; }
+        
+        /* FLASH SCANNING LINE (HIDUP KEMBALI) */
+        .header::after { content: ''; position: absolute; bottom: -1px; left: 0; width: 30%; height: 2px; background: var(--neon-blue); box-shadow: 0 0 15px var(--neon-blue); animation: scanningLine 5s linear infinite; }
+        @keyframes scanningLine { 0% { left: 0; width: 0; opacity: 0; } 50% { width: 50%; opacity: 1; } 100% { left: 100%; width: 0; opacity: 0; } }
+
+        .logo-siganteng { height: 55px; width: auto; filter: drop-shadow(0 0 8px var(--neon-blue)); animation: floatLogo 4s ease-in-out infinite; }
+        @keyframes floatLogo { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+
+        .main-content { flex: 1; display: flex; padding: 15px; gap: 15px; height: 83vh; overflow: hidden; }
+        .card-box { background: var(--card-bg); border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 20px 50px rgba(0,0,0,0.3); display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        
+        /* KOLOM TENGAH */
+        .col-center { flex: 1.4; display: flex; flex-direction: column; gap: 15px; }
+        .stats-wrapper { flex: 1.6; background: var(--card-bg); border-radius: 16px; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.05); position: relative; }
+        
+        /* REACTOR RING SPINNING (HIDUP KEMBALI) */
+        .reactor-ring { position: absolute; width: 210px; height: 210px; border-radius: 50%; border: 2px dashed rgba(14, 165, 233, 0.2); animation: spin 20s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        .donut-chart { position: relative; width: 160px; height: 160px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 1; box-shadow: 0 0 30px rgba(0,0,0,0.5); border: 2px solid rgba(255,255,255,0.05); }
+        .big-percent { font-size: 2.8em; font-weight: 900; color: white; font-family: 'Share Tech Mono'; }
+        
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; width: 100%; gap: 8px; margin-top: 15px; }
+        .stat-item { background: rgba(255,255,255,0.03); padding: 10px; border-radius: 12px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
+        .stat-item h4 { margin: 0; font-size: 0.65em; color: #94a3b8; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+        .stat-item p { margin: 0; font-size: 1.5em; font-weight: 700; font-family: 'Share Tech Mono'; }
+
+        /* LIST & SCROLLER */
+        .scroller-content { flex: 1; overflow: hidden; padding: 10px; position: relative; }
+        .marquee-vertical { animation: scrollUp linear infinite; }
+        @keyframes scrollUp { 0% { transform: translateY(0); } 100% { transform: translateY(-100%); } }
+
+        /* ITEM ROWS */
+        .rank-item { display: flex; align-items: center; padding: 8px; margin-bottom: 6px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(255,255,255,0.02); }
+        .avatar-img { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,0.1); margin-right: 12px; }
+        
+        /* GERBANG ROW (TIDAK PAKAI FOTO SESUAI PERMINTAAN) */
+        .gerbang-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 15px; border-radius: 8px; background: rgba(255,255,255,0.02); margin-bottom: 5px; border-left: 4px solid var(--neon-gold); }
+        .gerbang-row.kembali { border-left-color: var(--neon-cyan); background: rgba(34, 211, 238, 0.05); }
+
+        .footer-marquee { height: 5vh; background: #020617; display: flex; align-items: center; border-top: 1px solid var(--neon-blue); z-index: 10; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div style="display:flex; align-items:center; gap:20px;">
+            <img src="logo_sekolah.png" style="height:60px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2));">
+            <div>
+                <h1 style="margin:0; font-size:1.6em; font-weight:900; letter-spacing:1px;">SMAN 1 PEJAGOAN</h1>
+                <span style="font-size:0.75em; color:#94a3b8; letter-spacing:4px; font-weight:800;">COMMAND CENTER LIVE MONITORING</span>
+            </div>
+        </div>
+        
+        <div style="display:flex; align-items:center;">
+            <img src="logo.png" class="logo-siganteng">
+            <div style="border-left:2px solid rgba(255,255,255,0.1); padding-left:25px; margin-left:25px;">
+                <div id="jam-real" style="font-family:'Share Tech Mono'; font-size:2.8em; color:var(--neon-blue); line-height:1; text-shadow: 0 0 15px rgba(14, 165, 233, 0.4);">00:00</div>
+                <div id="tgl-real" style="font-size:0.85em; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:2px;">...</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="card-box" style="flex:0.8; border-top:2px solid var(--neon-green);">
+            <div style="padding:15px; font-weight:900; color:var(--neon-green); text-align:center; background:rgba(0,0,0,0.3); letter-spacing:1px;"><i class='bx bxs-zap'></i> TOP 10 GASIK</div>
+            <div id="gasik-list" style="padding:10px; overflow-y:auto;"></div>
+        </div>
+
+        <div class="col-center">
+            <div class="stats-wrapper">
+                <div class="reactor-ring"></div>
+                
+                <div style="position:absolute; top:20px; text-align:center; z-index:2;">
+                    <span style="font-size:0.75em; color:#94a3b8; font-weight:800; letter-spacing:3px; opacity:0.8;">TOTAL POPULASI SISWA</span>
+                    <div id="total-populasi" style="font-size:2em; font-weight:900; font-family:'Share Tech Mono'; color:white; text-shadow: 0 0 10px rgba(255,255,255,0.2);">...</div>
+                </div>
+
+                <div class="donut-chart" id="chart-absen">
+                    <div style="width:85%; height:85%; background:var(--card-bg); border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; border: 2px solid rgba(255,255,255,0.05);">
+                        <span class="big-percent" id="persen-text" style="color:var(--neon-green);">0%</span>
+                        <small style="font-size:0.6em; color:#94a3b8; font-weight:800; letter-spacing:1px;">HADIR HARI INI</small>
+                    </div>
+                </div>
+
+                <div class="stat-grid">
+                    <div class="stat-item"><h4 style="color:var(--neon-green)">HADIR SEKOLAH</h4><p id="total-hadir" style="color:white">0</p></div>
+                    <div class="stat-item"><h4 style="color:var(--neon-gold)">IJIN/SAKIT (HOME)</h4><p id="total-izin" style="color:white">0</p></div>
+                    <div class="stat-item" style="border-color:var(--neon-gold); background:rgba(245, 158, 11, 0.05);"><h4 style="color:var(--neon-gold)">DI LUAR GERBANG</h4><p id="count-keluar" style="color:var(--neon-gold)">0</p></div>
+                    <div class="stat-item" style="border-color:var(--neon-cyan); background:rgba(34, 211, 238, 0.05);"><h4 style="color:var(--neon-cyan)">SUDAH KEMBALI</h4><p id="count-kembali" style="color:var(--neon-cyan)">0</p></div>
+                </div>
+            </div>
+
+            <div class="card-box" style="flex:1; border-top:2px solid var(--neon-gold);">
+                <div style="padding:15px; font-weight:900; color:var(--neon-gold); text-align:center; background:rgba(0,0,0,0.3);"><i class='bx bx-door-open'></i> LOG MONITOR GERBANG</div>
+                <div class="scroller-content">
+                    <div class="marquee-vertical" id="list-gerbang"></div>
+                </div>
+            </div>
+        </div>
+
+        <div style="flex:1.3; display:flex; flex-direction:column; gap:15px;">
+            <div class="card-box" style="flex:1; border-top:2px solid var(--neon-red);">
+                <div style="padding:12px; font-weight:900; color:var(--neon-red); text-align:center; background:rgba(0,0,0,0.2);"><i class='bx bxs-time-five'></i> TERLAMBAT (DATANG > 07:00)</div>
+                <div class="scroller-content">
+                    <div class="marquee-vertical" id="list-telat"></div>
+                </div>
+            </div>
+            <div class="card-box" style="flex:2.2; border-top:2px solid var(--neon-blue);">
+                <div style="padding:15px; font-weight:900; color:var(--neon-blue); text-align:center; background:rgba(0,0,0,0.2);"><i class='bx bxs-broadcast'></i> LIVE FEED AKTIVITAS</div>
+                <div class="scroller-content">
+                    <div class="marquee-vertical" id="live-feed-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-marquee">
+        <marquee scrollamount="7">🚀 <strong>SiGanteng Monitor:</strong> Pantau Kedisiplinan Siswa SMAN 1 Pejagoan secara Realtime • Hindari Meninggalkan Sekolah Tanpa Izin • Kedisiplinan adalah Jembatan antara Cita-cita dan Keberhasilan 🔥</marquee>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, collection, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        const firebaseConfig = { apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo", authDomain: "siganteng-absensi.firebaseapp.com", databaseURL: "https://siganteng-absensi-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "siganteng-absensi", storageBucket: "siganteng-absensi.firebasestorage.app", messagingSenderId: "917873420012", appId: "1:917873420012:web:0fe1a9eddc5f94959ba7c9" };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const today = new Date().toLocaleDateString('fr-CA');
+        let allSiswa = [];
+        let validStudentNISNs = new Set();
+        const DEFAULT_IMG = "https://ui-avatars.com/api/?background=random&color=fff&name=S";
+
+       async function initMonitor() {
+    const cacheKey = 'master_siswa_siganteng_' + today;
+    const cachedData = localStorage.getItem(cacheKey);
+
+    if (cachedData) {
+        // JOSS! Ambil dari memori lobi, 0 READ ke Firebase
+        const parsed = JSON.parse(cachedData);
+        allSiswa = parsed;
+        allSiswa.forEach(s => validStudentNISNs.add(s.username));
+        console.log("⚡ Mode Irit Aktif: Menggunakan Cache Lokal");
+        document.getElementById('total-populasi').innerText = allSiswa.length;
+        startMonitor();
+    } else {
+        // Ambil dari Server (Cuma sekali sehari)
+        console.log("📡 Mengambil Master Siswa dari Server...");
+        const q = query(collection(db, "users"), where("role", "==", "siswa"));
+        const snap = await getDocs(q);
+        
+        allSiswa = [];
+        snap.forEach(doc => {
+            const d = doc.data();
+            allSiswa.push({ username: d.username, name: d.nama || d.name, kelas: d.kelas });
+            validStudentNISNs.add(d.username);
+        });
+        
+        localStorage.setItem(cacheKey, JSON.stringify(allSiswa));
+        document.getElementById('total-populasi').innerText = allSiswa.length;
+        startMonitor();
+    }
+}
+
+        function startMonitor() {
+            onSnapshot(query(collection(db, "absensi"), where("tanggal", "==", today)), (snap) => {
+                let data = [];
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    if(validStudentNISNs.has(d.nisn)) data.push(d);
+                });
+                renderUI(data);
+            });
+        }
+
+        function renderUI(data) {
+            // FILTER KETAT: Izin Keluar & Kembali TIDAK masuk ke Sakit/Izin
+            const listHadir = data.filter(d => d.status_terakhir === "Masuk" || d.status_terakhir === "Pulang" || d.status_terakhir === "Hadir");
+            const listIzin = data.filter(d => d.status_terakhir === "Sakit" || d.status_terakhir === "Izin");
+            const listKeluar = data.filter(d => d.status_terakhir === "Izin Keluar");
+            const listKembali = data.filter(d => d.status_terakhir === "Kembali");
+            const listTelat = listHadir.filter(d => getJam(d) > "07:00");
+
+            document.getElementById('total-hadir').innerText = listHadir.length;
+            document.getElementById('total-izin').innerText = listIzin.length;
+            document.getElementById('count-keluar').innerText = listKeluar.length;
+            document.getElementById('count-kembali').innerText = listKembali.length;
+
+            const persen = allSiswa.length > 0 ? (((listHadir.length + listIzin.length) / allSiswa.length) * 100).toFixed(1) : 0;
+            document.getElementById('persen-text').innerText = persen + "%";
+            document.getElementById('chart-absen').style.background = `conic-gradient(var(--neon-green) ${persen * 3.6}deg, #1e293b 0deg)`;
+
+            // GASIK (TOP 10 DENGAN FOTO)
+            const sortedGasik = [...listHadir].sort((a,b) => getJam(a).localeCompare(getJam(b))).slice(0, 10);
+            document.getElementById('gasik-list').innerHTML = sortedGasik.map((d, i) => `
+                <div class="rank-item">
+                    <div class="rank-num" style="color:${i < 3 ? 'var(--neon-gold)' : 'white'}">${i+1}</div>
+                    <img src="${d.foto_masuk || DEFAULT_IMG}" class="avatar-img">
+                    <div style="flex:1; overflow:hidden;"><div style="font-weight:700; font-size:0.9em; white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">${d.nama}</div><div style="font-size:0.7em; opacity:0.5;">${d.kelas}</div></div>
+                    <div style="font-family:'Share Tech Mono'; color:var(--neon-green); font-weight:700;">${getJam(d)}</div>
+                </div>`).join('');
+
+            // GERBANG MONITOR (TIDAK PAKAI FOTO - RAMPING)
+            const gateData = [...listKeluar, ...listKembali].sort((a,b) => (b.updated_at || 0) - (a.updated_at || 0));
+            renderToScroller('list-gerbang', gateData.map(d => {
+                const isOut = d.status_terakhir === "Izin Keluar";
+                return `
+                <div class="gerbang-row ${!isOut ? 'kembali' : ''}">
+                    <div class="g-nama">${d.nama} <span style="font-size:0.8em; opacity:0.5; font-weight:400;">(${d.kelas})</span></div>
+                    <div style="display:flex; gap:12px; align-items:center;">
+                        <span style="color:${isOut?'var(--neon-gold)':'var(--neon-cyan)'}; font-weight:900; font-size:0.75em;">${isOut?'OUT':'BACK'}</span>
+                        <div style="font-family:'Share Tech Mono'; font-weight:700; color:white;">${getJam(d)}</div>
+                    </div>
+                </div>`;
+            }), 4);
+
+            // TERLAMBAT (DENGAN FOTO)
+            renderToScroller('list-telat', listTelat.map(d => `
+                <div class="rank-item" style="border-left:3px solid var(--neon-red); background:rgba(239, 68, 68, 0.05);">
+                    <img src="${d.foto_masuk || DEFAULT_IMG}" class="avatar-img" style="border-color:var(--neon-red)">
+                    <div style="flex:1; font-weight:700; font-size:0.9em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${d.nama}</div>
+                    <div style="font-family:'Share Tech Mono'; color:var(--neon-red); font-weight:900;">${getJam(d)}</div>
+                </div>`).join(''), 3);
+
+            // LIVE FEED (ALWAYS NEWEST AT TOP - DENGAN FOTO)
+            const liveData = [...data].sort((a,b) => (b.updated_at || 0) - (a.updated_at || 0));
+            renderToScroller('live-feed-list', liveData.slice(0, 15).map(d => `
+                <div class="rank-item" style="border-left:4px solid var(--neon-blue);">
+                    <img src="${d.foto_masuk || d.foto_bukti || DEFAULT_IMG}" class="avatar-img">
+                    <div style="flex:1; overflow:hidden;">
+                        <div style="font-weight:700; font-size:1em; white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">${d.nama}</div>
+                        <div style="color:var(--neon-blue); font-weight:800; font-size:0.75em; text-transform:uppercase;">${d.status_terakhir}</div>
+                    </div>
+                    <div style="font-family:'Share Tech Mono'; color:var(--neon-green); font-weight:700; font-size:1.2em;">${getJam(d)}</div>
+                </div>`).join(''), 5);
+        }
+
+        function renderToScroller(id, htmlArray, limit) {
+            const el = document.getElementById(id);
+            if(Array.isArray(htmlArray)) el.innerHTML = htmlArray.join('');
+            else el.innerHTML = htmlArray;
+
+            const itemCount = Array.isArray(htmlArray) ? htmlArray.length : el.children.length;
+            if(itemCount > limit) {
+                el.style.animation = `scrollUp ${itemCount * 3}s linear infinite`;
+                el.innerHTML += el.innerHTML;
+            } else { el.style.animation = 'none'; }
+        }
+
+        function getJam(d) {
+            if(d.jam_masuk && d.jam_masuk.seconds) return new Date(d.jam_masuk.seconds * 1000).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit', hour12: false}).replace('.',':');
+            if(d.riwayat_kegiatan && d.riwayat_kegiatan.length > 0) { const last = d.riwayat_kegiatan[d.riwayat_kegiatan.length-1]; return last.split(' - ')[0].substring(0,5); }
+            return "--:--";
+        }
+
+        setInterval(() => { const n = new Date(); document.getElementById('jam-real').innerText = n.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit', hour12: false}).replace('.', ':'); document.getElementById('tgl-real').innerText = n.toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long'}); }, 1000);
+        initMonitor();
+    </script>
+</body>
+</html>
