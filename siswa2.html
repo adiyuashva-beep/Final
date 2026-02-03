@@ -144,9 +144,14 @@
 
         <div id="page-refleksi" class="hidden-page p-6 fade-in h-full bg-white flex flex-col overflow-y-auto">
             <button onclick="kembali()" class="mb-6 flex items-center gap-2 font-bold text-slate-500 text-sm"><i data-lucide="arrow-left" class="w-5 h-5"></i> Kembali</button>
-            <h2 class="text-2xl font-black text-slate-800 leading-tight">Timeline KBM</h2>
-            <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-6">Jurnal & Refleksi Belajar</p>
-            <div id="timeline-kbm" class="space-y-4"></div>
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-2xl font-black text-slate-800 leading-tight">Timeline KBM</h2>
+                    <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Jurnal & Refleksi Belajar</p>
+                </div>
+                <div class="bg-indigo-100 p-2 rounded-xl text-indigo-600"><i data-lucide="book-open" class="w-6 h-6"></i></div>
+            </div>
+            <div id="timeline-kbm" class="space-y-4 pb-10"></div>
         </div>
 
         <div id="page-profil" class="hidden-page p-6 fade-in h-full bg-white overflow-y-auto">
@@ -219,6 +224,7 @@
         let streamKamera = null; let tipeAbsenAktif = ""; let tempFotoBukti = null;
         let configSekolah = { validasi_gps_aktif: true, radius_meter: 50 }; let jenisIzinAktif = "";
         let currentStatusSiswa = "Belum Hadir";
+        let tempRefleksi = {}; // Menyimpan emosi sementara
 
         const getTodayID = () => { const now = new Date(); return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`; };
 
@@ -233,9 +239,7 @@
                 document.getElementById('profil-page-nama').innerText = userSiswa.nama;
                 document.getElementById('profil-page-nisn').innerText = userSiswa.nisn;
                 
-                // RENDER MENU DULUAN BIAR GA KOSONG
                 renderMenu(); 
-                
                 syncAdminSettings(); loadFotoProfil(); mulaiJam(); pantauDataRealtime(); cekGPS(); loadMenuDinamis(); 
             } else { window.location.href = 'index.html'; }
         });
@@ -257,19 +261,11 @@
             lucide.createIcons();
         }
 
-        // --- VALIDASI GPS YANG KOMUNIKATIF ---
+        // --- VALIDASI GPS CEREWET ---
         window.validasiGPS = () => { 
-            if(!lokasiUser) {
-                Swal.fire({
-                    icon: 'info', title: 'Mencari Lokasi...', text: 'Sabar, sedang mencari titik GPS...', timer: 2000, showConfirmButton: false
-                });
-                return false; 
-            }
+            if(!lokasiUser) { Swal.fire({ icon: 'info', title: 'Mencari Lokasi...', text: 'Sabar, sedang mencari titik GPS...', timer: 2000, showConfirmButton: false }); return false; }
             const d = map.distance(lokasiUser, [SEKOLAH_LAT, SEKOLAH_LNG]); 
-            if (d > 50) { 
-                Swal.fire({ icon: 'error', title: 'Kejauhan!', text: `Kamu berjarak ${Math.round(d)} meter dari titik absen. Geser dikit!` }); 
-                return false; 
-            } 
+            if (d > 50) { Swal.fire({ icon: 'error', title: 'Kejauhan!', text: `Kamu berjarak ${Math.round(d)} meter dari titik absen. Geser dikit!` }); return false; } 
             return true; 
         }
 
@@ -289,17 +285,11 @@
                 if(snap.exists()) {
                     if(data.jam_masuk) document.getElementById('info-jam-masuk').innerText = new Date(data.jam_masuk.seconds*1000).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
                     if(data.jam_pulang) document.getElementById('info-jam-pulang').innerText = new Date(data.jam_pulang.seconds*1000).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
-                    
                     if(currentStatusSiswa !== "Belum Hadir") {
                         document.getElementById('btnMasuk').classList.add('hidden');
                         document.getElementById('groupDiSekolah').classList.remove('hidden');
-                        if(currentStatusSiswa === "Izin Keluar") {
-                            document.getElementById('btnIzinKeluar').classList.add('hidden');
-                            document.getElementById('btnKembali').classList.remove('hidden');
-                        } else {
-                            document.getElementById('btnIzinKeluar').classList.remove('hidden');
-                            document.getElementById('btnKembali').classList.add('hidden');
-                        }
+                        if(currentStatusSiswa === "Izin Keluar") { document.getElementById('btnIzinKeluar').classList.add('hidden'); document.getElementById('btnKembali').classList.remove('hidden'); } 
+                        else { document.getElementById('btnIzinKeluar').classList.remove('hidden'); document.getElementById('btnKembali').classList.add('hidden'); }
                     }
                 }
             });
@@ -315,11 +305,8 @@
                         else markerSiswa.setLatLng(lokasiUser); 
                         const d = map.distance(lokasiUser, [SEKOLAH_LAT, SEKOLAH_LNG]); 
                         const box = document.getElementById('jarakBox'); 
-                        if (d > 50) { 
-                            box.innerText = `DILUAR RADIUS (${Math.round(d)}m)`; box.className = "bg-rose-500 text-white text-[10px] font-bold py-2 px-4 rounded-xl shadow-lg border border-white/10"; 
-                        } else { 
-                            box.innerText = "DALAM RADIUS - SIAP ABSEN"; box.className = "bg-emerald-500 text-white text-[10px] font-bold py-2 px-4 rounded-xl shadow-lg border border-white/10"; 
-                        } 
+                        if (d > 50) { box.innerText = `DILUAR RADIUS (${Math.round(d)}m)`; box.className = "bg-rose-500 text-white text-[10px] font-bold py-2 px-4 rounded-xl shadow-lg border border-white/10"; } 
+                        else { box.innerText = "DALAM RADIUS - SIAP ABSEN"; box.className = "bg-emerald-500 text-white text-[10px] font-bold py-2 px-4 rounded-xl shadow-lg border border-white/10"; } 
                     } 
                 }, (e) => Swal.fire('GPS Error', 'Aktifkan Lokasi HP!', 'warning'), { enableHighAccuracy: true }); 
             } 
@@ -360,7 +347,46 @@
             finally { document.getElementById('loadingOverlay').classList.add('hidden'); } 
         }
 
-        // --- FITUR TAMBAHAN (SAMA SEPERTI SEBELUMNYA) ---
+        // --- REFLEKSI / JURNAL KBM (FULL EMOSI + TEKS) ---
+        window.loadTimelineKBM = function() { 
+            const container = document.getElementById('timeline-kbm'); const todayStr = getTodayID(); 
+            const q = query(collection(db, "jurnal_guru"), where("kelas", "==", userSiswa.kelas), where("tanggal", "==", todayStr), orderBy("waktu", "desc")); 
+            onSnapshot(q, (snap) => { 
+                container.innerHTML = ''; 
+                if(snap.empty) { container.innerHTML = '<div class="text-center py-10 text-slate-400 italic">Belum ada jurnal guru masuk.</div>'; return; } 
+                snap.forEach(async docSnapshot => { 
+                    const d = docSnapshot.data(); const idJurnal = docSnapshot.id;
+                    const htmlCard = `
+                    <div class="bg-white p-5 rounded-[1.5rem] border border-slate-100 shadow-sm mb-4 relative overflow-hidden group">
+                        <div class="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
+                        <div class="flex justify-between items-start mb-2 pl-3">
+                            <div><h4 class="font-black text-slate-800 text-lg leading-tight">${d.mapel}</h4><p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">${d.jam_ke || 'Jam ke-?'} • ${d.waktu ? new Date(d.waktu.seconds*1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '-'}</p></div>
+                            <div class="bg-indigo-50 text-indigo-600 p-2 rounded-lg"><i data-lucide="book-open" class="w-5 h-5"></i></div>
+                        </div>
+                        <p class="text-sm text-slate-600 pl-3 mb-4 border-l-2 border-slate-100 py-1">${d.materi || 'Tidak ada keterangan materi.'}</p>
+                        <div class="bg-slate-50 rounded-xl p-4 border border-slate-100" id="box-refleksi-${idJurnal}">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase mb-3 text-center">Bagaimana pelajaran ini?</p>
+                            <div class="grid grid-cols-4 gap-2 mb-3">
+                                <button onclick="pilihEmosi('${idJurnal}', 'Senang')" id="btn-${idJurnal}-Senang" class="btn-emosi p-2 rounded-xl border border-slate-200 bg-white hover:bg-emerald-50 hover:border-emerald-200 transition active:scale-95 flex flex-col items-center gap-1"><span class="text-2xl">😄</span><span class="text-[8px] font-bold text-slate-500">Senang</span></button>
+                                <button onclick="pilihEmosi('${idJurnal}', 'Terinspirasi')" id="btn-${idJurnal}-Terinspirasi" class="btn-emosi p-2 rounded-xl border border-slate-200 bg-white hover:bg-blue-50 hover:border-blue-200 transition active:scale-95 flex flex-col items-center gap-1"><span class="text-2xl">🤩</span><span class="text-[8px] font-bold text-slate-500">Inspirasi</span></button>
+                                <button onclick="pilihEmosi('${idJurnal}', 'Belum Paham')" id="btn-${idJurnal}-Belum Paham" class="btn-emosi p-2 rounded-xl border border-slate-200 bg-white hover:bg-orange-50 hover:border-orange-200 transition active:scale-95 flex flex-col items-center gap-1"><span class="text-2xl">🤔</span><span class="text-[8px] font-bold text-slate-500">Bingung</span></button>
+                                <button onclick="pilihEmosi('${idJurnal}', 'Ngantuk')" id="btn-${idJurnal}-Ngantuk" class="btn-emosi p-2 rounded-xl border border-slate-200 bg-white hover:bg-rose-50 hover:border-rose-200 transition active:scale-95 flex flex-col items-center gap-1"><span class="text-2xl">😴</span><span class="text-[8px] font-bold text-slate-500">Ngantuk</span></button>
+                            </div>
+                            <div class="relative mb-3"><textarea id="txt-${idJurnal}" maxlength="150" class="w-full p-3 text-sm rounded-xl border border-slate-200 focus:border-indigo-500 outline-none transition" rows="2" placeholder="Tulis pesan singkat (maks 150 huruf)..."></textarea><div class="absolute bottom-2 right-2 text-[8px] text-slate-300 font-bold">MAX 150</div></div>
+                            <button onclick="kirimRefleksi('${idJurnal}')" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-indigo-700 active:scale-95 transition shadow-lg shadow-indigo-200">Kirim Jurnal</button>
+                        </div>
+                        <div id="done-${idJurnal}" class="hidden bg-emerald-50 p-4 rounded-xl border border-emerald-100 text-center"><p class="text-emerald-600 font-bold text-sm flex items-center justify-center gap-2"><i data-lucide="check-circle" class="w-5 h-5"></i> Terkirim!</p><p class="text-[10px] text-emerald-400">Terima kasih atas feedback-nya.</p></div>
+                    </div>`;
+                    container.innerHTML += htmlCard; lucide.createIcons(); cekStatusRefleksi(idJurnal);
+                }); 
+            }); 
+        }
+
+        window.pilihEmosi = (id, emo) => { tempRefleksi[id] = emo; document.querySelectorAll(`#box-refleksi-${id} .btn-emosi`).forEach(b => { b.classList.remove('ring-2', 'ring-indigo-500', 'bg-indigo-50', 'border-indigo-200'); b.classList.add('bg-white', 'border-slate-200'); }); const btn = document.getElementById(`btn-${id}-${emo}`); btn.classList.remove('bg-white', 'border-slate-200'); btn.classList.add('ring-2', 'ring-indigo-500', 'bg-indigo-50', 'border-indigo-200'); }
+        window.kirimRefleksi = async (id) => { const emo = tempRefleksi[id]; const msg = document.getElementById(`txt-${id}`).value; if(!emo) return Swal.fire('Pilih Emosi', 'Gimana pelajaran tadi?', 'warning'); if(!msg) return Swal.fire('Tulis Pesan', 'Isi dikit dong, jangan kosong.', 'warning'); Swal.fire({ title: 'Mengirim...', didOpen: () => Swal.showLoading() }); try { await setDoc(doc(db, "jurnal_guru", id, "refleksi", userSiswa.nisn), { nisn: userSiswa.nisn, nama: userSiswa.nama, emosi: emo, pesan: msg, waktu: serverTimestamp() }); Swal.close(); Swal.fire({ icon: 'success', title: 'Mantap!', text: 'Refleksi terkirim.', timer: 1500, showConfirmButton: false }); document.getElementById(`box-refleksi-${id}`).classList.add('hidden'); document.getElementById(`done-${id}`).classList.remove('hidden'); } catch (e) { console.error(e); Swal.fire('Gagal', 'Error koneksi.', 'error'); } }
+        async function cekStatusRefleksi(id) { const snap = await getDoc(doc(db, "jurnal_guru", id, "refleksi", userSiswa.nisn)); if(snap.exists()) { if(document.getElementById(`box-refleksi-${id}`)) { document.getElementById(`box-refleksi-${id}`).classList.add('hidden'); document.getElementById(`done-${id}`).classList.remove('hidden'); } } }
+
+        // --- LAIN-LAIN ---
         window.pilihJenisIzin = (jenis) => { jenisIzinAktif = jenis; document.getElementById('btnOptSakit').className = "p-4 rounded-2xl border-2 border-slate-100 font-bold text-slate-400 flex flex-col items-center gap-2 transition active:scale-95"; document.getElementById('btnOptIzin').className = "p-4 rounded-2xl border-2 border-slate-100 font-bold text-slate-400 flex flex-col items-center gap-2 transition active:scale-95"; if (jenis === 'Sakit') { document.getElementById('btnOptSakit').className = "p-4 rounded-2xl border-2 border-rose-500 bg-rose-50 font-bold text-rose-600 flex flex-col items-center gap-2 transition scale-105 shadow-md"; } else { document.getElementById('btnOptIzin').className = "p-4 rounded-2xl border-2 border-indigo-500 bg-indigo-50 font-bold text-indigo-600 flex flex-col items-center gap-2 transition scale-105 shadow-md"; } document.getElementById('areaUploadFoto').classList.remove('hidden'); };
         window.kirimLaporanIzin = async () => { const alasan = document.getElementById('ketIzin').value; if (!jenisIzinAktif) return Swal.fire('Pilih Jenis', 'Pilih Sakit atau Izin dulu ya!', 'warning'); if (!alasan) return Swal.fire('Alasan?', 'Tuliskan alasan/keterangan singkat.', 'warning'); if (!tempFotoBukti) return Swal.fire('Foto Bukti', 'Wajib lampirkan foto bukti.', 'warning'); Swal.fire({ title: 'Kirim Laporan?', text: "Laporan akan diteruskan ke guru.", icon: 'question', showCancelButton: true, confirmButtonText: 'Ya, Kirim!' }).then(async (result) => { if (result.isConfirmed) { try { await kirimData(jenisIzinAktif, alasan, tempFotoBukti); document.getElementById('ketIzin').value = ""; tempFotoBukti = null; document.getElementById('previewBukti').classList.add('hidden'); document.getElementById('areaUploadFoto').classList.add('hidden'); kembali(); } catch (e) { Swal.fire('Gagal', e.message, 'error'); } } }); };
         
@@ -376,7 +402,6 @@
         window.logout = () => { sessionStorage.clear(); localStorage.clear(); window.location.href='index.html'; }
         window.bukaKartu = () => { document.getElementById('modalKartu').classList.remove('hidden'); document.getElementById('namaDiKartu').innerText=userSiswa.nama; document.getElementById('nisnDiKartu').innerText=userSiswa.nisn; document.getElementById("qrcode").innerHTML=""; new QRCode(document.getElementById("qrcode"), {text:userSiswa.nisn, width:150, height:150}); }
         window.tutupKartu = () => document.getElementById('modalKartu').classList.add('hidden');
-        window.loadTimelineKBM = function() { const container = document.getElementById('timeline-kbm'); const todayStr = getTodayID(); const q = query(collection(db, "jurnal_guru"), where("kelas", "==", userSiswa.kelas), where("tanggal", "==", todayStr), orderBy("waktu", "desc")); onSnapshot(q, (snap) => { container.innerHTML = ''; if(snap.empty) { container.innerHTML = '<div class="text-center py-10 text-slate-400">BELUM ADA PELAJARAN</div>'; return; } snap.forEach(doc => { const d = doc.data(); container.innerHTML += `<div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm mb-4"><h4 class="font-bold text-slate-800">${d.mapel}</h4><p class="text-xs text-slate-500">${d.materi || '-'}</p></div>`; }); }); }
     </script>
 </body>
 </html>
