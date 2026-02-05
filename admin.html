@@ -18,7 +18,11 @@
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* Style untuk Modal Edit */
+        /* Toggle Switch Style */
+        .toggle-checkbox:checked { right: 0; border-color: #10b981; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #10b981; }
+        
+        /* Modal Edit */
         .modal { transition: opacity 0.25s ease; }
         body.modal-active { overflow-x: hidden; overflow-y: visible !important; }
     </style>
@@ -36,6 +40,9 @@
             <p class="px-4 text-[10px] font-bold text-slate-600 uppercase mb-2">Menu Utama</p>
             <button onclick="nav('dashboard')" id="nav-dashboard" class="nav-item active w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
                 <i data-lucide="layout-dashboard" class="w-5 h-5"></i> Dashboard Sistem
+            </button>
+            <button onclick="nav('schedule')" id="nav-schedule" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
+                <i data-lucide="calendar-clock" class="w-5 h-5 text-yellow-500"></i> Jadwal & Aturan
             </button>
             <button onclick="nav('data')" id="nav-data" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
                 <i data-lucide="database" class="w-5 h-5"></i> Database User
@@ -108,6 +115,63 @@
             </div>
         </div>
 
+        <div id="view-schedule" class="hidden space-y-8 fade-in">
+            <h2 class="text-3xl font-bold text-white flex items-center gap-3"><i data-lucide="calendar-clock" class="w-8 h-8 text-yellow-500"></i> Jadwal & Aturan Sekolah</h2>
+            
+            <div class="bg-gradient-to-r from-rose-900 to-slate-900 rounded-[2rem] border border-rose-800/50 p-8 shadow-2xl relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-6 opacity-20"><i data-lucide="siren" class="w-32 h-32 text-rose-500"></i></div>
+                <div class="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
+                    <div class="flex-1">
+                        <h3 class="font-black text-white text-2xl mb-1 flex items-center gap-2"><i data-lucide="zap" class="text-yellow-400"></i> SAKLAR PAMUNGKAS (MODE EVENT)</h3>
+                        <p class="text-rose-200 text-sm">Jika <b>ON</b>: Semua jadwal mingguan di bawah akan <b>DIABAIKAN</b>. Jam masuk otomatis 05:15, Pulang BEBAS kapan saja. Peringatan Popup akan muncul 2x di siswa.</p>
+                        
+                        <div class="mt-4">
+                            <label class="text-xs text-rose-300 uppercase font-bold">Pesan Peringatan Popup (Wajib Diisi)</label>
+                            <textarea id="pesanBebasPulang" class="w-full bg-black/30 text-white p-3 rounded-xl border border-rose-700/50 mt-1 h-20 placeholder-rose-300/50 focus:ring-2 focus:ring-rose-500 outline-none" placeholder="Contoh: Dikarenakan Classmeeting, siswa diperbolehkan pulang setelah lomba selesai..."></textarea>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-center gap-2 bg-black/20 p-4 rounded-2xl border border-rose-500/30">
+                        <div class="relative inline-block w-16 align-middle select-none">
+                            <input type="checkbox" name="toggle" id="toggleBebasPulang" class="toggle-checkbox absolute block w-8 h-8 rounded-full bg-white border-4 appearance-none cursor-pointer transition-all duration-300"/>
+                            <label for="toggleBebasPulang" class="toggle-label block overflow-hidden h-8 rounded-full bg-slate-700 cursor-pointer border border-slate-600"></label>
+                        </div>
+                        <span class="text-xs font-bold text-white uppercase tracking-widest mt-2">STATUS MODE</span>
+                    </div>
+                </div>
+                <div class="mt-6 border-t border-rose-800/50 pt-4 text-right">
+                    <button onclick="simpanModePamungkas()" class="bg-rose-600 hover:bg-rose-500 text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-rose-900/50 active:scale-95 transition">SIMPAN STATUS MODE</button>
+                </div>
+            </div>
+
+            <div class="bg-slate-900 rounded-[2rem] border border-slate-800 p-8 shadow-2xl relative">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h3 class="font-bold text-white text-xl mb-1 flex items-center gap-2"><i data-lucide="calendar" class="text-blue-500"></i> Jadwal Mingguan (Reguler)</h3>
+                        <p class="text-slate-400 text-xs">Atur jam masuk dan pulang berbeda tiap harinya. Jika "Sabtu Libur", set Status ke Libur.</p>
+                    </div>
+                    <button onclick="simpanJadwalHarian()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg flex items-center gap-2 active:scale-95 transition">
+                        <i data-lucide="save" class="w-4 h-4"></i> Simpan Jadwal
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-slate-800">
+                    <table class="w-full text-left text-sm text-slate-300">
+                        <thead class="bg-slate-950 text-xs uppercase font-bold text-slate-500">
+                            <tr>
+                                <th class="p-4">Hari</th>
+                                <th class="p-4 text-center">Status</th>
+                                <th class="p-4">Jam Buka Absen</th>
+                                <th class="p-4 text-red-400">Batas Terlambat</th>
+                                <th class="p-4 text-emerald-400">Jam Pulang</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-jadwal" class="divide-y divide-slate-800 bg-slate-900/50">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <div id="view-data" class="hidden space-y-6 fade-in">
             <h2 class="text-3xl font-bold text-white">Database Management</h2>
             
@@ -160,7 +224,7 @@
                 <h3 class="font-bold text-white text-lg mb-4 flex items-center gap-2"><i data-lucide="search" class="text-purple-500"></i> Cari & Edit User</h3>
                 
                 <div class="mb-4">
-                    <input type="text" id="cariUserBox" onkeyup="cariUser()" class="w-full bg-slate-950 text-white p-3 rounded-lg border border-slate-700" placeholder="Ketik Nama Siswa atau Guru...">
+                    <input type="text" id="cariUserBox" onkeyup="cariUser()" class="w-full bg-slate-950 text-white p-3 rounded-lg border border-slate-700" placeholder="Ketik Nama Siswa atau Guru... (Min 3 Huruf)">
                 </div>
 
                 <div class="overflow-x-auto max-h-96 border border-slate-800 rounded-lg">
@@ -312,6 +376,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getFirestore, collection, query, where, getDocs, getDoc, onSnapshot, doc, setDoc, addDoc, deleteDoc, orderBy, updateDoc, limit } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+        // FIREBASE CONFIG PEJAGOAN (SiGanteng)
         const firebaseConfig = {
             apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo",
             authDomain: "siganteng-absensi.firebaseapp.com",
@@ -336,6 +401,7 @@
             loadMenuManager(); 
             loadMapel(); 
             loadDaftarAdmin(); 
+            loadJadwalSekolah(); // LOAD JADWAL
             document.getElementById('loading').style.display = 'none';
         });
 
@@ -363,6 +429,112 @@
             document.getElementById(`btn-tab-${mode}`).classList.replace('text-slate-400', 'text-white');
         }
 
+        // --- NEW: LOGIKA JADWAL & ATURAN ---
+        async function loadJadwalSekolah() {
+            // 1. Load Global Config (Mode Pamungkas)
+            try {
+                const confRef = doc(db, "settings", "config_sekolah");
+                const confSnap = await getDoc(confRef);
+                if (confSnap.exists()) {
+                    const d = confSnap.data();
+                    document.getElementById('toggleBebasPulang').checked = d.mode_bebas_pulang || false;
+                    document.getElementById('pesanBebasPulang').value = d.pesan_bebas_pulang || "";
+                    updateTampilanMode(d.mode_bebas_pulang);
+                }
+            } catch(e) { console.log("Config null"); }
+
+            // 2. Load Jadwal Mingguan
+            try {
+                const jadwalRef = doc(db, "settings", "jadwal_pelajaran");
+                const jadwalSnap = await getDoc(jadwalRef);
+                const hariList = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+                const dataJadwal = jadwalSnap.exists() ? jadwalSnap.data() : {};
+
+                const tbody = document.getElementById('tbody-jadwal');
+                tbody.innerHTML = '';
+
+                hariList.forEach(hari => {
+                    const d = dataJadwal[hari] || { masuk: "06:30", telat: "07:00", pulang: "15:30", libur: false };
+                    if(hari === "Jumat" && !dataJadwal[hari]) d.pulang = "11:00"; 
+                    if(hari === "Sabtu" && !dataJadwal[hari]) d.libur = true;
+
+                    const isLibur = d.libur ? "selected" : "";
+                    const isMasuk = !d.libur ? "selected" : "";
+                    const rowClass = d.libur ? "bg-red-900/10" : "";
+
+                    tbody.innerHTML += `
+                    <tr class="border-b border-slate-800 hover:bg-slate-800 transition ${rowClass}" id="row-${hari}">
+                        <td class="p-4 font-bold text-white">${hari}</td>
+                        <td class="p-4">
+                            <select id="status-${hari}" onchange="cekStatusHari('${hari}')" class="bg-slate-950 text-white p-2 rounded border border-slate-700 text-xs">
+                                <option value="masuk" ${isMasuk}>Masuk KBM</option>
+                                <option value="libur" ${isLibur}>Libur</option>
+                            </select>
+                        </td>
+                        <td class="p-4"><input type="time" id="masuk-${hari}" value="${d.masuk}" class="bg-slate-950 text-white p-2 rounded border border-slate-700 text-xs w-24"></td>
+                        <td class="p-4"><input type="time" id="telat-${hari}" value="${d.telat}" class="bg-slate-950 text-red-300 p-2 rounded border border-slate-700 text-xs w-24 font-bold"></td>
+                        <td class="p-4"><input type="time" id="pulang-${hari}" value="${d.pulang}" class="bg-slate-950 text-emerald-300 p-2 rounded border border-slate-700 text-xs w-24 font-bold"></td>
+                    </tr>`;
+                });
+            } catch(e) { console.log(e); }
+        }
+
+        window.cekStatusHari = (hari) => {
+            const st = document.getElementById(`status-${hari}`).value;
+            const row = document.getElementById(`row-${hari}`);
+            if(st === 'libur') row.classList.add('bg-red-900/10', 'opacity-50');
+            else row.classList.remove('bg-red-900/10', 'opacity-50');
+        }
+
+        window.simpanModePamungkas = async () => {
+            const aktif = document.getElementById('toggleBebasPulang').checked;
+            const pesan = document.getElementById('pesanBebasPulang').value;
+            if(aktif && !pesan) return Swal.fire('Wajib Diisi', 'Jika Mode Aktif, Pesan Peringatan harus diisi!', 'warning');
+            
+            try {
+                await setDoc(doc(db, "settings", "config_sekolah"), { 
+                    mode_bebas_pulang: aktif, 
+                    pesan_bebas_pulang: pesan 
+                }, { merge: true });
+                updateTampilanMode(aktif);
+                Swal.fire('Tersimpan', `Mode Pamungkas ${aktif?'AKTIF':'NONAKTIF'}.`, 'success');
+            } catch(e) { Swal.fire('Error', e.message, 'error'); }
+        }
+
+        window.simpanJadwalHarian = async () => {
+            const hariList = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+            let payload = {};
+            hariList.forEach(hari => {
+                payload[hari] = {
+                    libur: document.getElementById(`status-${hari}`).value === 'libur',
+                    masuk: document.getElementById(`masuk-${hari}`).value,
+                    telat: document.getElementById(`telat-${hari}`).value,
+                    pulang: document.getElementById(`pulang-${hari}`).value
+                };
+            });
+
+            try {
+                await setDoc(doc(db, "settings", "jadwal_pelajaran"), payload);
+                // Update Legacy Config (Biar siswa.html lama gak crash)
+                const today = new Date().toLocaleDateString('id-ID', {weekday: 'long'}); 
+                const todayRule = payload[today] || payload["Senin"];
+                await setDoc(doc(db, "settings", "config_sekolah"), {
+                    jam_masuk_start: todayRule.masuk,
+                    jam_masuk_end: todayRule.telat,
+                    jam_pulang_start: todayRule.pulang
+                }, { merge: true });
+
+                Swal.fire('Sukses', 'Jadwal Mingguan Tersimpan!', 'success');
+            } catch(e) { Swal.fire('Error', e.message, 'error'); }
+        }
+
+        function updateTampilanMode(aktif) {
+            const el = document.querySelector('.toggle-checkbox');
+            if(aktif) el.nextElementSibling.classList.replace('bg-slate-700','bg-rose-600');
+            else el.nextElementSibling.classList.replace('bg-rose-600','bg-slate-700');
+        }
+
+        // --- CORE FUNCTIONS (USER, MAPEL, DLL) ---
         window.tarikDataUser = async (forceRefresh = false) => {
             const cacheKey = 'master_user_full_v1'; 
             const cachedData = localStorage.getItem(cacheKey); 
@@ -403,24 +575,30 @@
             uniqueKelas.forEach(k => { select.add(new Option(k, k)); });
         }
 
+        // --- SEARCH ENGINE FIX (ANTI-CRASH) ---
         window.cariUser = () => {
             const input = document.getElementById('cariUserBox');
             if(!input) return;
-            const key = input.value.toLowerCase();
+            const key = String(input.value || "").toLowerCase(); // Sanitasi Input
             const tbody = document.getElementById('tabel-hasil-cari');
             tbody.innerHTML = '';
+
             if (!listUsers || listUsers.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-yellow-500">Data kosong. Klik "Sync Database User" dulu!</td></tr>'; return;
             }
             if (key.length < 3) {
                 tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center italic text-xs">Ketik minimal 3 huruf...</td></tr>'; return;
             }
+
+            // LOGIC PENCARIAN SAKTI
             const hasil = listUsers.filter(s => {
-                const namaAman = s.nama ? String(s.nama).toLowerCase() : "";
-                const userAman = s.username ? String(s.username).toLowerCase() : "";
+                const namaAman = String(s.nama || "").toLowerCase(); // Sanitasi Data Nama
+                const userAman = String(s.username || "").toLowerCase(); // Sanitasi Username
                 return namaAman.includes(key) || userAman.includes(key);
             });
+
             if(hasil.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-red-400">Tidak ditemukan.</td></tr>'; return; }
+            
             hasil.slice(0, 10).forEach(s => {
                 let badgeColor = s.role === 'guru' ? 'bg-orange-500 text-white' : (s.role === 'admin' ? 'bg-purple-500 text-white' : 'bg-slate-700 text-slate-300');
                 let infoKelas = s.role === 'siswa' ? s.kelas : 'Pengajar';
@@ -431,38 +609,22 @@
         window.editUser = (username) => {
             const user = listUsers.find(u => u.username === username);
             if(!user) return;
-
             document.getElementById('editUsername').value = user.username;
             document.getElementById('editNama').value = user.nama;
             document.getElementById('editPassword').value = user.password;
-
             const divKelas = document.getElementById('divEditKelas');
             const selectKelas = document.getElementById('editKelas');
             
-            // --- PERBAIKAN DI SINI ---
-            // Tampilkan Kolom Kelas untuk SISWA dan GURU
             if(user.role === 'siswa' || user.role === 'guru') {
                 divKelas.classList.remove('hidden');
-                
-                // Ambil daftar kelas dari dropdown manual
                 selectKelas.innerHTML = document.getElementById('manualKelas').innerHTML;
-                
-                // Tambahkan Opsi 'Bukan Wali Kelas' khusus untuk Guru
                 if(user.role === 'guru') {
-                     const option = document.createElement("option");
-                     option.text = "- Bukan Wali Kelas -";
-                     option.value = "-";
-                     selectKelas.add(option, selectKelas[0]); // Taruh di paling atas
+                      const option = document.createElement("option"); option.text = "- Bukan Wali Kelas -"; option.value = "-";
+                      selectKelas.add(option, selectKelas[0]); 
                 }
-
-                // Set nilai kelas saat ini (kalau kosong/undefined jadi strip)
                 selectKelas.value = user.kelas || "-"; 
-            } else { 
-                // Kalau Admin/Kepsek, baru disembunyikan
-                divKelas.classList.add('hidden'); 
-            }
-            // -------------------------
-
+            } else { divKelas.classList.add('hidden'); }
+            
             const modal = document.getElementById('modalEdit');
             modal.classList.remove('opacity-0', 'pointer-events-none');
             document.body.classList.add('modal-active');
@@ -483,12 +645,7 @@
             try {
                 await updateDoc(doc(db, "users", u), { nama: n, password: p, kelas: k });
                 const index = listUsers.findIndex(x => x.username === u);
-                if (index !== -1) {
-                    listUsers[index].nama = n;
-                    listUsers[index].password = p;
-                    listUsers[index].kelas = k;
-                    localStorage.setItem('master_user_full_v1', JSON.stringify(listUsers));
-                }
+                if (index !== -1) { listUsers[index].nama = n; listUsers[index].password = p; listUsers[index].kelas = k; localStorage.setItem('master_user_full_v1', JSON.stringify(listUsers)); }
                 tutupModal(); cariUser(); updateDashboardStats(); 
                 Swal.fire('Berhasil','Data user diupdate!','success');
             } catch(e) { Swal.fire('Error', e.message, 'error'); }
@@ -581,61 +738,22 @@
                 tb.innerHTML = ''; 
                 snap.forEach(d => { 
                     const data = d.data();
-                    const isAktif = data.aktif !== false; // Default true (jika field belum ada)
-                    
-                    // Tombol Toggle Warna-Warni
+                    const isAktif = data.aktif !== false; 
                     const btnToggle = isAktif 
                         ? `<button onclick="toggleMenuStatus('${d.id}', false)" class="bg-emerald-500 text-white px-2 py-1 rounded text-[10px] font-bold shadow hover:bg-emerald-600 transition">ON</button>` 
                         : `<button onclick="toggleMenuStatus('${d.id}', true)" class="bg-slate-600 text-slate-400 px-2 py-1 rounded text-[10px] font-bold shadow hover:bg-slate-500 transition">OFF</button>`;
-
-                    tb.innerHTML += `
-                        <tr class="hover:bg-slate-800">
-                            <td class="p-3 uppercase text-blue-400 font-bold">${data.target}</td>
-                            <td class="p-3">${data.icon}</td>
-                            <td class="p-3 text-white">${data.judul}</td>
-                            <td class="p-3 text-xs font-mono text-blue-400 truncate max-w-[150px]">${data.link}</td>
-                            <td class="p-3 text-center">${btnToggle}</td>
-                            <td class="p-3 text-right">
-                                <button onclick="hapusMenu('${d.id}')" class="text-red-500 hover:text-red-400 p-1 rounded hover:bg-red-500/10">
-                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                </button>
-                            </td>
-                        </tr>`; 
+                    tb.innerHTML += `<tr class="hover:bg-slate-800"><td class="p-3 uppercase text-blue-400 font-bold">${data.target}</td><td class="p-3">${data.icon}</td><td class="p-3 text-white">${data.judul}</td><td class="p-3 text-xs font-mono text-blue-400 truncate max-w-[150px]">${data.link}</td><td class="p-3 text-center">${btnToggle}</td><td class="p-3 text-right"><button onclick="hapusMenu('${d.id}')" class="text-red-500 hover:text-red-400 p-1 rounded hover:bg-red-500/10"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td></tr>`; 
                 }); 
                 lucide.createIcons(); 
             }); 
         }
-
         window.simpanMenuBaru = async () => { 
-            const t = document.getElementById('menuTarget').value; 
-            const j = document.getElementById('menuJudul').value; 
-            const i = document.getElementById('menuIcon').value; 
-            const l = document.getElementById('menuLink').value; 
-            if(j&&l) { 
-                await addDoc(collection(db, "menu_dinamis"), {
-                    target:t, judul:j, icon:i, link:l, 
-                    highlight:document.getElementById('menuWarna').checked, 
-                    aktif: true, // Default ON saat dibuat
-                    created_at: new Date().toISOString()
-                }); 
-                Swal.fire('Sukses','','success'); 
-            } 
+            const t = document.getElementById('menuTarget').value; const j = document.getElementById('menuJudul').value; const i = document.getElementById('menuIcon').value; const l = document.getElementById('menuLink').value; 
+            if(j&&l) { await addDoc(collection(db, "menu_dinamis"), { target:t, judul:j, icon:i, link:l, highlight:document.getElementById('menuWarna').checked, aktif: true, created_at: new Date().toISOString() }); Swal.fire('Sukses','','success'); } 
         }
-
         window.hapusMenu = async(id) => { if(confirm("Hapus?")) await deleteDoc(doc(db,"menu_dinamis",id)); }
+        window.toggleMenuStatus = async (id, newStatus) => { try { await updateDoc(doc(db, "menu_dinamis", id), { aktif: newStatus }); } catch (e) { console.error(e); Swal.fire('Error', 'Gagal update status', 'error'); } }
 
-        // --- FUNGSI TOGGLE BARU ---
-        window.toggleMenuStatus = async (id, newStatus) => {
-            try {
-                await updateDoc(doc(db, "menu_dinamis", id), { aktif: newStatus });
-                // Tidak perlu reload, onSnapshot akan otomatis update UI
-            } catch (e) {
-                console.error(e);
-                Swal.fire('Error', 'Gagal update status', 'error');
-            }
-        }
-
-        // --- MANAJEMEN ADMIN BARU ---
         function loadDaftarAdmin() { 
             const q = query(collection(db, "users"), where("role", "in", ["admin", "super", "bk", "kurikulum"]));
             onSnapshot(q, (snap) => { 
@@ -653,10 +771,8 @@
                 lucide.createIcons(); 
             }); 
         }
-
         window.angkatJadiAdmin = async () => { 
-            const u = document.getElementById('inputCalonAdmin').value; 
-            const r = document.getElementById('inputRoleAdmin').value;
+            const u = document.getElementById('inputCalonAdmin').value; const r = document.getElementById('inputRoleAdmin').value;
             if(!u) return Swal.fire('Eits', 'Isi NIP dulu dong', 'warning');
             const q = query(collection(db, "users"), where("username", "==", u)); 
             const snap = await getDocs(q); 
@@ -665,15 +781,9 @@
             Swal.fire('Sukses', `User berhasil dilantik menjadi ${r.toUpperCase()}`, 'success'); 
             document.getElementById('inputCalonAdmin').value=''; 
         }
-
-        window.copotAdmin = async (id, nama) => { 
-            if(confirm(`Yakin ingin menurunkan jabatan ${nama} menjadi GURU BIASA?`)) {
-                await updateDoc(doc(db, "users", id), { role: 'guru' }); 
-            }
-        }
+        window.copotAdmin = async (id, nama) => { if(confirm(`Yakin ingin menurunkan jabatan ${nama} menjadi GURU BIASA?`)) { await updateDoc(doc(db, "users", id), { role: 'guru' }); } }
         
         window.logout = () => { localStorage.clear(); window.location.href='index.html'; }
     </script>
 </body>
 </html>
-
