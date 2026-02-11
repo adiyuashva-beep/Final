@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitor Live - SiGanteng (CCTV Mode)</title>
+    <title>Monitor CCTV Live - SiGanteng</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 
@@ -38,9 +38,7 @@
         
         .main-content { flex: 1; display: flex; padding: 20px; gap: 20px; height: 83vh; overflow: hidden; }
         .card-box { background: var(--card-bg); border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 20px 50px rgba(0,0,0,0.3); display: flex; flex-direction: column; overflow: hidden; position: relative; }
-        .card-box::before { content: ''; position: absolute; top: 0; left: 0; width: 15px; height: 15px; border-top: 2px solid var(--neon-blue); border-left: 2px solid var(--neon-blue); border-radius: 4px 0 0 0; }
-        .card-box::after { content: ''; position: absolute; bottom: 0; right: 0; width: 15px; height: 15px; border-bottom: 2px solid var(--neon-blue); border-right: 2px solid var(--neon-blue); border-radius: 0 0 4px 0; }
-
+        
         .card-header { padding: 15px; font-weight: 800; font-size: 0.9em; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px; text-transform: uppercase; letter-spacing: 1px; background: rgba(0,0,0,0.2); }
         
         /* KOLOM KIRI */
@@ -57,42 +55,55 @@
         .rank-nama { font-weight: 600; flex: 1; font-size: 0.9em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #e2e8f0; }
         .rank-jam { color: var(--neon-green); font-weight: 700; font-family: 'Share Tech Mono', monospace; font-size: 1.1em; text-shadow: 0 0 5px rgba(16, 185, 129, 0.5); }
 
-        /* KOLOM TENGAH MODIFIKASI CCTV */
+        /* KOLOM TENGAH (MODIFIKASI KAMERA) */
         .col-center { flex: 1.3; display: flex; flex-direction: column; gap: 20px; }
-        .stats-wrapper { flex: 1.8; background: var(--card-bg); border-radius: 16px; padding: 5px; display: flex; flex-direction: column; border: 1px solid rgba(255,255,255,0.05); position: relative; overflow: hidden; }
+        .stats-wrapper { flex: 1.5; background: var(--card-bg); border-radius: 16px; padding: 15px; display: flex; flex-direction: column; align-items: center; border: 1px solid rgba(255,255,255,0.05); position: relative; }
         
-        /* KAMERA WRAPPER */
-        .camera-container { width: 100%; flex: 1; position: relative; background: #000; border-radius: 12px; overflow: hidden; border: 2px solid #334155; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-        video#webcam-feed { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); /* Mirror effect */ }
+        /* STYLE KAMERA SCI-FI */
+        .camera-container {
+            width: 100%;
+            height: 280px; /* Ukuran kamera */
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            border: 2px solid var(--neon-blue);
+            box-shadow: 0 0 20px rgba(14, 165, 233, 0.2);
+        }
+        .camera-overlay {
+            position: absolute; inset: 0; pointer-events: none; z-index: 10;
+            background: 
+                linear-gradient(to right, rgba(14, 165, 233, 0.1) 1px, transparent 1px) 0 0,
+                linear-gradient(to bottom, rgba(14, 165, 233, 0.1) 1px, transparent 1px) 0 0;
+            background-size: 40px 40px;
+        }
+        .rec-badge {
+            position: absolute; top: 15px; left: 15px; z-index: 20;
+            background: rgba(239, 68, 68, 0.8); color: white;
+            padding: 4px 10px; border-radius: 4px; font-weight: 800; font-size: 0.8em;
+            display: flex; align-items: center; gap: 6px; letter-spacing: 1px;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+        }
+        .cam-name {
+            position: absolute; bottom: 15px; right: 15px; z-index: 20;
+            background: rgba(0,0,0,0.7); color: var(--neon-blue);
+            padding: 4px 10px; border-radius: 4px; font-family: 'Share Tech Mono', monospace; font-size: 0.9em;
+            border: 1px solid var(--neon-blue);
+        }
+        video#live-cam { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); /* Biar kayak cermin */ }
         
-        .camera-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; padding: 15px; display: flex; flex-direction: column; justify-content: space-between; }
-        
-        .cam-top-bar { display: flex; justify-content: space-between; align-items: flex-start; }
-        .cam-rec { display: flex; align-items: center; gap: 5px; color: var(--neon-red); font-weight: bold; font-family: 'Share Tech Mono'; background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 5px; border: 1px solid var(--neon-red); animation: blink 2s infinite; }
-        .cam-scan-text { color: var(--neon-blue); font-family: 'Share Tech Mono'; font-size: 0.8em; text-shadow: 0 0 5px var(--neon-blue); }
+        .progress-bar-container { width: 100%; height: 24px; background: rgba(255,255,255,0.1); border-radius: 12px; overflow: hidden; margin-top: 15px; position: relative; border: 1px solid rgba(255,255,255,0.2); }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--neon-green), var(--neon-blue)); width: 0%; transition: width 1s ease-in-out; display: flex; align-items: center; justify-content: flex-end; padding-right: 10px; }
+        .progress-text { font-family: 'Share Tech Mono'; font-weight: bold; color: white; text-shadow: 0 0 5px black; font-size: 0.9em; }
 
-        .cam-center-hud { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 200px; height: 200px; border: 1px dashed rgba(14, 165, 233, 0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-direction: column; box-shadow: 0 0 50px rgba(14, 165, 233, 0.1) inset; animation: rotateHud 10s linear infinite; }
-        .cam-center-hud::before { content:'+'; position: absolute; top: 10px; left: 50%; color: var(--neon-blue); transform: translateX(-50%); }
-        .cam-center-hud::after { content:'+'; position: absolute; bottom: 10px; left: 50%; color: var(--neon-blue); transform: translateX(-50%); }
-
-        .cam-info-panel { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(5px); border: 1px solid var(--neon-blue); border-radius: 10px; padding: 10px; text-align: center; max-width: 250px; margin: 0 auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5); transform: translateY(-20px); }
-        .cam-percent-big { font-size: 2.5em; font-weight: 900; color: white; line-height: 1; font-family: 'Share Tech Mono'; text-shadow: 0 0 15px var(--neon-blue); }
-        .cam-label { font-size: 0.7em; color: #94a3b8; letter-spacing: 2px; text-transform: uppercase; font-weight: bold; }
-
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        @keyframes rotateHud { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
-
-        .stat-grid-compact { display: grid; grid-template-columns: 1fr 1fr 1fr; width: 100%; gap: 5px; text-align: center; margin-top: 10px; padding: 0 10px; }
-        .stat-item-c { background: rgba(255,255,255,0.05); padding: 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); }
-        .stat-item-c h4 { margin: 0; font-size: 0.65em; color: #94a3b8; font-weight: 800; letter-spacing: 1px; }
-        .stat-item-c p { margin: 2px 0 0 0; font-size: 1.2em; font-weight: 700; font-family: 'Share Tech Mono'; }
-
-        /* END MODIFIKASI CCTV */
-
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; width: 100%; gap: 10px; text-align: center; margin-top: 15px; }
+        .stat-item { background: rgba(255,255,255,0.03); padding: 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
+        .stat-item h4 { margin: 0 0 5px 0; font-size: 0.7em; color: #94a3b8; font-weight: 800; letter-spacing: 1px; }
+        .stat-item p { margin: 0; font-size: 1.4em; font-weight: 700; font-family: 'Share Tech Mono', monospace; }
         .c-hadir { color: var(--neon-green); text-shadow: 0 0 10px rgba(16, 185, 129, 0.4); } 
         .c-izin { color: var(--neon-gold); } .c-alpha { color: var(--neon-red); }
 
-        .box-belum { flex: 0.8; border-top: 2px solid #64748b; }
+        .box-belum { flex: 1; border-top: 2px solid #64748b; }
         .belum-header { color: #94a3b8; }
         .scroller-content { flex: 1; overflow: hidden; padding: 10px; position: relative; }
         .alpha-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-radius: 6px; background: rgba(255,255,255,0.02); margin-bottom: 5px; border-left: 2px solid #64748b; }
@@ -124,6 +135,7 @@
         
         .refresh-btn { position: fixed; top: 10px; left: 10px; z-index: 100; background: rgba(0,0,0,0.5); color: #fff; border: 1px solid #333; padding: 5px 10px; font-size: 10px; cursor: pointer; border-radius: 4px; opacity: 0.2; transition: opacity 0.3s; }
         .refresh-btn:hover { opacity: 1; }
+        @keyframes breathe { 0%, 100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.2); opacity: 1; } }
     </style>
 </head>
 <body>
@@ -160,29 +172,35 @@
         <div class="col-center">
             <div class="stats-wrapper">
                 <div class="camera-container">
-                    <video id="webcam-feed" autoplay playsinline muted></video>
-                    
-                    <div class="camera-overlay">
-                        <div class="cam-top-bar">
-                            <div class="cam-rec">● REC</div>
-                            <div class="cam-scan-text">FACE RECOGNITION: IDLE</div>
-                        </div>
-                        
-                        <div class="cam-center-hud"></div> <div class="cam-info-panel">
-                            <div class="cam-label">KEHADIRAN HARI INI</div>
-                            <div class="cam-percent-big" id="persen-text">0%</div>
-                            <div style="font-size:0.8em; color:var(--neon-green); font-family:'Share Tech Mono';">TOTAL: <span id="total-populasi">...</span> SISWA</div>
-                        </div>
+                    <div class="camera-overlay"></div>
+                    <div class="rec-badge"><i class='bx bxs-circle' style="color:white; font-size:10px; animation: breathe 1s infinite;"></i> LIVE CAM</div>
+                    <div class="cam-name">CAM-RESEPSIONIS-01</div>
+                    <video id="live-cam" autoplay playsinline muted></video>
+                </div>
+
+                <div style="width:100%; margin-top:10px; display:flex; justify-content:space-between; align-items:end;">
+                    <div class="text-sekolah" style="text-align:left;">
+                        <span style="font-size: 0.7em; color: #94a3b8; font-weight: 600; letter-spacing:1px; display:block;">POPULASI SISWA</span>
+                        <span style="font-size: 1.4em; font-weight: 800; color: white; font-family: 'Share Tech Mono', monospace;" id="total-populasi">...</span>
+                    </div>
+                    <div class="text-sekolah" style="text-align:right;">
+                        <span style="font-size: 0.7em; color: #94a3b8; font-weight: 600; letter-spacing:1px;">PERSENTASE</span>
                     </div>
                 </div>
 
-                <div class="stat-grid-compact">
-                    <div class="stat-item-c"><h4 class="c-hadir">HADIR</h4><p id="total-hadir">0</p></div>
-                    <div class="stat-item-c"><h4 class="c-izin">IZIN</h4><p id="total-izin">0</p></div>
-                    <div class="stat-item-c"><h4 class="c-alpha">BELUM</h4><p id="total-alpha">0</p></div>
+                <div class="progress-bar-container">
+                    <div class="progress-fill" id="progress-bar-fill">
+                        <span class="progress-text" id="persen-text">0%</span>
+                    </div>
                 </div>
                 
-                <div id="data-source-indicator" style="position:absolute; bottom:2px; right:10px; font-size:9px; color:rgba(255,255,255,0.2);">Waiting...</div>
+                <div class="stat-grid">
+                    <div class="stat-item"><h4 class="c-hadir">HADIR</h4><p id="total-hadir">0</p></div>
+                    <div class="stat-item"><h4 class="c-izin">IZIN</h4><p id="total-izin">0</p></div>
+                    <div class="stat-item"><h4 class="c-alpha">BELUM</h4><p id="total-alpha">0</p></div>
+                </div>
+                
+                <div id="data-source-indicator" style="position:absolute; bottom:5px; right:10px; font-size:9px; color:rgba(255,255,255,0.2);">Waiting...</div>
             </div>
 
             <div class="box-belum">
@@ -247,21 +265,26 @@
         let dataAbsenHariIni = []; 
         let validStudentNISNs = new Set();
 
-        // 1. KAMERA WEB (MODIFIKASI UTAMA)
-        async function startWebcam() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                const videoEl = document.getElementById('webcam-feed');
-                videoEl.srcObject = stream;
-            } catch (err) {
-                console.error("Gagal akses kamera:", err);
-                document.querySelector('.camera-container').innerHTML = `<div style="display:flex; justify-content:center; align-items:center; height:100%; color:gray;">Kamera Tidak Terdeteksi</div>`;
+        // --- KAMERA LIVE LOGIC ---
+        function initCamera() {
+            const videoEl = document.getElementById('live-cam');
+            if (navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(function (stream) {
+                        videoEl.srcObject = stream;
+                    })
+                    .catch(function (error) {
+                        console.log("Kamera error/ditolak: ", error);
+                        // Kalo gagal, kasih gambar statis sci-fi biar ga jelek
+                        videoEl.parentElement.style.background = "url('https://media.istockphoto.com/id/1129638612/vector/interface-hud-element.jpg?s=612x612&w=0&k=20&c=N5F7A9m-R3-tTfC3T-uUaLzT-w-eC-0-2-2.jpg') center/cover";
+                    });
             }
         }
+        initCamera(); // Jalankan kamera saat load
 
-        // 2. CACHING MASTER SISWA (OPTIMASI UTAMA)
+        // 1. CACHING MASTER SISWA (OPTIMASI UTAMA)
         async function loadMasterSiswa() {
-            const cacheKey = 'cache_master_siswa_v3';
+            const cacheKey = 'cache_master_siswa_v3'; 
             const cachedSiswa = localStorage.getItem(cacheKey);
             const indicator = document.getElementById('data-source-indicator');
             
@@ -274,7 +297,7 @@
                     allSiswa = parsed.data;
                     allSiswa.forEach(s => validStudentNISNs.add(s.username));
                     document.getElementById('total-populasi').innerText = allSiswa.length;
-                    startMonitorAbsen(); // Langsung monitor
+                    startMonitorAbsen(); 
                     return;
                 }
             }
@@ -323,7 +346,7 @@
             }
         }
 
-        // 3. MONITORING (REALTIME)
+        // 2. MONITORING (REALTIME)
         function startMonitorAbsen() {
             const q = query(collection(db, "absensi"), where("tanggal", "==", today));
 
@@ -356,14 +379,12 @@
         function updateTampilanLayar() {
             const listHadir = dataAbsenHariIni.filter(d => d.status_terakhir.includes("Masuk") || d.status_terakhir.includes("Hadir") || d.status_terakhir.includes("Pulang"));
             const listIzin = dataAbsenHariIni.filter(d => d.status_terakhir.includes("Sakit") || d.status_terakhir.includes("Izin"));
-            
             const nisnHadir = dataAbsenHariIni.map(d => d.nisn_clean); 
             
             const totalPopulasi = allSiswa.length > 0 ? allSiswa.length : 0; 
             const countIzin = listIzin.length;
             const countHadir = listHadir.length;
             const totalMasuk = countHadir + countIzin;
-            
             const listBelum = allSiswa.filter(s => !nisnHadir.includes(s.username));
 
             document.getElementById('total-populasi').innerText = totalPopulasi;
@@ -371,20 +392,25 @@
             document.getElementById('total-izin').innerText = countIzin;
             document.getElementById('total-alpha').innerText = listBelum.length;
 
+            // UPDATE PROGRESS BAR & TEXT
             let rawPercent = totalPopulasi > 0 ? (totalMasuk / totalPopulasi) * 100 : 0;
-            let warnaDonat = rawPercent > 75 ? '#10b981' : (rawPercent > 40 ? '#f59e0b' : '#ef4444'); 
+            if (rawPercent > 100) rawPercent = 100;
             
+            const elFill = document.getElementById('progress-bar-fill');
             const elText = document.getElementById('persen-text');
-            if(elText) {
-                elText.innerText = rawPercent.toFixed(1) + "%";
-                elText.style.color = warnaDonat;
-                elText.style.textShadow = `0 0 10px ${warnaDonat}`;
-            }
+            
+            elFill.style.width = rawPercent + '%';
+            elText.innerText = rawPercent.toFixed(1) + "%";
+            
+            // Ubah warna bar sesuai capaian
+            let gradientColor = rawPercent > 90 ? 'linear-gradient(90deg, #10b981, #34d399)' : 
+                                (rawPercent > 50 ? 'linear-gradient(90deg, #f59e0b, #fbbf24)' : 
+                                'linear-gradient(90deg, #ef4444, #f87171)');
+            elFill.style.background = gradientColor;
 
             // UPDATE LISTS
             const containerBelum = document.getElementById('list-belum');
             const msgTooMany = document.getElementById('msg-too-many');
-
             document.getElementById('badge-belum').innerText = listBelum.length;
 
             if(listBelum.length > 50) {
@@ -462,10 +488,7 @@
 
         setInterval(() => { const now = new Date(); document.getElementById('jam-real').innerText = now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}); document.getElementById('tgl-real').innerText = now.toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long'}); }, 1000);
         
-        document.addEventListener("DOMContentLoaded", () => {
-            startWebcam(); // JALANKAN KAMERA
-            loadMasterSiswa(); // JALANKAN DATA
-        });
+        document.addEventListener("DOMContentLoaded", loadMasterSiswa);
     </script>
 </body>
 </html>
