@@ -100,7 +100,7 @@
 
         <!-- PAGE: ABSENSI (GPS & KAMERA) -->
         <div id="page-absen" class="hidden-page p-6 fade-in h-full bg-white flex flex-col">
-            <button onclick="kembali()" class="w-12 h-12 bg-slate-50 hover:bg-slate-100 rounded-full flex items-center justify-center border border-slate-200 mb-4 transition"><i data-lucide="chevron-left" class="w-6 h-6 text-slate-600"></i></button>
+            <button onclick="kembali()" class="w-12 h-12 bg-slate-50 hover:bg-slate-100 rounded-full flex items-center justify-center border border-slate-200 mb-4 transition"><i data-lucide="chevron-left" class="w-6 h-6"></i></button>
             <div class="text-center mb-6">
                 <h1 class="font-black text-5xl text-slate-800 tracking-tighter font-mono" id="jamDigital">00:00</h1>
                 <p class="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] mt-1" id="tanggalDigital">...</p>
@@ -314,6 +314,11 @@
 
         // --- VALIDASI GPS ---
         window.validasiGPS = () => { 
+            // -------------------------------------------------------------
+            // [1] TAMBAHAN DARI CONTROL PANEL: Bypass kalau GPS dimatikan
+            if (configSekolah.validasi_gps_aktif === false) return true; 
+            // -------------------------------------------------------------
+
             if(!lokasiUser) { Swal.fire({ icon: 'info', title: 'Mencari Titik...', text: 'Tunggu sebentar, HP kamu sedang mencari sinyal GPS.', timer: 2000, showConfirmButton: false }); return false; }
             const d = map.distance(lokasiUser, [SEKOLAH_LAT, SEKOLAH_LNG]); 
             if (d > configSekolah.radius_meter) { 
@@ -341,6 +346,11 @@
                     if(d.lokasi_lng) SEKOLAH_LNG = parseFloat(d.lokasi_lng); 
                     if(d.radius_meter) configSekolah.radius_meter = parseInt(d.radius_meter);
                     
+                    // -------------------------------------------------------------
+                    // [2] TAMBAHAN DARI CONTROL PANEL: Tangkap status toggle GPS
+                    if(d.validasi_gps_aktif !== undefined) configSekolah.validasi_gps_aktif = d.validasi_gps_aktif;
+                    // -------------------------------------------------------------
+
                     // Mode Event
                     if(d.mode_bebas_pulang) {
                         Swal.fire({title: 'PENGUMUMAN!', html: d.pesan_bebas_pulang, icon: 'info', confirmButtonText: 'Oke, Paham', confirmButtonColor: '#3b82f6'});
@@ -396,7 +406,15 @@
                         
                         const d = map.distance(lokasiUser, [SEKOLAH_LAT, SEKOLAH_LNG]); 
                         const box = document.getElementById('jarakBox'); 
-                        if (d > configSekolah.radius_meter) { box.innerText = `DILUAR RADIUS (${Math.round(d)}m)`; box.className = "inline-block bg-red-600/90 backdrop-blur-md text-white text-[10px] font-bold py-2 px-5 rounded-full shadow-lg border border-red-400 tracking-widest"; } 
+                        
+                        // -------------------------------------------------------------
+                        // [3] TAMBAHAN DARI CONTROL PANEL: Ganti warna indikator GPS kalau dimatikan
+                        if (configSekolah.validasi_gps_aktif === false) { 
+                            box.innerText = "MODE DARURAT (BEBAS GPS)"; 
+                            box.className = "inline-block bg-orange-600/90 backdrop-blur-md text-white text-[10px] font-bold py-2 px-5 rounded-full shadow-lg border border-orange-400 tracking-widest"; 
+                        } 
+                        // -------------------------------------------------------------
+                        else if (d > configSekolah.radius_meter) { box.innerText = `DILUAR RADIUS (${Math.round(d)}m)`; box.className = "inline-block bg-red-600/90 backdrop-blur-md text-white text-[10px] font-bold py-2 px-5 rounded-full shadow-lg border border-red-400 tracking-widest"; } 
                         else { box.innerText = "DALAM RADIUS - SIAP ABSEN"; box.className = "inline-block bg-emerald-600/90 backdrop-blur-md text-white text-[10px] font-bold py-2 px-5 rounded-full shadow-lg border border-emerald-400 tracking-widest"; } 
                     } 
                 }, (e) => Swal.fire('GPS Error', 'Mohon izinkan akses Lokasi (GPS) di browser kamu!', 'warning'), { enableHighAccuracy: true }); 
