@@ -216,16 +216,15 @@
 
     <audio id="sound-scan" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
 
-    <!-- SCRIPT JAM DIGITAL (DIPISAH BIAR KEBAL ERROR LOADING DATA) -->
+    <!-- SCRIPT JAM DIGITAL -->
     <script>
         function updateJamDigital() {
             const now = new Date(); 
-            // Tambah detik (second:'2-digit') biar kelihatan realtime
             document.getElementById('jam-real').innerText = now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit', second:'2-digit'}); 
             document.getElementById('tgl-real').innerText = now.toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
         }
-        updateJamDigital(); // Panggil pertama kali langsung pas halaman kebuka
-        setInterval(updateJamDigital, 1000); // Ulangi setiap 1 detik
+        updateJamDigital(); 
+        setInterval(updateJamDigital, 1000); 
     </script>
 
     <!-- SCRIPT UTAMA FIREBASE & DATA -->
@@ -233,10 +232,8 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getFirestore, collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         
-        // IMPORT KTP SEKOLAH
         import { KODE_SEKOLAH } from "./config_sekolah.js";
 
-        // CONFIG FIREBASE (Sama dengan siswa.php SMAN 1 Pejagoan)
         const firebaseConfig = {
             apiKey: "AIzaSyBXWR-_aJyoMrUjTeNQYlcPD8p3eu58yOo",
             authDomain: "siganteng-absensi.firebaseapp.com",
@@ -250,12 +247,9 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // ==========================================
-        // ATURAN JAM TERLAMBAT SMAN 1 PEJAGOAN
-        // ==========================================
         const JAM_BATAS_TERLAMBAT = "07:00:00"; 
-        
         const DEFAULT_IMG = "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+        
         let allSiswa = [];        
         let dataAbsenHariIni = []; 
         let validStudentNISNs = new Set();
@@ -280,22 +274,32 @@
             console.log("⚠️ Download Data Siswa dari Server PHP...");
             indicator.innerText = "Downloading Master Data...";
             try {
-                const res = await fetch('api_monitor.php?action=get_master_siswa').then(r=>r.json());
+                // Tarik data dari api PHP kamu
+                const response = await fetch('api_monitor.php?action=get_master_siswa');
+                if (!response.ok) throw new Error("API tidak merespon 200 OK");
+                
+                const res = await response.json();
                 allSiswa = res;
                 localStorage.setItem(cacheKey, JSON.stringify({ timestamp: new Date().getTime(), data: allSiswa }));
                 finishLoadMaster();
             } catch (error) { 
                 console.error("Gagal load siswa:", error);
-                indicator.innerText = "Error Master Data (API PHP tidak ditemukan)";
+                indicator.innerText = "Data Master Error, Tapi Live Jalan";
+                indicator.style.color = "orange";
+                
+                // MENGAKALI ERROR: Tetap jalankan Firebase walau PHP Error biar absen hari ini tetep nampil!
+                startFirebaseListener();
             }
         }
 
         function finishLoadMaster() {
             validStudentNISNs.clear();
             allSiswa.forEach(s => validStudentNISNs.add(s.username)); 
-            document.getElementById('total-populasi').innerText = allSiswa.length;
             
-            // SETELAH MASTER SIAP, BARU NYALAKAN RADAR FIREBASE
+            const populasi = document.getElementById('total-populasi');
+            populasi.innerText = allSiswa.length > 0 ? allSiswa.length : "0";
+            
+            // NYALAKAN RADAR FIREBASE
             startFirebaseListener();
         }
 
@@ -305,7 +309,9 @@
             const indicator = document.getElementById('data-source-indicator');
             
             console.log("📡 Menyalakan Radar Firebase SiGanteng...");
-            indicator.innerText = "Connecting Firebase...";
+            if(indicator.innerText !== "Data Master Error, Tapi Live Jalan") {
+                indicator.innerText = "Connecting Firebase...";
+            }
 
             const q = query(
                 collection(db, "presensi_harian"),
@@ -314,9 +320,11 @@
             );
 
             onSnapshot(q, (snapshot) => {
-                indicator.innerText = "● LIVE STREAM";
-                indicator.style.color = "#10b981";
-                indicator.style.textShadow = "0 0 5px #10b981";
+                if(indicator.innerText !== "Data Master Error, Tapi Live Jalan") {
+                    indicator.innerText = "● LIVE STREAM";
+                    indicator.style.color = "#10b981";
+                    indicator.style.textShadow = "0 0 5px #10b981";
+                }
 
                 let adaDataBaru = false;
 
@@ -369,7 +377,8 @@
             const nisnHadir = dataAbsenHariIni.map(d => d.nisn);
             const listBelum = allSiswa.filter(s => !nisnHadir.includes(s.username));
 
-            const totalPopulasi = allSiswa.length || 1;
+            // Perbaiki pembagian persentase agar tidak NaN jika populasi 0
+            const totalPopulasi = allSiswa.length > 0 ? allSiswa.length : 1; 
             const countHadir = listHadir.length;
             const countIzin = listIzin.length;
             const totalMasuk = countHadir + countIzin;
@@ -380,6 +389,8 @@
 
             let rawPercent = (totalMasuk / totalPopulasi) * 100;
             if (rawPercent > 100) rawPercent = 100;
+            if (allSiswa.length === 0 && totalMasuk > 0) rawPercent = 100; // Kalau API gagal, anggap persen manual
+            
             let derajat = rawPercent * 3.6;
             let warnaDonat = rawPercent > 90 ? '#10b981' : (rawPercent > 50 ? '#f59e0b' : '#ef4444');
             
@@ -423,7 +434,11 @@
 
         function renderScrollList(data, id, type) {
             const container = document.getElementById(id); container.innerHTML = '';
-            if(data.length === 0) { container.innerHTML = `<div style="text-align:center; padding:20px; color:#64748b; font-style:italic;">${type==='telat'?'Nihil (Tertib)':'Semua Hadir!'}</div>`; container.style.animation = 'none'; return; }
+            if(data.length === 0) { 
+                let msg = type==='telat' ? 'Nihil (Tertib)' : (allSiswa.length === 0 ? 'Menunggu API PHP...' : 'Semua Hadir!');
+                container.innerHTML = `<div style="text-align:center; padding:20px; color:#64748b; font-style:italic;">${msg}</div>`; 
+                container.style.animation = 'none'; return; 
+            }
             let durasi = data.length * 2; if(durasi < 10) durasi = 10; container.style.animation = `scrollUp ${durasi}s linear infinite`;
             data.forEach(d => {
                 const nama = d.nama || d.name; 
@@ -467,7 +482,9 @@
         
         window.forceRefreshMaster = () => { if(confirm("Download ulang data siswa terbaru dari Server?")) { localStorage.removeItem('cache_master_siswa_v3_php'); location.reload(); } }
 
-        document.addEventListener("DOMContentLoaded", loadMasterSiswa);
+        // PERUBAHAN DISINI: Panggil langsung, gausah nunggu DOMContentLoaded karena ini type="module"
+        loadMasterSiswa();
+
     </script>
 </body>
 </html>
