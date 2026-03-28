@@ -1,0 +1,9 @@
+{
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "destination": "https://smanja.edugate-tech.com/",
+      "permanent": true
+    }
+  ]
+}
